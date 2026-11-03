@@ -1,0 +1,1 @@
+"""Tkinter interface; importing does not create a window."""

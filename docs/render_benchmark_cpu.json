@@ -1,0 +1,74 @@
+{
+  "renderer_requested": "cpu",
+  "renderer_used": "QPainter CPU",
+  "opengl_driver": null,
+  "opengl_vendor": null,
+  "internal_resolution": [
+    800,
+    450
+  ],
+  "seconds_per_phase": 3.0,
+  "modes": {
+    "shader": {
+      "active": {
+        "fps_target": 30,
+        "fps_measured": 30.32,
+        "timer_callbacks_per_second": 29.99,
+        "cpu_percent_average": 49.98,
+        "vram_mib_before": 0,
+        "vram_mib_after": 0,
+        "vram_scope": "cpu_renderer_no_opengl"
+      },
+      "idle": {
+        "fps_target": 5,
+        "fps_measured": 5.0,
+        "timer_callbacks_per_second": 5.0,
+        "cpu_percent_average": 9.77,
+        "vram_mib_before": 0,
+        "vram_mib_after": 0,
+        "vram_scope": "cpu_renderer_no_opengl"
+      }
+    },
+    "ascii": {
+      "active": {
+        "fps_target": 30,
+        "fps_measured": 29.57,
+        "timer_callbacks_per_second": 30.23,
+        "cpu_percent_average": 101.72,
+        "vram_mib_before": 0,
+        "vram_mib_after": 0,
+        "vram_scope": "cpu_renderer_no_opengl"
+      },
+      "idle": {
+        "fps_target": 5,
+        "fps_measured": 5.0,
+        "timer_callbacks_per_second": 5.0,
+        "cpu_percent_average": 17.13,
+        "vram_mib_before": 0,
+        "vram_mib_after": 0,
+        "vram_scope": "cpu_renderer_no_opengl"
+      }
+    },
+    "hud": {
+      "active": {
+        "fps_target": 30,
+        "fps_measured": 30.31,
+        "timer_callbacks_per_second": 29.98,
+        "cpu_percent_average": 37.28,
+        "vram_mib_before": 0,
+        "vram_mib_after": 0,
+        "vram_scope": "cpu_renderer_no_opengl"
+      },
+      "idle": {
+        "fps_target": 5,
+        "fps_measured": 5.0,
+        "timer_callbacks_per_second": 5.0,
+        "cpu_percent_average": 6.32,
+        "vram_mib_before": 0,
+        "vram_mib_after": 0,
+        "vram_scope": "cpu_renderer_no_opengl"
+      }
+    }
+  },
+  "gpu_vram_note": "process_dedicated_mib comes from WDDM; process_mib is NVIDIA per-process; system_gpu_mib is a whole-adapter total. cpu_renderer_no_opengl excludes Windows composition."
+}

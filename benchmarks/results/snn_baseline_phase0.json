@@ -1,0 +1,198 @@
+{
+  "schema": 1,
+  "baseline_kind": "phase0_before",
+  "python": "3.14.10",
+  "numpy": "2.5.4",
+  "seed": 20261102,
+  "tick_samples": 100,
+  "determinism": {
+    "seed": 20261102,
+    "steps": 4096,
+    "spike_sha256": "0f6bbf53dda5eb1900a3b1847ce83ee7c527774a7e70ebe8f2be76666eecd51d",
+    "state_sha256": "c0dd58284492498e35f62193653f73c443d12a7a572da99a7edd8b5fdbf513a9",
+    "spike_counts_by_population": {
+      "sensor": 12241,
+      "hidden": 45,
+      "output": 0
+    },
+    "spike_samples": {
+      "0": [
+        50,
+        58,
+        86
+      ],
+      "1": [
+        2,
+        4
+      ],
+      "2": [
+        79
+      ],
+      "127": [
+        55,
+        94
+      ],
+      "511": [
+        48,
+        59,
+        83
+      ],
+      "1023": [
+        0
+      ],
+      "2047": [
+        16,
+        19,
+        84,
+        85,
+        86
+      ],
+      "4095": [
+        10,
+        16,
+        82,
+        91,
+        92
+      ]
+    },
+    "weights": {
+      "sensor_hidden": 3614,
+      "recurrent": 14728,
+      "hidden_output": 4586
+    }
+  },
+  "memory": {
+    "600": {
+      "neurons_requested": 600,
+      "neurons_total_with_tools": 712,
+      "rss_mib": 54.99609375,
+      "connections": 27561
+    },
+    "1000": {
+      "neurons_requested": 1000,
+      "neurons_total_with_tools": 1112,
+      "rss_mib": 56.3984375,
+      "connections": 71208
+    }
+  },
+  "tick_cost_600": {
+    "active": {
+      "ticks": 100,
+      "simulated_ms_per_tick": 50.0,
+      "mean_cpu_ms": 8.90625,
+      "p95_wall_ms": 9.278875,
+      "mean_wall_ms": 8.934560999999999,
+      "live_traced_blocks_delta_per_tick": 0.46,
+      "live_traced_bytes_delta_per_tick": 28.8,
+      "peak_traced_bytes_delta_per_tick": 1937.87,
+      "sleep_entry_consolidation_cpu_ms": null
+    },
+    "rest": {
+      "ticks": 100,
+      "simulated_ms_per_tick": 250.0,
+      "mean_cpu_ms": 0.46875,
+      "p95_wall_ms": 0.538755,
+      "mean_wall_ms": 0.5068889999999999,
+      "live_traced_blocks_delta_per_tick": 0.38,
+      "live_traced_bytes_delta_per_tick": 23.15,
+      "peak_traced_bytes_delta_per_tick": 1932.03,
+      "sleep_entry_consolidation_cpu_ms": null
+    },
+    "sleep": {
+      "ticks": 100,
+      "simulated_ms_per_tick": 250.0,
+      "mean_cpu_ms": 0.46875,
+      "p95_wall_ms": 0.54533,
+      "mean_wall_ms": 0.502086,
+      "live_traced_blocks_delta_per_tick": 0.38,
+      "live_traced_bytes_delta_per_tick": 22.83,
+      "peak_traced_bytes_delta_per_tick": 1932.03,
+      "sleep_entry_consolidation_cpu_ms": 0.0
+    }
+  },
+  "tick_cost_1000": {
+    "active": {
+      "ticks": 100,
+      "simulated_ms_per_tick": 50.0,
+      "mean_cpu_ms": 18.125,
+      "p95_wall_ms": 18.702225,
+      "mean_wall_ms": 18.098954000000003,
+      "live_traced_blocks_delta_per_tick": 1.43,
+      "live_traced_bytes_delta_per_tick": 57.77,
+      "peak_traced_bytes_delta_per_tick": 5121.41,
+      "sleep_entry_consolidation_cpu_ms": null
+    },
+    "mean_cpu_ms_50ms_simulated": 18.125
+  },
+  "encoder_probe_note": "Phase-0 1000-neuron ticks use a harness-only encoder scaled to n_sensor. The runtime's fixed 4x24 encoder currently mismatches larger networks; phase-0 measurement keeps the runtime unchanged and exposes this limitation.",
+  "firing_rate_hz": {
+    "active": {
+      "sensor": 8.481770833333798,
+      "hidden": 0.10221354166667226,
+      "output": 0.0
+    },
+    "rest": {
+      "sensor": 0.0,
+      "hidden": 0.0,
+      "output": 0.0
+    },
+    "sleep": {
+      "sensor": 0.0,
+      "hidden": 0.0,
+      "output": 0.0
+    },
+    "1000_active": {
+      "sensor": 9.335937500000512,
+      "hidden": 2.9687500000001625,
+      "output": 2.7660256410257924
+    }
+  },
+  "top_profile_costs": [
+    {
+      "function": "tick",
+      "file": "engine.py",
+      "line": 128,
+      "calls": 80,
+      "total_seconds": 0.012768300000000002,
+      "cumulative_seconds": 0.8190805000000001
+    },
+    {
+      "function": "mark",
+      "file": "plasticity.py",
+      "line": 24,
+      "calls": 6000,
+      "total_seconds": 0.5310908000000001,
+      "cumulative_seconds": 0.5419832
+    },
+    {
+      "function": "step",
+      "file": "network.py",
+      "line": 63,
+      "calls": 2000,
+      "total_seconds": 0.019237900000000002,
+      "cumulative_seconds": 0.20410440000000002
+    },
+    {
+      "function": "currents",
+      "file": "synapses.py",
+      "line": 48,
+      "calls": 6000,
+      "total_seconds": 0.007741100000000001,
+      "cumulative_seconds": 0.11633470000000001
+    },
+    {
+      "function": "__matmul__",
+      "file": "_base.py",
+      "line": 1006,
+      "calls": 6000,
+      "total_seconds": 0.0033565,
+      "cumulative_seconds": 0.10343340000000001
+    }
+  ],
+  "idle_process_cpu": {
+    "seconds": 4.0003179000050295,
+    "single_core_cpu_percent": 0.0
+  },
+  "allocation_metric_note": "Python tracemalloc reports net live traced blocks/bytes per tick and peak traced bytes; it does not count short-lived allocations that are freed inside each tick.",
+  "regime_note": "Active uses 50 ms simulated with 25 LIF steps. Rest and sleep each use one 250 ms low-duty LIF step; sleep adds a one-time consolidation measurement and the runtime waits 500 ms between sleep ticks."
+}

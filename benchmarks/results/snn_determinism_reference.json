@@ -1,0 +1,56 @@
+{
+  "seed": 20261102,
+  "steps": 4096,
+  "spike_sha256": "45c47b8e06e2f7dfff2a61832f9d07d5cc4197c8ee35c82df65e3260bbcc92b7",
+  "state_sha256": "d34fec09870ee66aa118d91bfc1293c44e9b2fddb14ab6990eb742d330978279",
+  "spike_counts_by_population": {
+    "sensor": 12606,
+    "hidden": 33,
+    "output": 0
+  },
+  "spike_samples": {
+    "0": [
+      50,
+      58,
+      86
+    ],
+    "1": [
+      2,
+      4
+    ],
+    "2": [
+      79
+    ],
+    "127": [
+      55,
+      94
+    ],
+    "511": [
+      48,
+      59,
+      83
+    ],
+    "1023": [
+      0
+    ],
+    "2047": [
+      16,
+      19,
+      84,
+      85,
+      86
+    ],
+    "4095": [
+      10,
+      16,
+      82,
+      91,
+      92
+    ]
+  },
+  "weights": {
+    "sensor_hidden": 3614,
+    "recurrent": 14728,
+    "hidden_output": 4586
+  }
+}

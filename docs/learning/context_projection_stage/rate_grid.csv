@@ -1,0 +1,10 @@
+action_credit_rate,prediction_rate,combined_b_readaptation_episodes,combined_b_accuracy_percent,strict_snn_b_readaptation_episodes,strict_snn_b_accuracy_percent,note
+0.08,0.05,44,100,49,99,isolated actor
+0.08,0.1,44,100,,62,no 85% window
+0.08,0.2,44,100,,26,no 85% window
+0.1,0.05,44,100,49,100,selected
+0.1,0.1,44,100,49,76,
+0.1,0.2,44,100,,28,no 85% window
+0.15,0.05,44,100,49,100,tied best isolated B
+0.15,0.1,43,100,49,99,
+0.15,0.2,44,100,63,82,

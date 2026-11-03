@@ -1,0 +1,107 @@
+seed: 41
+renderer: ascii
+visual:
+  width: 800
+  height: 450
+  fps_active: 30
+  fps_idle: 5
+  max_particles: 48
+  ascii_columns: 100
+  ascii_rows: 56
+  ascii_max_columns: 170
+  ascii_max_rows: 96
+  palette: cyan_amber_white
+  scene_time: auto       # auto, noite, dia ou entardecer
+  eye_design: A          # A (íris redonda) ou B (olho alongado)
+context_projections:
+  max_contexts: 8
+  similarity_threshold: 0.85
+network:
+  neurons: 600
+  sensor_fraction: 0.16
+  hidden_fraction: 0.64
+  recurrent_connectivity: 0.10
+  dt_ms: 2.0
+  tick_active_ms: 50
+  tick_idle_ms: 250
+  background_noise: 0.015
+  synaptic_gain: 1.7
+plasticity:
+  learning_rate: 0.0005
+  eligibility_tau_s: 3.0
+  action_credit_rate: 0.10
+  dopamine_baseline: 0.0
+learning:
+  prediction_rate: 0.05
+  rpe_deadband: 0.01
+  action_preference_rate: 0.30
+  neural_score_scale_hz: 15.0
+  affect_impulse_tau_s: 4.0
+  affect_happiness_gain: 0.10
+  curiosity_threshold: 0.72
+  curiosity_base: 0.25
+  curiosity_inactivity_gain: 0.40
+  curiosity_energy_gain: 0.15
+interaction:
+  affection_drag_min_s: 1.0
+  mouse_observation_interval_s: 0.5
+curiosity_novelty:
+  impulse_gain_mouse: 0.04
+  impulse_gain_active_window: 0.025
+  impulse_max: 0.05
+  impulse_tau_s: 2.5
+  habituation_step: 0.35
+  recovery_tau_s: 180.0
+  per_minute_cap:
+    mouse: 0.08
+    active_window: 0.04
+affect:
+  non_deliberate_mood_per_minute: 0.02
+  non_deliberate_impulse_per_minute: 0.08
+mood:
+  relax_fast_tau_s: 240.0
+  relax_slow_tau_s: 1800.0
+  slow_component_fraction: 0.20
+reward_channels:
+  affection:
+    affect_impulse: 1.0
+    learning_reward: 1.0
+  feedback_positive:
+    affect_impulse: 0.25
+    learning_reward: 1.0
+  feedback_negative:
+    affect_impulse: -0.35
+    learning_reward: -1.0
+  proposal_accepted:
+    affect_impulse: 0.18
+    learning_reward: 0.35
+  proposal_rejected:
+    affect_impulse: -0.24
+    learning_reward: -0.35
+  tool_success:
+    affect_impulse: 0.08
+    learning_reward: 0.10
+  tool_failure:
+    affect_impulse: -0.20
+    learning_reward: -0.20
+  curiosity:
+    affect_impulse: 0.12
+    learning_reward: 0.05
+runtime:
+  active_timeout_s: 20
+  sleep_after_s: 1800
+  autosave_s: 60
+  proposal_timeout_s: 120
+  watchdog_timeout_s: 3
+privacy:
+  sensors:
+    input_activity: false
+    active_window: false
+    file_events: false
+    clipboard: false
+    system_stats: false
+tools:
+  max_automatic_per_hour: 6
+  allowed_folders: []
+  allowed_apps: []
+  allowed_commands: []

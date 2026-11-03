@@ -1,0 +1,1 @@
+"""Windows system tray integration will require an optional tray backend."""

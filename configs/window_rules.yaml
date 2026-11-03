@@ -1,0 +1,5 @@
+# Regras aplicadas somente ao nome do executável, nunca ao título da janela.
+codigo: [code, devenv, pycharm, rider, notepad++]
+navegador: [chrome, msedge, firefox, brave, opera]
+chat: [teams, slack, discord, telegram, whatsapp]
+jogo: [game, steam, epicgames]
