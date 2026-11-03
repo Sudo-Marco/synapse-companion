@@ -8,12 +8,12 @@ from collections import deque
 from dataclasses import replace
 from pathlib import Path
 
-from PySide6.QtCore import QEvent, QPoint, Qt, QTimer
-from PySide6.QtGui import (QBrush, QColor, QCursor, QFont, QPainter, QPen,
+from PySide6.QtCore import QEvent, QPoint, Qt, QTimer, QUrl
+from PySide6.QtGui import (QBrush, QColor, QCursor, QDesktopServices, QFont, QPainter, QPen,
                            QSurfaceFormat, QShortcut, QKeySequence)
 from PySide6.QtWidgets import (QApplication, QDialog, QFileDialog, QFrame,
                                QHBoxLayout, QLabel, QMainWindow, QMenu,
-                               QProgressBar, QPushButton, QVBoxLayout, QWidget)
+                               QMessageBox, QProgressBar, QPushButton, QVBoxLayout, QWidget)
 
 from ..runtime.visual_state import VisualState
 from .gl_renderer import EyeCanvas
@@ -505,6 +505,17 @@ class PetWindow(QMainWindow):
         self._proposal_name = None
         self.proposal.hide()
 
+    def _offer_folder_configuration(self) -> None:
+        answer = QMessageBox.question(
+            self, "Configure uma pasta",
+            "Para explorar arquivos, o Synapse Pet precisa de uma pasta permitida. "
+            "Deseja abrir configs/default.yaml para configurar tools.allowed_folders?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.Yes)
+        if answer == QMessageBox.StandardButton.Yes:
+            config_path = Path(__file__).resolve().parents[3] / "configs" / "default.yaml"
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(config_path)))
+
     @staticmethod
     def _emotion_label(state: VisualState) -> str:
         return {
@@ -559,6 +570,12 @@ class PetWindow(QMainWindow):
             elif operation == "runtime":
                 self._notice = ("SIMULAÇÃO RECUPERADA" if status == "restarted"
                                 else f"SIMULAÇÃO: {status}")
+            elif operation == "tool" and status == "configuration_required":
+                self._notice = "PASTA NECESSÁRIA PARA EXPLORAR"
+                if result.get("tool") in {"abrir_pasta", "resumo_arquivos_alterados"}:
+                    QTimer.singleShot(0, self._offer_folder_configuration)
+            elif operation == "tool" and status in {"parameters_required", "invalid_parameters"}:
+                self._notice = "AÇÃO NÃO EXECUTADA · FALTAM DADOS VÁLIDOS"
             elif operation == "tool" and status == "error":
                 self._notice = f"FALHA NA AÇÃO {result.get('tool', '')}"
             elif status == "undone":

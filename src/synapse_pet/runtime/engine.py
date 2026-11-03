@@ -28,7 +28,7 @@ from ..mind.action_selection import ActionCandidate, ActionSelector
 from ..tools.registry import ToolRegistry
 from ..tools.permissions import PermissionManager
 from ..tools.sandbox import Sandbox
-from ..tools.manifest import ToolManifest
+from ..tools.manifest import ToolManifest, ToolParameterError
 from ..tools.builtin.basic import builtin_tools
 from .persistence import SnapshotStore
 from .logging_db import ActionLog
@@ -148,6 +148,12 @@ class PetEngine:
         self.action_results: queue.Queue[dict[str, object]] = queue.Queue()
         self._pending_tools: dict[str, float] = {}
         self._proposal_cooldowns: dict[str, float] = {}
+        self._tool_failure_cooldown_s = max(1.0, float(
+            tool_config.get("failure_cooldown_s", 300.0)))
+        self._tool_config_notice_cooldown_s = max(1.0, float(
+            tool_config.get("configuration_notice_cooldown_s", 900.0)))
+        self._tool_config_notices: dict[str, float] = {}
+        self._tool_cooldowns: dict[str, float] = {}
         self._last_auto_action: dict[str, float] = {}
         self._undo_stack: list[tuple[ToolManifest, dict[str, object]]] = []
         self.stop_event = threading.Event()
@@ -552,19 +558,26 @@ class PetEngine:
                      accepted: bool = False, explicit: bool = False,
                      context_category: str = "outro") -> dict[str, object]:
         tool = self.registry.get(name)
+        supplied = dict(params or {})
+        if name == "abrir_url":
+            supplied["explicit_user_action"] = explicit
+        try:
+            safe_params = tool.prepare_parameters(supplied)
+        except ToolParameterError as exc:
+            status = "configuration_required" if exc.missing else "invalid_parameters"
+            return {"status": status, "missing": exc.missing,
+                    "error": str(exc)}
         if not self.permissions.authorize(tool, accepted=accepted, explicit=explicit):
             self.action_log.record(name, "blocked_or_waiting_for_confirmation", 0.0, context_category)
             return {"status": "confirmation_required"}
         if tool.run is None:
             raise RuntimeError(f"tool {name} has no run function")
-        safe_params = dict(params or {})
-        if name == "abrir_url":
-            safe_params["explicit_user_action"] = explicit
         try:
             result = tool.run(safe_params)
         except Exception:
             self.action_log.record(name, "failure", -0.2, context_category)
             self.reward(context_category, 1.0, name, source="tool_failure")
+            self._cool_down_failed_tool(name)
             raise
         if tool.undo is not None:
             undo_params: dict[str, object] = dict(safe_params)
@@ -578,6 +591,14 @@ class PetEngine:
                        accepted: bool = False, context_category: str = "outro") -> None:
         """Run potentially slow tools away from the simulation thread."""
         tool = self.registry.get(name)
+        try:
+            safe_params = tool.prepare_parameters(params)
+        except ToolParameterError as exc:
+            status = "configuration_required" if exc.missing else "invalid_parameters"
+            self.action_results.put({"operation": "tool", "status": status,
+                                     "tool": name, "missing": exc.missing,
+                                     "error": str(exc)})
+            return
         if not self.permissions.authorize(tool, accepted=accepted):
             self.action_log.record(name, "blocked_or_waiting_for_confirmation", 0.0,
                                    context_category)
@@ -586,7 +607,6 @@ class PetEngine:
             return
         if tool.run is None:
             raise RuntimeError(f"tool {name} has no run function")
-        safe_params = dict(params or {})
         future = self._tool_executor.submit(tool.run, safe_params)
         future.add_done_callback(lambda finished: self._queue_tool_completion(
             finished, name, context_category, safe_params))
@@ -616,8 +636,10 @@ class PetEngine:
             self._log_exception(f"Ferramenta {name!r} falhou", error)
             self.action_log.record(name, "failure", -0.2, context)
             self.reward(context, 1.0, name, source="tool_failure")
+            self._cool_down_failed_tool(name)
             self.action_results.put({"operation": "tool", "status": "error",
-                                     "tool": name, "error": str(error)})
+                                     "tool": name,
+                                     "error": f"Falha em {name}: {type(error).__name__}"})
             return
         tool = self.registry.get(name)
         result = completion.get("result", {})
@@ -638,6 +660,23 @@ class PetEngine:
                 self.logger.warning("Proposta %r expirou sem resposta", name)
                 self.action_results.put({"operation": "proposal", "status": "timeout",
                                          "tool": name})
+
+    def _cool_down_failed_tool(self, name: str) -> None:
+        deadline = time.monotonic() + self._tool_failure_cooldown_s
+        self._tool_cooldowns[name] = deadline
+        self._proposal_cooldowns[name] = max(
+            self._proposal_cooldowns.get(name, 0.0), deadline)
+
+    def _report_missing_tool_parameters(self, name: str,
+                                        exc: ToolParameterError) -> None:
+        now = time.monotonic()
+        if now < self._tool_config_notices.get(name, 0.0):
+            return
+        self._tool_config_notices[name] = now + self._tool_config_notice_cooldown_s
+        status = ("configuration_required" if name in {
+            "abrir_pasta", "resumo_arquivos_alterados"} else "parameters_required")
+        self.action_results.put({"operation": "tool", "status": status,
+                                 "tool": name, "missing": exc.missing})
 
     def undo_last(self) -> dict[str, object]:
         if not self._undo_stack:
@@ -829,6 +868,16 @@ class PetEngine:
         self._stall_reported = False
         category = str(context.get("window_category", "outro"))
         candidate = self.decide_action(category)
+        if candidate is not None:
+            manifest = self.registry.get(candidate.name)
+            try:
+                manifest.prepare_parameters({})
+            except ToolParameterError as exc:
+                self._report_missing_tool_parameters(candidate.name, exc)
+                candidate = None
+        if candidate is not None and time.monotonic() < self._tool_cooldowns.get(
+                candidate.name, 0.0):
+            candidate = None
         if candidate is not None:
             if candidate.risk == "low":
                 now = time.monotonic()

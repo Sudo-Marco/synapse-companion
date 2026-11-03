@@ -6,7 +6,7 @@ import sqlite3
 import subprocess
 import webbrowser
 from typing import Any
-from ..manifest import ToolManifest
+from ..manifest import ToolManifest, ToolParameter
 from ..sandbox import Sandbox
 
 def status_system(_params: dict[str, Any]) -> dict[str, Any]:
@@ -74,8 +74,10 @@ def notes_tools(db_path: Path) -> tuple[ToolManifest, ToolManifest]:
         with sqlite3.connect(db_path) as db:
             db.execute("DELETE FROM notes WHERE id=?", (note_id,))
         return {"deleted": bool(note_id)}
-    return (ToolManifest("anotar", "Salvar uma nota local.", "low", ("notes",), run=add, undo=undo_add),
-            ToolManifest("buscar_notas", "Buscar notas locais.", "low", ("notes",), run=search))
+    return (ToolManifest("anotar", "Salvar uma nota local.", "low", ("notes",), run=add, undo=undo_add,
+                         parameters={"text": ToolParameter(str, required=True, max_length=4000)}),
+            ToolManifest("buscar_notas", "Buscar notas locais.", "low", ("notes",), run=search,
+                         parameters={"query": ToolParameter(str, required=True, max_length=100)}))
 
 def clipboard_history_tool(db_path: Path) -> ToolManifest:
     db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -90,9 +92,10 @@ def clipboard_history_tool(db_path: Path) -> ToolManifest:
             rows = db.execute("SELECT id,text,created FROM clips ORDER BY id DESC LIMIT 10").fetchall()
         return {"items": rows}
     return ToolManifest("historico_clipboard", "Capturar ou consultar histórico local do clipboard.", "medium",
-                        ("clipboard",), run=run)
+                        ("clipboard",), run=run,
+                        parameters={"capture": ToolParameter(bool, default=False)})
 
-def changed_files_tool(sandbox: Sandbox) -> ToolManifest:
+def changed_files_tool(sandbox: Sandbox, folder_default=None) -> ToolManifest:
     baseline: dict[str, dict[str, int]] = {}
     def run(params: dict[str, Any]) -> dict[str, Any]:
         folder = Path(str(params.get("folder", ""))).expanduser().resolve()
@@ -105,7 +108,10 @@ def changed_files_tool(sandbox: Sandbox) -> ToolManifest:
         baseline[str(folder)] = files
         return {"changed_names": changed[:100], "removed_names": removed[:100], "count": len(changed)+len(removed)}
     return ToolManifest("resumo_arquivos_alterados", "Resumir nomes de arquivos modificados numa pasta.", "medium",
-                        ("files",), run=run)
+                        ("files",), run=run,
+                        parameters={"folder": ToolParameter(str, required=True,
+                                                              default=folder_default,
+                                                              max_length=1024)})
 
 def daily_summary_tool(db_path: Path) -> ToolManifest:
     def run(_params: dict[str, Any]) -> dict[str, Any]:
@@ -122,7 +128,10 @@ def command_tool(sandbox: Sandbox) -> ToolManifest:
         return sandbox.run_command(str(params.get("executable", "")),
                                    [str(a) for a in params.get("args", [])][:30])
     return ToolManifest("rodar_comando_permitido", "Executar um comando exato na allowlist.", "high",
-                        ("system",), run=run)
+                        ("system",), run=run,
+                        parameters={"executable": ToolParameter(str, required=True, max_length=1024),
+                                    "args": ToolParameter(list, default=[], max_length=30,
+                                                          item_type=str)})
 
 def template_tool(folder: Path) -> ToolManifest:
     def run(params: dict[str, Any]) -> dict[str, Any]:
@@ -140,7 +149,8 @@ def template_tool(folder: Path) -> ToolManifest:
             encoding="utf-8")
         return {"created": str(path)}
     return ToolManifest("criar_ferramenta_template", "Criar um esqueleto de plugin local.", "medium",
-                        ("developer",), run=run)
+                        ("developer",), run=run,
+                        parameters={"name": ToolParameter(str, default="new_tool", max_length=40)})
 
 def builtin_tools(data_dir: Path, sandbox: Sandbox) -> list[ToolManifest]:
     add, search = notes_tools(data_dir / "notes.sqlite3")
@@ -151,15 +161,27 @@ def builtin_tools(data_dir: Path, sandbox: Sandbox) -> list[ToolManifest]:
         return open_app(params, sandbox)
     def url_run(params: dict[str, Any]) -> dict[str, Any]:
         return open_url(params, explicit_user_action=bool(params.get("explicit_user_action")))
+    folder_default = lambda: str(sorted(sandbox.allowed_folders)[0]) if sandbox.allowed_folders else ""
+    app_default = lambda: sorted(sandbox.allowed_apps)[0] if sandbox.allowed_apps else ""
     return [
         ToolManifest("status_sistema", "Consultar CPU, RAM e bateria.", "low", ("status",), run=status_system),
-        ToolManifest("lembrete", "Criar lembrete local.", "low", ("planning",), run=reminder),
+        ToolManifest("lembrete", "Criar lembrete local.", "low", ("planning",), run=reminder,
+                     parameters={"minutes": ToolParameter(int, default=25, minimum=1, maximum=1440),
+                                 "label": ToolParameter(str, default="Lembrete", max_length=120)}),
         ToolManifest("pausa", "Sugerir uma pausa.", "low", ("activity",), run=suggest_pause),
-        ToolManifest("pomodoro", "Iniciar ciclo de foco e descanso.", "low", ("planning",), run=pomodoro),
-        ToolManifest("abrir_pasta", "Abrir pasta autorizada.", "medium", ("files",), run=folder_run),
-        ToolManifest("abrir_app", "Iniciar aplicativo permitido.", "medium", ("apps",), run=app_run),
-        ToolManifest("abrir_url", "Abrir endereço após ação explícita do usuário.", "high", ("web",), run=url_run),
+        ToolManifest("pomodoro", "Iniciar ciclo de foco e descanso.", "low", ("planning",), run=pomodoro,
+                     parameters={"work_minutes": ToolParameter(int, default=25, minimum=5, maximum=90),
+                                 "rest_minutes": ToolParameter(int, default=5, minimum=1, maximum=30)}),
+        ToolManifest("abrir_pasta", "Abrir pasta autorizada.", "medium", ("files",), run=folder_run,
+                     parameters={"path": ToolParameter(str, required=True, default=folder_default,
+                                                         max_length=1024)}),
+        ToolManifest("abrir_app", "Iniciar aplicativo permitido.", "medium", ("apps",), run=app_run,
+                     parameters={"app": ToolParameter(str, required=True, default=app_default,
+                                                        max_length=1024)}),
+        ToolManifest("abrir_url", "Abrir endereço após ação explícita do usuário.", "high", ("web",), run=url_run,
+                     parameters={"url": ToolParameter(str, required=True, max_length=2048),
+                                 "explicit_user_action": ToolParameter(bool, default=False)}),
         add, search, clipboard_history_tool(data_dir / "clipboard.sqlite3"),
-        changed_files_tool(sandbox), daily_summary_tool(audit_db), command_tool(sandbox),
+        changed_files_tool(sandbox, folder_default), daily_summary_tool(audit_db), command_tool(sandbox),
         template_tool(data_dir / "user_tools"),
     ]
