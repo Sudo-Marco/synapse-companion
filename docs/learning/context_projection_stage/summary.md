@@ -1,6 +1,6 @@
 # Ajustes aprovados: taxas de crédito e projeção contextual
 
-Avaliação offline, seed 20261102, 600 neurônios. Nenhum teste foi iniciado no app real; nenhuma tarefa da Fase 3 foi iniciada.
+Avaliação offline, seed 20261102, 600 neurônios. Nenhum teste foi iniciado no app real. No momento em que esta avaliação foi executada, as tarefas seguintes da Fase 3 não haviam começado; a implementação posterior de replay opcional e métricas agregadas está descrita em [LEARNING.md](../../LEARNING.md).
 
 ## Grade de taxas
 

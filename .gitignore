@@ -222,3 +222,48 @@ __marimo__/
 # Local project data and probe artifacts
 work/
 benchmarks/results/*_smoke.*
+
+# Local runtime state (never commit real creature data or user content)
+creature/
+creatures/
+snapshots/
+cache/
+.cache/
+*.snapshot
+*.snapshot.*
+*.creature.json
+*.creature.zip
+*.backup.zip
+*.sqlite
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-*
+logs/
+*.log
+*.log.*
+
+# Python environments and local editor state
+.venv/
+.vscode/
+.idea/
+__pycache__/
+
+# Build and test outputs
+.coverage
+.coverage.*
+htmlcov/
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local machine-specific settings and scratch reports
+.env
+.env.*
+!.env.example
+*_smoke.*
+*.tmp
+*.bak

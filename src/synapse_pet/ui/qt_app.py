@@ -533,7 +533,7 @@ class PetWindow(QMainWindow):
         menu.addAction(self._pause_action)
         self._autonomy_action = QAction("Silenciar autonomia", self)
         self._autonomy_action.setCheckable(True)
-        self._autonomy_action.setChecked(True)
+        self._autonomy_action.setChecked(bool(self.engine.autonomy_enabled))
         self._autonomy_action.toggled.connect(self._toggle_autonomy)
         menu.addAction(self._autonomy_action)
         self._autostart_action = QAction("Iniciar com o Windows", self)
@@ -861,6 +861,7 @@ class PetWindow(QMainWindow):
         screen = current_screen or screens[0]
         area = screen.availableGeometry()
         width, height = self.width(), self.height()
+        self._teleport_look_target = None
 
         if target == "corners":
             screen = self._teleport_rng.choice(screens)
@@ -872,10 +873,12 @@ class PetWindow(QMainWindow):
                                            area.bottom() - margin - height // 2))
         elif target == "center":
             x, y = area.center().x(), area.center().y()
+            self._teleport_look_target = QPointF(x, y)
         elif target == "near_cursor":
             point = QCursor.pos()
             screen = QGuiApplication.screenAt(point) or screen
             area = screen.availableGeometry()
+            self._teleport_look_target = QPointF(point)
             angle = self._teleport_rng.uniform(-math.pi, math.pi)
             distance = self._teleport_rng.uniform(110, 190)
             x = point.x() + round(math.cos(angle) * distance)
@@ -883,9 +886,11 @@ class PetWindow(QMainWindow):
         else:
             rect = self._active_window_rect()
             if rect is None:
-                return self._teleport_destination("center") if target != "center" else None
+                self._teleport_look_target = QPointF(area.center())
+                return QPoint(area.center().x(), area.center().y())
             screen = QGuiApplication.screenAt(rect.center()) or screen
             area = screen.availableGeometry()
+            self._teleport_look_target = QPointF(rect.center())
             x, y = rect.right() + width // 2 + 22, rect.bottom() + height // 2 + 22
 
         area = screen.availableGeometry()
@@ -974,8 +979,18 @@ class PetWindow(QMainWindow):
             self.setGeometry(self._teleport_destination_geometry)
             self._teleport_blink_until = time.monotonic() + 0.32
             widget = self.canvas._stack.currentWidget()
-            if hasattr(widget, "gaze_target"):
-                widget.gaze_target = (0.15, -0.12)
+            target = self._teleport_look_target
+            if target is not None:
+                center = self._teleport_destination_geometry.center()
+                gaze_x = max(-1.0, min(
+                    1.0, (target.x() - center.x()) / max(1.0, self.width() * 0.5)))
+                gaze_y = max(-1.0, min(
+                    1.0, (target.y() - center.y()) / max(1.0, self.height() * 0.5)))
+                gaze = (gaze_x, gaze_y)
+                if hasattr(widget, "gaze_target"):
+                    widget.gaze_target = gaze
+                elif hasattr(widget, "gaze"):
+                    widget.gaze = gaze
         self.setWindowOpacity(1.0)
         if self._teleport_trail is not None:
             self._teleport_trail.close()
@@ -984,6 +999,7 @@ class PetWindow(QMainWindow):
         self._teleport_start_geometry = None
         self._teleport_destination_geometry = None
         self._teleport_style = None
+        self._teleport_look_target = None
 
     def _restore_postits(self) -> None:
         for note in self._postit_store.active():
@@ -1407,6 +1423,9 @@ class PetWindow(QMainWindow):
 
     def closeEvent(self, event) -> None:
         if self._really_close:
+            for note_window in tuple(self._postit_windows.values()):
+                note_window._close_reason = "app_exit"
+                note_window.close()
             event.accept()
             self.application.quit()
             return

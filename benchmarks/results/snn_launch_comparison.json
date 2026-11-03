@@ -1,0 +1,225 @@
+{
+  "schema": 1,
+  "baseline_kind": "comparison_run",
+  "python": "3.14.10",
+  "numpy": "2.5.4",
+  "seed": 20261102,
+  "tick_samples": 60,
+  "determinism": {
+    "seed": 20261102,
+    "steps": 4096,
+    "spike_sha256": "45c47b8e06e2f7dfff2a61832f9d07d5cc4197c8ee35c82df65e3260bbcc92b7",
+    "state_sha256": "d34fec09870ee66aa118d91bfc1293c44e9b2fddb14ab6990eb742d330978279",
+    "spike_counts_by_population": {
+      "sensor": 12606,
+      "hidden": 33,
+      "output": 0
+    },
+    "spike_samples": {
+      "0": [
+        50,
+        58,
+        86
+      ],
+      "1": [
+        2,
+        4
+      ],
+      "2": [
+        79
+      ],
+      "127": [
+        55,
+        94
+      ],
+      "511": [
+        48,
+        59,
+        83
+      ],
+      "1023": [
+        0
+      ],
+      "2047": [
+        16,
+        19,
+        84,
+        85,
+        86
+      ],
+      "4095": [
+        10,
+        16,
+        82,
+        91,
+        92
+      ]
+    },
+    "weights": {
+      "sensor_hidden": 3614,
+      "recurrent": 14728,
+      "hidden_output": 4586
+    }
+  },
+  "memory": {
+    "600": {
+      "neurons_requested": 600,
+      "neurons_total_with_tools": 712,
+      "rss_mib": 55.3046875,
+      "connections": 27561
+    },
+    "1000": {
+      "neurons_requested": 1000,
+      "neurons_total_with_tools": 1112,
+      "rss_mib": 55.87109375,
+      "connections": 71208
+    }
+  },
+  "tick_cost_600": {
+    "active": {
+      "ticks": 60,
+      "simulated_ms_per_tick": 50.0,
+      "mean_cpu_ms": 9.114583333333334,
+      "p95_wall_ms": 9.331025,
+      "mean_wall_ms": 9.036785000000002,
+      "live_traced_blocks_delta_per_tick": 2.433333333333333,
+      "live_traced_bytes_delta_per_tick": 130.11666666666667,
+      "peak_traced_bytes_delta_per_tick": 3344.1666666666665,
+      "sleep_entry_consolidation_cpu_ms": null
+    },
+    "rest": {
+      "ticks": 60,
+      "simulated_ms_per_tick": 250.0,
+      "mean_cpu_ms": 0.5208333333333334,
+      "p95_wall_ms": 0.566175,
+      "mean_wall_ms": 0.5380800000000001,
+      "live_traced_blocks_delta_per_tick": 0.7666666666666667,
+      "live_traced_bytes_delta_per_tick": 69.71666666666667,
+      "peak_traced_bytes_delta_per_tick": 3251.1833333333334,
+      "sleep_entry_consolidation_cpu_ms": null
+    },
+    "sleep": {
+      "ticks": 60,
+      "simulated_ms_per_tick": 250.0,
+      "mean_cpu_ms": 0.5208333333333334,
+      "p95_wall_ms": 0.57063,
+      "mean_wall_ms": 0.5394416666666667,
+      "live_traced_blocks_delta_per_tick": 0.7333333333333333,
+      "live_traced_bytes_delta_per_tick": 67.48333333333333,
+      "peak_traced_bytes_delta_per_tick": 3249.483333333333,
+      "sleep_entry_consolidation_cpu_ms": 0.0
+    }
+  },
+  "tick_cost_1000": {
+    "active": {
+      "ticks": 60,
+      "simulated_ms_per_tick": 50.0,
+      "mean_cpu_ms": 18.75,
+      "p95_wall_ms": 19.477815,
+      "mean_wall_ms": 18.846794999999997,
+      "live_traced_blocks_delta_per_tick": 5.883333333333334,
+      "live_traced_bytes_delta_per_tick": 306.3666666666667,
+      "peak_traced_bytes_delta_per_tick": 8644.3,
+      "sleep_entry_consolidation_cpu_ms": null
+    },
+    "mean_cpu_ms_50ms_simulated": 18.75
+  },
+  "encoder_probe_note": "The harness uses four encoder groups scaled to n_sensor for both 600 and 1000-neuron comparisons. Phase 0 exposed that the original runtime hard-coded 4x24 sensors; phase 1 now derives these group sizes from the network.",
+  "firing_rate_hz": {
+    "active": {
+      "sensor": 9.513888888889234,
+      "hidden": 13.10069444444492,
+      "output": 13.751436781609694
+    },
+    "rest": {
+      "sensor": 0.0,
+      "hidden": 0.0,
+      "output": 0.0
+    },
+    "sleep": {
+      "sensor": 0.0,
+      "hidden": 0.0,
+      "output": 0.0
+    },
+    "1000_active": {
+      "sensor": 9.335416666667005,
+      "hidden": 107.7125000000039,
+      "output": 122.60897435897881
+    }
+  },
+  "top_profile_costs": [
+    {
+      "function": "tick",
+      "file": "engine.py",
+      "line": 322,
+      "calls": 40,
+      "total_seconds": 0.009553800000000001,
+      "cumulative_seconds": 0.40323610000000004
+    },
+    {
+      "function": "mark",
+      "file": "plasticity.py",
+      "line": 24,
+      "calls": 3000,
+      "total_seconds": 0.2597938,
+      "cumulative_seconds": 0.2651113
+    },
+    {
+      "function": "step",
+      "file": "network.py",
+      "line": 196,
+      "calls": 1000,
+      "total_seconds": 0.0140345,
+      "cumulative_seconds": 0.1043411
+    },
+    {
+      "function": "currents",
+      "file": "synapses.py",
+      "line": 56,
+      "calls": 3000,
+      "total_seconds": 0.0038296000000000003,
+      "cumulative_seconds": 0.0568118
+    },
+    {
+      "function": "__matmul__",
+      "file": "_base.py",
+      "line": 1006,
+      "calls": 3000,
+      "total_seconds": 0.0017215000000000002,
+      "cumulative_seconds": 0.050423100000000005
+    }
+  ],
+  "idle_process_cpu": {
+    "seconds": 2.000064099993324,
+    "single_core_cpu_percent": 0.7812249617425839
+  },
+  "allocation_metric_note": "Python tracemalloc reports net live traced blocks/bytes per tick and peak traced bytes; it does not count short-lived allocations that are freed inside each tick.",
+  "regime_note": "Active uses 50 ms simulated with 25 LIF steps. Rest and sleep each use one 250 ms low-duty LIF step; sleep adds a one-time consolidation measurement and the runtime waits 500 ms between sleep ticks.",
+  "comparison": {
+    "tick_cost_600.active.mean_cpu_ms": {
+      "before": 9.114583333333334,
+      "after": 9.114583333333334,
+      "change_percent": 0.0
+    },
+    "tick_cost_1000.active.mean_cpu_ms": {
+      "before": 18.90625,
+      "after": 18.75,
+      "change_percent": -0.8264462809917356
+    },
+    "idle_process_cpu.single_core_cpu_percent": {
+      "before": 0.0,
+      "after": 0.7812249617425839,
+      "change_percent": null
+    },
+    "memory.600.rss_mib": {
+      "before": 55.26953125,
+      "after": 55.3046875,
+      "change_percent": 0.06360873559968902
+    },
+    "memory.1000.rss_mib": {
+      "before": 55.68359375,
+      "after": 55.87109375,
+      "change_percent": 0.33672395650648895
+    }
+  }
+}

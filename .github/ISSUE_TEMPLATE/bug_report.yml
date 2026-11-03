@@ -1,0 +1,40 @@
+name: Bug report
+description: Report a reproducible problem in Synapse Pet
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: "Please remove personal paths, window titles, typed text, and private screenshots before submitting."
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the observed behavior and what you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. Start the app..."
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Windows version, Python version, renderer, and GPU if relevant.
+  - type: dropdown
+    id: validation
+    attributes:
+      label: How was it tested?
+      options:
+        - Live desktop app
+        - Headless or offscreen simulation
+        - Automated test
+        - Not yet tested

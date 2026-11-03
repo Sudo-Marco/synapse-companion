@@ -1,238 +1,226 @@
 # Synapse Pet
 
-![Status: em desenvolvimento](https://img.shields.io/badge/status-em%20desenvolvimento-orange)
+[English](README.md) · [Português (Brasil)](README.pt-BR.md)
+
 ![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
-![Windows 10/11](https://img.shields.io/badge/plataforma-Windows%2010%2F11-0078D6?logo=windows&logoColor=white)
-![Licença MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-2E8B57)
+![License: MIT](https://img.shields.io/badge/License-MIT-2E8B57.svg)
+![Platform: Windows 10/11](https://img.shields.io/badge/Platform-Windows%2010%2F11-0078D6?logo=windows&logoColor=white)
+![Status: experimental](https://img.shields.io/badge/status-experimental-orange)
 
-**Tópicos:** `Python` · `SNN/LIF` · `PySide6` · `arte ASCII` · `simulação local` · `Windows` · `companheiro virtual`
+**Synapse Pet** is an experimental desktop companion driven by a small, local spiking neural network (SNN). Its state controls an animated ASCII eye, bounded autonomous behaviors, and a compact telemetry panel. It is a simulation and learning experiment, not a conversational AI assistant.
 
-**Synapse Pet** é um companheiro virtual de desktop em desenvolvimento. Uma rede neural de impulsos esparsa (SNN, do inglês *spiking neural network*) controla estados simulados de humor, energia, curiosidade e estresse, que influenciam um olho animado em arte ASCII e uma interface de telemetria.
+The default experience is a transparent, floating eye. The configuration panel opens on demand. The project is designed to grow in measured, testable increments while keeping the simulation, data, and tools on the user's computer.
 
-O projeto é local por padrão e foi estruturado para crescer em etapas. Hoje, ele é uma simulação interativa e um ambiente de experimentação; não é um assistente de linguagem nem um sistema de inteligência geral.
+![Floating ASCII pet, captured with Qt's offscreen renderer](docs/screenshots/floating_pet_offscreen.png)
 
-> **Resumo do estado:** a aplicação, a simulação local, a persistência, os controles e as avaliações offline descritas neste documento estão implementados. A suíte automatizada teve **52 testes aprovados** em execução local em **3 de novembro de 2026**. Isso não equivale a validação visual ou operacional do aplicativo em uso real, e o repositório ainda não possui integração contínua configurada.
+*Renderer capture from a headless Qt session. It demonstrates the transparent pet buffer; it is not a screenshot of the application running on a user's desktop.*
 
-## Navegação
+## Project status
 
-- [Estado e escopo](#estado-e-escopo)
-- [O que o programa faz hoje](#o-que-o-programa-faz-hoje)
-- [Instalação e execução](#instalação-e-execução)
-- [Controles](#controles)
-- [Configuração visual](#configuração-visual)
-- [Arquitetura](#arquitetura)
-- [Dados, sensores e permissões](#dados-sensores-e-permissões)
-- [Testes e avaliações](#testes-e-avaliações)
-- [Saídas produzidas](#saídas-produzidas)
-- [Direção futura](#direção-futura)
-- [Licença](#licença)
-
-## Estado e escopo
-
-| Área | Situação atual |
+| Area | Current implementation |
 | --- | --- |
-| Aplicativo de desktop | Implementado com PySide6; janela sem bordas, arrastável e sempre no topo. |
-| Avatar | Olho animado em ASCII, com HUD alternável, expressões e cenário que acompanha o horário local. |
-| Simulação | SNN LIF esparsa, estados afetivos e necessidades, seletor de ações e propostas de ferramentas locais. |
-| Salvamento e recuperação | Snapshots, exportação/importação de backup, log rotativo e mecanismos de proteção da thread de simulação. |
-| Avaliação de aprendizado | Cenários artificiais reproduzíveis, relatórios CSV/JSON e curvas em PNG. |
-| Assistência por linguagem | **Não implementada.** O programa não interpreta perguntas livres nem gera respostas ou código como um modelo de linguagem. |
-| Fase 3 do plano de aprendizado | **Não iniciada.** |
+| Desktop UI | PySide6; transparent floating mode and an on-demand panel, tray controls, click-through mask, position persistence, and global panel shortcut when `pynput` is installed. |
+| Avatar | Animated ASCII eye with emotional expressions, gaze, day/night lighting, blinking, sleep, and a CPU-compatible renderer. |
+| Teleport | Short, emotion-dependent animation with a particle trail, destination bounds, cooldown, hourly limit, and proposal/drag guards. |
+| SNN | Sparse LIF network; 600 requested neurons by default (tool output groups increase the runtime population). |
+| Learning | Reward-modulated STDP, eligibility traces, homeostasis, affect impulses, and contextual action preferences. Sleep replay is optional and disabled by default. |
+| Autonomy | Budgeted, local post-it windows; aggregate habit tracking; existing gaze, idle glance, sleep, and affection reactions. |
+| Tools | Typed manifest validation before dispatch, permission checks, user confirmation for higher-risk actions, and asynchronous execution. |
+| Evaluation | Reproducible synthetic scenarios with CSV/JSON results and plots under `docs/learning/`. |
+| Language-model assistance | Not implemented. The pet does not understand open-ended questions or generate programming answers. |
 
-### O que o programa faz hoje
+The UI changes in this project have been checked with automated tests and short offscreen Qt runs. Those checks do **not** establish full interactive behavior on every Windows desktop, GPU, multi-monitor setup, or display-scaling configuration.
 
-- Executa uma simulação de neurônios LIF com topologia esparsa e configuração padrão de 600 neurônios.
-- Transforma sinais simulados em métricas como humor, energia, estresse, curiosidade, dopamina e taxa de disparo.
-- Anima o olho de acordo com o estado da simulação: olhar, piscadas, expressões, sono e reações a interações deliberadas.
-- Mostra um painel de debug com telemetria e saúde da thread de simulação.
-- Aprende associações em tarefas delimitadas de avaliação; preferências contextuais participam da seleção de ações.
-- Pode propor ferramentas locais, sujeitas às permissões e confirmações configuradas.
-- Salva o estado e os pesos aprendidos localmente, sem apagar o aprendizado ao redefinir humor e afeto.
+## What it can and cannot do
 
-### O que não faz
+**Implemented:** simulate neural and affective state; animate the eye; respond to deliberate affection and feedback; learn bounded associations in synthetic scenarios; show local template notes; and propose configured local tools under their permission rules.
 
-- Não é um chatbot, copiloto de programação ou mecanismo de busca. Não responde a perguntas abertas como um modelo de linguagem.
-- A SNN não compreende texto ou significado geral. As avaliações atuais usam sinais e cenários artificiais definidos pelo projeto.
-- Um resultado bem-sucedido na avaliação offline não demonstra que a SNN aprendeu uma habilidade geral nem que o comportamento será igual em outros contextos.
-- O programa não toma a simulação como evidência de eficácia no mundo real.
+**Not implemented:** a chatbot, code assistant, web search agent, general language understanding, or general-purpose autonomous computer control. The SNN receives numeric features and coarse categories; it does not read typed text. Combined scenario results use both neural scores and contextual preferences, so they should not be described as SNN-only performance.
 
-## Instalação e execução
+## Requirements and installation
 
-### Requisitos
+- Windows 10 or 11 is the primary desktop target.
+- Python 3.10 or newer.
+- Internet access is needed to install packages. The running simulation itself is local; `abrir_url` can access the internet only after an explicit user action.
 
-- Windows 10 ou 11.
-- Python 3.10 ou superior, disponível como `python` no PowerShell.
-- Acesso à internet durante a instalação para baixar as dependências do projeto.
-
-Abra o PowerShell na pasta do repositório e execute:
+In PowerShell, from the repository root:
 
 ```powershell
 .\scripts\install.ps1
 .\scripts\run.ps1
 ```
 
-O instalador cria `.venv` e instala o projeto com as dependências de desenvolvimento e os sensores opcionais para Windows. Se o PowerShell bloquear a execução do script, permita a execução apenas na sessão atual e rode novamente:
-
-```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\scripts\install.ps1
-```
-
-Para iniciar diretamente pelo interpretador do ambiente virtual:
+The installer creates `.venv` and installs the project, development tools, and optional Windows sensors. To start the app directly:
 
 ```powershell
 .\.venv\Scripts\python.exe -m synapse_pet.main
 ```
 
-Para executar sem abrir a interface gráfica:
+To run a short headless simulation:
 
 ```powershell
 .\.venv\Scripts\python.exe -m synapse_pet.main --headless --ticks 100
 ```
 
-Esse modo roda uma quantidade definida de ticks e imprime o total executado e o tamanho da rede. Ele serve para verificações da simulação, não para conversar com o pet.
-
-### Comandos úteis
-
-Redefinir humor e afeto ao neutro, preservando os pesos aprendidos:
+For a manual environment setup:
 
 ```powershell
-.\.venv\Scripts\python.exe -m synapse_pet.main --reset-affect
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -e ".[dev,windows]"
 ```
 
-Exportar ou importar um backup portátil da criatura:
+The configured GitHub Actions workflow runs the test suite on Windows and Linux with Qt's offscreen platform. This is a portability check, not a promise of a supported Linux desktop experience.
 
-```powershell
-.\.venv\Scripts\python.exe -m synapse_pet.main --export-creature .\backup.zip
-.\.venv\Scripts\python.exe -m synapse_pet.main --import-creature .\backup.zip
-```
+## Floating pet and controls
 
-## Controles
+`pet.mode: floating` is the default. It shows only the eye in a transparent, borderless, topmost tool window. The eye's mask lets clicks pass through outside its visible body; dragging moves it. Double-click opens the panel, while right-click opens the small pet menu. The system tray can open the panel, pause/resume the simulation, silence autonomy, configure Windows startup, or exit. The default global shortcut is `Ctrl+Alt+O` and requires the optional `pynput` package.
 
-| Controle | Função |
+Set `pet.mode: window` in `configs/default.yaml` to open the full panel directly. Close the panel to return to floating mode.
+
+| Panel control | Effect |
 | --- | --- |
-| **CARINHO** | Envia uma interação afetiva deliberada. Também é possível arrastar sobre o olho pelo tempo mínimo definido em `interaction.affection_drag_min_s` (1 segundo por padrão). |
-| Arrastar o cursor sobre o olho | Após o gesto deliberado e o tempo mínimo, envia carinho. Hover ou clique sem arrastar não gera recompensa afetiva positiva. |
-| Cursor sobre a área do olho | Direciona o olhar e pode gerar curiosidade breve, categorizada e habituada. Não equivale a carinho nem a recompensa de aprendizado. |
-| **FEEDBACK** | Envia um sinal de feedback negativo à simulação. |
-| **DEBUG** | Abre o painel de telemetria: estado neural e afetivo, tick, regime, fila e saúde da thread. |
-| **SENSORES** | Abre o menu para ativar ou desativar cada sensor. Todos começam desligados. A ativação do monitor de arquivos pede uma pasta. |
-| **EXPRESSÕES · ASCII** | Alterna a visualização ASCII e o HUD. |
-| **DESFAZER** | Solicita a reversão da última ação que oferece suporte a undo. Não desfaz qualquer mudança da simulação. |
-| **SALVAR** | Solicita o salvamento do estado atual. A escrita do snapshot é executada fora do caminho crítico dos ticks. |
-| **ACEITAR / RECUSAR / DEPOIS** | Responde a uma proposta de ferramenta apresentada pelo pet. Ações de risco elevado exigem confirmação explícita. |
+| **CARINHO** | Sends deliberate positive affect and learning feedback. A drag held over the eye for `interaction.affection_drag_min_s` (1 second by default) also counts. Hover alone does not reward the pet. |
+| **FEEDBACK** | Sends negative user feedback to the simulation. |
+| **DEBUG** | Opens neural telemetry including tick, regime, queue, and simulation-thread status. |
+| **SENSORES** | Opens the opt-in sensor menu. Sensors are disabled by default. |
+| **EXPRESSÕES · ASCII** | Switches the panel between the ASCII view and the HUD. |
+| **APRENDIZADO** | Opens aggregate habit counts and reward statistics. Its refresh timer runs only while the panel is visible. |
+| **DESFAZER** | Requests undo for the most recent tool that implements undo. It does not undo changes to the simulation. |
+| **SALVAR** | Queues a snapshot save; disk writing runs outside the simulation's critical tick path. |
+| **ACEITAR / RECUSAR / DEPOIS** | Answers a pending tool proposal. Higher-risk tools require explicit confirmation. |
 
-Atalhos: `M` alterna ASCII/HUD, `H` seleciona HUD, `F11` alterna tela cheia, `T` alterna opacidade entre 100% e 90%, e `Esc` sai da tela cheia. A faixa superior permite arrastar a janela; `—` minimiza e `×` fecha.
+In the panel, `M` toggles ASCII/HUD, `H` selects HUD, `F11` toggles full-screen, `T` changes panel opacity, and `Esc` leaves full-screen. These shortcuts are disabled in floating mode to avoid capturing unrelated keys.
 
-## Configuração visual
+## Configuration
 
-As opções ficam em [`configs/default.yaml`](configs/default.yaml). O aplicativo lê o arquivo ao iniciar; reinicie-o para aplicar alterações.
+Edit [`configs/default.yaml`](configs/default.yaml) and restart the application. Common options:
 
-| Opção | Efeito |
+| Setting | Purpose |
 | --- | --- |
-| `renderer` | `ascii` é o padrão e usa o avatar animado em caracteres sem exigir OpenGL. `cpu` atualmente seleciona o mesmo avatar ASCII. `auto` tenta o renderizador OpenGL e recorre ao renderizador QPainter se não conseguir inicializá-lo. |
-| `visual.ascii_columns`, `visual.ascii_rows` | Densidade inicial da grade de caracteres. |
-| `visual.ascii_max_columns`, `visual.ascii_max_rows` | Limites da grade quando a janela cresce, para equilibrar nitidez e custo de renderização. |
-| `visual.scene_time` | `auto` acompanha o relógio local; `noite`, `dia` e `entardecer` fixam a iluminação da cena. |
-| `visual.eye_design` | Escolhe entre os desenhos `A` e `B` do olho. |
-| `visual.fps_active`, `visual.fps_idle` | Alvos de atualização durante atividade e repouso. A interface pausa a renderização quando oculta ou minimizada. |
-| `visual.palette` | Paleta do renderizador de compatibilidade. A arte ASCII padrão define suas próprias cores no código e não usa esta opção como paleta configurável. |
-| `context_projections.max_contexts`, `context_projections.similarity_threshold` | Limite de projeções contextuais próprias e similaridade mínima para inicializar uma projeção copiando outra. |
+| `pet.mode`, `pet.width`, `pet.height`, `pet.anchor`, `pet.margin` | Select panel or floating mode and set the eye's size and initial placement. |
+| `pet.panel_hotkey` | Global shortcut to show the panel (optional `pynput`). |
+| `renderer` | `ascii` is the default. `cpu` forces the QPainter fallback. `auto` tries the OpenGL-compatible renderer and falls back to QPainter if initialization fails. |
+| `visual.ascii_columns`, `visual.ascii_rows` | Set the starting ASCII grid density. The `ascii_max_*` values cap resolution as the panel grows. |
+| `visual.scene_time` | `auto`, `dia`, `entardecer`, or `noite`. |
+| `teleport.enabled`, `teleport.cooldown_s`, `teleport.max_per_hour`, `teleport.targets` | Control autonomous teleport triggers, rate limits, and allowed destinations. |
+| `autonomy.enabled`, `autonomy.max_actions_per_hour`, `autonomy.postits.*` | Silence autonomy or set post-it budgets, expiry, thresholds, and templates. Templates are local configuration text. |
+| `sleep.replay_enabled` | Enables bounded replay of high-reward episodes during sleep. Default: `false`. |
+| `habits.enabled`, `habits.minimum_observations`, `habits.minimum_mean_rpe` | Enable aggregate habit counts. The habit table stores only a fixed category, action key, counts, reward averages, and timestamp. |
+| `privacy.sensors.*` | Configure the opt-in sensors; all default to `false`. |
 
-`auto` mantém o caminho OpenGL/GLSL de compatibilidade; a experiência principal do projeto é o avatar ASCII direto. A disponibilidade do OpenGL e do compositor do Windows pode afetar os modos de compatibilidade e a transparência.
+### Teleport and autonomous notes
 
-## Arquitetura
+Teleport styles follow the current state: curious and happy states use a brighter arc; stress uses a short, shaky movement; low energy uses a slower movement; attention can move the eye near the cursor or active-window rectangle. Only screen coordinates and window geometry are queried for placement; window titles and contents are not read. Destinations are clamped to each monitor's available geometry so the pet avoids the taskbar.
 
-```text
-Sensores opcionais ─┐
-Interações da UI ────┼──> fila de eventos ──> thread da simulação (SNN + estado + seletor)
-Relógio local ───────┘                                │
-                                                     ├──> fila curta de snapshots ──> interface e avatar
-                                                     └──> salvamento assíncrono ────> dados locais
+A teleport requires sufficient SNN initiative, respects the hourly cap and cooldown, and is suppressed during drag, recent interaction, a pending proposal, or paused/stopped simulation. Post-its are independent frameless app windows, at most four by default, and expire after ten minutes. Closing one quickly gives a small negative signal; selecting **Entendi** gives a small positive signal. SQLite stores only the template ID, state category, geometry, and expiry—not the rendered note text. Full-screen suppression uses window bounds on Windows and does not inspect the window title.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    S[Opt-in sensors and UI events] --> Q[Thread-safe event queue]
+    C[Local clock] --> Q
+    Q --> N[Sparse LIF SNN]
+    N --> E[Emotion, drives, neuromodulators]
+    E --> P[Personality and action selector]
+    N --> P
+    P --> T[Permission-checked tools]
+    E --> A[Autonomy: teleport and post-its]
+    N --> V[Visual snapshots queue]
+    E --> V
+    V --> U[PySide6 UI and ASCII eye]
+    N --> D[Async snapshot persistence]
+    E --> D
 ```
 
-- **Interface:** PySide6. O avatar ASCII é desenhado diretamente; o modo de compatibilidade tenta OpenGL/GLSL com fallback para QPainter.
-- **Simulação:** a rede LIF esparsa, a integração de estado afetivo, as necessidades e a seleção de ações são executadas separadas da thread da interface.
-- **Aprendizado:** recompensas e sinais afetivos têm canais distintos. Preferências contextuais complementam a pontuação neural na seleção de ações.
-- **Projeções contextuais:** a topologia esparsa é compartilhada; vetores de pesos por contexto são criados sob demanda, limitados por LRU e incluídos nos snapshots.
-- **Resiliência:** erros de execução e de salvamento são registrados; um watchdog monitora os ticks e o estado de saúde é apresentado no DEBUG.
+The simulation runs in a worker thread. The GUI sends events through a thread-safe queue and receives immutable, one-slot visual snapshots. Tool execution and snapshot disk writes use worker executors. The UI does not perform SNN ticks. Runtime exceptions are logged with tracebacks; a watchdog reports stale ticks instead of presenting frozen values as live.
 
-## Dados, sensores e permissões
+More detail: [Architecture](docs/ARCHITECTURE.md), [Autonomy](docs/AUTONOMY.md), [Privacy](docs/PRIVACY.md), and [Performance](docs/PERFORMANCE.md).
 
-Os dados locais ficam em `%APPDATA%\synapse_pet` — normalmente `C:\Users\<usuário>\AppData\Roaming\synapse_pet`. O diretório contém estado persistido, memória da aplicação e logs. O log rotativo principal fica em `%APPDATA%\synapse_pet\logs\synapse_pet.log`.
+## How learning works
 
-Os sensores opcionais são atividade de teclado/mouse, categoria do aplicativo em foco, eventos em uma pasta escolhida, mudança no clipboard e estatísticas do sistema. Todos estão desligados por padrão. O sensor de clipboard informa o tamanho da mudança e não retorna nem persiste o texto; a ferramenta separada de histórico do clipboard pode armazenar texto quando sua captura é solicitada e autorizada.
+1. **LIF dynamics:** sensor features stimulate leaky integrate-and-fire neurons; sparse projections connect sensor, recurrent, and output populations.
+2. **Rate decoding:** named output groups provide numeric firing-rate signals for emotional states and tool candidates.
+3. **R-STDP:** spike-timing eligibility traces receive a reward-prediction-error (RPE) signal. Action-specific credit is applied to the selected output group where available.
+4. **Affect is separate from learning:** deliberate affection/feedback may change the simulated emotional state immediately. Only the learning RPE updates synaptic weights. Hover does not generate positive affect or reward.
+5. **Contextual preferences:** a small selector stores action preferences by coarse context and combines them with neural scores. A high combined accuracy is not an SNN-only result.
+6. **Homeostasis and sleep:** homeostasis constrains population activity. The optional replay flag re-presents a small set of high-absolute-reward episodes using a simplified synthetic input derived from a hashed coarse context. It is off by default; the original full sensor vector is not retained or replayed.
+7. **Habits:** repeated positive RPE is summarized as a count and mean by fixed context/action identifiers. This is an observable aggregate, not a learned language skill or a change to the network topology.
 
-O aplicativo não depende de um serviço de IA remoto. A ferramenta `abrir_url`, se usada, abre um endereço HTTP(S) no navegador padrão após uma ação explícita do usuário; isso pode acessar a internet. Plugins Python pessoais são código confiável e executam com os privilégios da conta do Windows: as permissões do pet não os isolam em um sandbox de sistema operacional.
+The detailed protocol, scores, ablations, and curves are in [Learning results](docs/LEARNING.md) and [`docs/learning/`](docs/learning/).
 
-## Testes e avaliações
+## Synthetic learning results
 
-### Suíte automatizada
+The recorded context-projection evaluation uses seed `20261102`, 600 requested neurons, artificial actions, and no real tools. Results are from the combined policy unless marked neural-only.
 
-Execute a suíte a partir da raiz do repositório:
+| Scenario | Combined policy | Neural-only ablation | SNN / contextual-selector share of winner score |
+| --- | ---: | ---: | ---: |
+| a — association | 100% | 100% | 43% / 57% |
+| b — reversal | 100%; readaptation in 44 episodes | 100% (strict SNN-only training: 100%, 49 episodes) | 21% / 79% |
+| c — X | 100% | 100% | 24% / 76% |
+| c — Y | 100% | 97.5% | 40% / 60% |
+| c — Z | 100% | 77.5% | 32% / 68% |
+| d — 10% feedback noise | 100% | 100% | 31% / 69% |
+| e — retention after interference | 100% | 67% | 29% / 71% |
+
+The score shares are descriptive decompositions of the combined winner score, not causal attribution. In scenario **e**, the preference selector contributes materially to the result. These results are synthetic and do not establish useful behavior in the live desktop app. Curves and episode-level CSVs are linked from [docs/learning/README.md](docs/learning/README.md).
+
+## Performance observations
+
+A short CPU benchmark after the current SNN changes compared 60 active ticks against a previous 300-tick sample. The small sample and CPU timer resolution limit the precision; see [the JSON report](benchmarks/results/snn_launch_comparison.json).
+
+| Requested network size | Before | Current sample | Change |
+| ---: | ---: | ---: | ---: |
+| 600 neurons | 9.1146 ms/tick | 9.1146 ms/tick | 0.00% |
+| 1,000 neurons | 18.9063 ms/tick | 18.7500 ms/tick | −0.83% |
+
+The current process RSS sample was 55.30 MiB at 600 requested neurons and 55.87 MiB at 1,000. The engine idle probe measured 0.78% of one logical core. A separate 4-second offscreen floating-UI sample measured 0.39% at a 200 ms (5 FPS) timer interval. These are short local samples, not physical Windows desktop guarantees. The 1,000-neuron tick delta is within timer noise and should not be treated as an improvement. VRAM and renderer costs vary by GPU and compositor. See [PERFORMANCE.md](docs/PERFORMANCE.md) for scope and older renderer measurements.
+
+## Privacy and local data
+
+- The simulation, snapshots, episode memory, habit aggregates, post-it metadata, and logs are stored locally under `%APPDATA%\synapse_pet` on Windows.
+- Opt-in sensors start disabled. Input activity records counts, not key identity or typed text. Active-window sensing emits a configured category from the executable name and does not read titles. The clipboard counter sensor returns only a length/count signal and does not persist clipboard text.
+- The separate, medium-risk `historico_clipboard` tool can capture up to 4,000 clipboard characters only when explicitly invoked with `capture: true` and accepted. Its contents are stored in local SQLite; do not enable or accept it unless that is intended.
+- File monitoring reports counts; the explicit file-summary tool may return changed file names from an allowed folder. Tool results remain local to the application unless another explicit action is taken.
+- Post-it text comes from local YAML templates. Post-it SQLite records do not contain text. Habit records use fixed categories/action IDs and contain aggregate statistics only.
+- Python plugins run with the current user's operating-system permissions; the app's permission manager is not an OS sandbox.
+
+See the data inventory in [PRIVACY.md](docs/PRIVACY.md).
+
+## Adding a tool
+
+A tool uses a manifest, a risk level, an explicit parameter schema, and a function that returns a result. Example (the real code also adds permissions and tests):
+
+```python
+from synapse_pet.tools.manifest import ToolManifest, ToolParameter
+
+def run(params):
+    return {"status": "ok", "count": len(params["items"])}
+
+manifest = ToolManifest(
+    name="count_items", description="Count supplied items", risk="low",
+    tags=("example",), run=run,
+    parameters={"items": ToolParameter(list, required=True, max_length=100)},
+)
+```
+
+The engine validates required fields and types before showing a proposal or dispatching a tool. See `src/synapse_pet/tools/builtin/basic.py` for built-in examples and the permission layer.
+
+## Tests and development
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest
+.\.venv\Scripts\python.exe benchmarks\snn_baseline.py --ticks 60 --profile-steps 40 --idle-seconds 2
 ```
 
-**Último resultado registrado nesta revisão:** 52 testes aprovados em execução local (`pytest -q`, 3 de novembro de 2026). A suíte cobre, entre outros pontos, determinismo, persistência e migração de snapshots, canais de recompensa, habituação da curiosidade, projeções por contexto e resiliência do runtime. Ela inclui verificações headless; não substitui validação manual da interface em outra máquina. Não há workflow de CI configurado neste repositório.
+The automated suite includes determinism, snapshots/migrations, reward separation, sensor privacy, tool schemas, sleep/replay gating, autonomy budgets, teleport geometry, and runtime recovery. GitHub Actions is configured to run the suite headlessly on Windows and Linux; the first hosted result is pending the release push. Benchmarks are local diagnostics, not stable hardware guarantees. Contribution guidance is in [CONTRIBUTING.md](CONTRIBUTING.md).
 
-### Avaliação offline da aprendizagem
+## Honest limitations and roadmap
 
-O simulador reproduz cinco cenários — associação simples, reversão, três contextos, feedback ruidoso e retenção após interferência — sem executar ferramentas reais:
+The SNN operates on numerical features and coarse categories; it is not a language model. Scenario evaluation is synthetic. The combined action policy relies on both the SNN and contextual preferences. Sleep replay uses reconstructed, simplified inputs and has not been evaluated against the scenario-e performance target. Teleport and post-it behavior has been checked offscreen, not validated as a live desktop experience across Windows/GPU/multi-monitor combinations.
 
-```powershell
-.\.venv\Scripts\python.exe -m synapse_pet.sim.learning_eval --output docs\learning
-```
+Remaining work is tracked in [ROADMAP.md](ROADMAP.md), including larger post-it behavior coverage, 600→800 snapshot migration, personality parameters that affect neural decisions, and targeted profiling. Optional future directions include a skills layer, a local LLM-backed narrator provider, MCP integration, and browser actions; none is implemented today.
 
-O relatório final das mudanças aprovadas está em [`docs/learning/context_projection_stage/summary.md`](docs/learning/context_projection_stage/summary.md), junto com os CSVs, JSON e curvas PNG. Nesse protocolo, a política combinada passou os critérios dos cenários **a–e**, com 100% de acerto combinado; no cenário **b**, a readaptação ocorreu em 44 episódios. Na ablação que remove a preferência contextual, o cenário **c** obteve 100% em X, 97,5% em Y e 77,5% em Z; o cenário **e** obteve 67%. Portanto, os resultados demonstram a contribuição importante do seletor contextual e não devem ser apresentados como sucesso isolado da SNN em todos os cenários.
+## License
 
-Os números são específicos do protocolo, seed e configuração registrados nos arquivos de avaliação. São resultados de simulação, sem validação no aplicativo real. A Fase 3 não foi iniciada.
-
-### Benchmarks e capturas
-
-Medir o custo da SNN e comparar duas configurações:
-
-```powershell
-.\.venv\Scripts\python.exe benchmarks\snn_baseline.py
-```
-
-Medir renderização e gerar um relatório local:
-
-```powershell
-.\.venv\Scripts\python.exe benchmarks\render_benchmark.py --seconds 5
-```
-
-Capturar os estados visuais do avatar:
-
-```powershell
-.\.venv\Scripts\python.exe tools\capture_eye_states.py
-```
-
-Os benchmarks dependem do computador e da GPU disponíveis; leituras de VRAM podem não estar disponíveis ou ser atribuíveis somente ao adaptador gráfico, e não ao processo do pet. Resultados anteriores nos diretórios `docs/` são registros daquela execução, não garantias de desempenho em outros equipamentos.
-
-## Saídas produzidas
-
-| Saída | Local padrão | Conteúdo |
-| --- | --- | --- |
-| Estado do pet | `%APPDATA%\synapse_pet` | Snapshots da rede e dos estados persistidos; backup portátil opcional em ZIP. |
-| Log rotativo | `%APPDATA%\synapse_pet\logs\synapse_pet.log` | Diagnósticos e exceções do runtime e do salvamento. |
-| Avaliação de aprendizado | `docs/learning/` | CSV e JSON por cenário, além de curvas PNG. |
-| Relatório de projeções contextuais | `docs/learning/context_projection_stage/` | Resultados da avaliação final e grade de taxas. |
-| Capturas de estados visuais | `docs/screenshots/` | Imagens dos estados de expressão geradas pelo script de captura. |
-| Benchmark de renderização | `docs/render_benchmark*.json` | Medições registradas localmente, que variam por hardware. |
-
-## Direção futura
-
-O projeto pretende evoluir como um companheiro local mais expressivo, estável, configurável e capaz de aprender preferências em tarefas bem delimitadas. O caminho de expansão pode incluir:
-
-1. Aumentar a cobertura e a variedade dos protocolos de avaliação antes de ampliar alegações sobre aprendizado.
-2. Tornar as ferramentas locais mais úteis, mantendo permissões explícitas e comportamento observável.
-3. Melhorar a instalação, distribuição e atualização para Windows.
-4. Explorar novos comportamentos, estados e formas de interação do avatar.
-
-Estes itens são objetivos de evolução, não funcionalidades entregues nem um compromisso de prazo. A prioridade é preservar resultados reproduzíveis, separar simulação de alegações sobre capacidades gerais e documentar cada nova etapa.
-
-## Licença
-
-Este projeto está licenciado sob a [MIT License](LICENSE).
+[MIT](LICENSE). See [CHANGELOG.md](CHANGELOG.md) for the current release history.

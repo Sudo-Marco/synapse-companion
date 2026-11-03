@@ -1,0 +1,28 @@
+# Changelog
+
+Notable changes are recorded here. This project follows a simple Keep a Changelog structure and Semantic Versioning from the first tagged release.
+
+## [0.1.0] - 2026-11-03
+
+### Added
+
+- Typed parameter schemas for built-in tools, validation before proposal/dispatch, safer configured folder defaults, short UI failures, and per-tool cooldowns.
+- Transparent floating ASCII eye, on-demand panel, tray actions, optional global shortcut and Windows autostart, saved position, and click-through mask.
+- Emotion-dependent teleport motion with ASCII particle trails, monitor-aware placement, hourly/session budget, cooldown, and drag/proposal guards.
+- Bounded local post-it windows driven by coarse state, local YAML templates, expiry and position persistence, and small user-response feedback.
+- Aggregate habit counts and an on-demand learning view.
+- Opt-in sleep replay flag, disabled by default, with bounded high-RPE episode selection and coarse synthetic input reconstruction.
+- English and Brazilian Portuguese documentation, privacy/architecture/performance/learning notes, contributor guidance, issue templates, and Windows/Linux headless CI.
+
+### Changed
+
+- Added an `rpe` field to the local episode database with an in-place migration for existing SQLite files.
+- Updated package metadata and documented the synthetic learning results and benchmark limits.
+
+### Limitations
+
+- The project is not a language model or coding assistant.
+- Learning curves are synthetic and the action policy combines neural output with contextual preferences.
+- Sleep replay has not been evaluated against the scenario-e goal and remains disabled by default.
+- Floating pet and post-it UI checks were offscreen; physical Windows desktop and multi-monitor validation remains outstanding.
+- Hourly autonomy/teleport caps reset when the process restarts.

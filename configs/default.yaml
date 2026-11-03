@@ -138,21 +138,8 @@ autonomy:
     atencao: conversa
     entediado: pausa
     curioso: curiosidade
-    afeto: particulas
-    cansaco: cochilar
-    assustado: teleporte_curto
   behaviors:
     postits: true
-    olhar_ao_redor: true
-    bocejar: true
-    cochilar: true
-    esconder: true
-    seguir_cursor: true
-    horario: true
-    particulas: true
-    birra: true
-    pausa: true
-    conversa: true
     habit_notice: true
   postits:
     enabled: true
