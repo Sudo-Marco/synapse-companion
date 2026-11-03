@@ -11,7 +11,11 @@ class EpisodicMemory:
         with sqlite3.connect(path) as db:
             db.execute("""CREATE TABLE IF NOT EXISTS episodes (
                 id INTEGER PRIMARY KEY, context TEXT NOT NULL, action TEXT,
-                reward REAL NOT NULL, timestamp TEXT DEFAULT CURRENT_TIMESTAMP, emotion TEXT)""")
+                reward REAL NOT NULL, timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+                emotion TEXT, rpe REAL NOT NULL DEFAULT 0)""")
+            columns = {str(row[1]) for row in db.execute("PRAGMA table_info(episodes)")}
+            if "rpe" not in columns:
+                db.execute("ALTER TABLE episodes ADD COLUMN rpe REAL NOT NULL DEFAULT 0")
             db.execute("""CREATE TABLE IF NOT EXISTS habits (
                 context_category TEXT NOT NULL, action TEXT NOT NULL,
                 observations INTEGER NOT NULL DEFAULT 0, mean_rpe REAL NOT NULL DEFAULT 0,
@@ -19,22 +23,25 @@ class EpisodicMemory:
                 last_updated TEXT DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY(context_category, action))""")
 
-    def add(self, context: str, action: str | None, reward: float, emotion: str = "") -> None:
+    def add(self, context: str, action: str | None, reward: float,
+            emotion: str = "", rpe: float | None = None) -> None:
+        learning_rpe = float(reward if rpe is None else rpe)
         with sqlite3.connect(self.path) as db:
-            db.execute("INSERT INTO episodes(context,action,reward,emotion) VALUES(?,?,?,?)",
-                       (context, action, reward, emotion))
+            db.execute("INSERT INTO episodes(context,action,reward,emotion,rpe) "
+                       "VALUES(?,?,?,?,?)",
+                       (context, action, reward, emotion, learning_rpe))
 
     def recent(self, limit: int = 100) -> list[tuple[Any, ...]]:
         with sqlite3.connect(self.path) as db:
             return db.execute("SELECT context,action,reward,timestamp,emotion FROM episodes ORDER BY id DESC LIMIT ?",
                               (limit,)).fetchall()
 
-    def top_rewarded(self, limit: int = 12) -> list[tuple[Any, ...]]:
-        """Return high-value episodes for optional, bounded sleep replay."""
+    def top_rpe(self, limit: int = 12) -> list[tuple[Any, ...]]:
+        """Return episodes with highest absolute RPE for optional sleep replay."""
         with sqlite3.connect(self.path) as db:
             return db.execute(
-                "SELECT context,action,reward,timestamp,emotion FROM episodes "
-                "WHERE ABS(reward) > 0 ORDER BY ABS(reward) DESC, id DESC LIMIT ?",
+                "SELECT context,action,rpe,timestamp,emotion FROM episodes "
+                "WHERE ABS(rpe) > 0 ORDER BY ABS(rpe) DESC, id DESC LIMIT ?",
                 (max(0, int(limit)),)).fetchall()
 
     def observe_habit(self, context_category: str, action: str, rpe: float,

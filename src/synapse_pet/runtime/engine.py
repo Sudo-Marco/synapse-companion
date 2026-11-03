@@ -553,7 +553,8 @@ class PetEngine:
                     ("hidden_output", self.network.hidden_to_output)):
                 self.learners[name].apply_reward(projection, self.learning_rpe)
 
-        self.memory.add(context, action, target_reward, str(asdict(self.emotions)))
+        self.memory.add(context, action, target_reward,
+                        str(asdict(self.emotions)), rpe=self.learning_rpe)
         if bool(self.habit_config.get("enabled", True)):
             safe_contexts = {"codigo", "navegador", "chat", "jogo", "outro",
                              "manual", "mouse", "sistema", "postit"}

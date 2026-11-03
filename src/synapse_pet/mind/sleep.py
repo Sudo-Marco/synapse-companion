@@ -26,10 +26,10 @@ class SleepConsolidator:
     def consolidate(self, network: SpikingNetwork, memory: EpisodicMemory,
                      learners: dict[str, RewardSTDP], modulators: Neuromodulators) -> int:
         """Replay a bounded number of safe episodes, prune weak edges, and regrow a few."""
-        episodes = (memory.top_rewarded(self.max_replay_episodes)
+        episodes = (memory.top_rpe(self.max_replay_episodes)
                     if self.replay_enabled else [])
         dt_s = network.dt_ms / 1000.0
-        for context, _action, reward, _timestamp, _emotion in reversed(episodes):
+        for context, _action, rpe_value, _timestamp, _emotion in reversed(episodes):
             digest = hashlib.blake2b(str(context).encode("utf-8"), digest_size=4).digest()
             sensor_index = int.from_bytes(digest, "little") % network.n_sensor
             current = np.zeros(network.n_sensor, dtype=np.float32)
@@ -45,7 +45,7 @@ class SleepConsolidator:
                 learners["sensor_hidden"].mark(network.sensor_to_hidden, spikes[:network.n_sensor], spikes[h], dt_s)
                 learners["recurrent"].mark(network.recurrent, spikes[h], spikes[h], dt_s)
                 learners["hidden_output"].mark(network.hidden_to_output, spikes[h], spikes[out], dt_s)
-            dopamine = float(np.clip(float(reward), -1.0, 1.0)) * 0.1
+            dopamine = float(np.clip(float(rpe_value), -1.0, 1.0)) * 0.1
             learners["sensor_hidden"].apply_reward(network.sensor_to_hidden, dopamine)
             learners["recurrent"].apply_reward(network.recurrent, dopamine)
             learners["hidden_output"].apply_reward(network.hidden_to_output, dopamine)
