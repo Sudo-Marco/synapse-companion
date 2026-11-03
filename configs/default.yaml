@@ -126,3 +126,43 @@ tools:
   allowed_commands: []
 autonomy:
   enabled: true
+  max_actions_per_hour: 6
+  cooldowns_s:
+    alerta: 900
+    conversa: 1200
+    pausa: 1800
+    curiosidade: 1200
+  state_behaviors:
+    estressado: alerta
+    atencao: conversa
+    entediado: pausa
+    curioso: curiosidade
+    afeto: particulas
+    cansaco: cochilar
+    assustado: teleporte_curto
+  behaviors:
+    postits: true
+    olhar_ao_redor: true
+    bocejar: true
+    cochilar: true
+    esconder: true
+    seguir_cursor: true
+    horario: true
+    particulas: true
+    birra: true
+    pausa: true
+    conversa: true
+  postits:
+    enabled: true
+    max_active: 4
+    expires_s: 600
+    quick_dismiss_s: 10
+    stress_threshold: 0.70
+    attention_rate_hz: 1.5
+    boredom_threshold: 0.84
+    curiosity_threshold: 0.84
+    templates:
+      alerta: "Parece que o ritmo apertou. Que tal uma pausa para respirar?"
+      conversa: "Estou aqui. Quer me contar no que está trabalhando?"
+      pausa: "Faz um tempinho de atividade. Uma pausa curta pode ajudar."
+      curiosidade: "Notei algo novo por aqui. Quer explorar comigo?"

@@ -23,8 +23,10 @@ from PySide6.QtWidgets import (QApplication, QDialog, QFileDialog, QFrame,
                                QSystemTrayIcon, QVBoxLayout, QWidget)
 
 from ..runtime.visual_state import VisualState
+from ..runtime.autonomy import AutonomyController, PostItStore, StoredPostIt
 from .teleport import STYLES as TELEPORT_STYLES, TeleportTrail, teleport_geometry
 from .gl_renderer import EyeCanvas
+from .postit import PostItWindow
 
 
 BG = "#050a10"
@@ -249,6 +251,10 @@ class PetWindow(QMainWindow):
         self.interaction_config = self.config.get("interaction", {})
         self.pet_config = self.config.get("pet", {})
         self.teleport_config = self.config.get("teleport", {})
+        self.autonomy_config = self.config.get("autonomy", {})
+        self.autonomy = AutonomyController(self.autonomy_config)
+        self._postit_store = PostItStore(engine.data_dir / "postits.sqlite3")
+        self._postit_windows: dict[int, PostItWindow] = {}
         self._pet_mode_enabled = str(self.pet_config.get("mode", "window")).lower() == "floating"
         self._is_floating = False
         self._pet_width = max(180, int(self.pet_config.get("width", 320)))
@@ -442,6 +448,7 @@ class PetWindow(QMainWindow):
         self.frame_timer.setInterval(33)
         self.frame_timer.start()
         QTimer.singleShot(0, self._refresh)
+        QTimer.singleShot(0, self._restore_postits)
 
     def _build_shortcuts(self) -> None:
         for sequence, callback in (("M", self._cycle_mode), ("H", lambda: self._set_mode("hud")),
@@ -927,10 +934,112 @@ class PetWindow(QMainWindow):
         self._teleport_destination_geometry = None
         self._teleport_style = None
 
+    def _restore_postits(self) -> None:
+        for note in self._postit_store.active():
+            if len(self._postit_windows) >= self._max_postits():
+                break
+            if self._postit_text(note.template):
+                self._spawn_postit(note, animate=False)
+
+    def _max_postits(self) -> int:
+        return max(0, int(self.autonomy_config.get("postits", {}).get(
+            "max_active", 4)))
+
+    def _postit_text(self, template: str) -> str:
+        templates = self.autonomy_config.get("postits", {}).get("templates", {})
+        return str(templates.get(template, ""))
+
+    def _consider_autonomy(self, state: VisualState, health: dict[str, object],
+                           now: float) -> None:
+        if len(self._postit_windows) >= self._max_postits():
+            return
+        quiet_after = float(self.autonomy_config.get("quiet_after_interaction_s", 18.0))
+        quiet = (now - self.last_interaction < quiet_after or self._pet_hovering
+                 or self._pet_drag_offset is not None or self._is_fullscreen_foreground())
+        rates = dict(state.rates)
+        template = self.autonomy.choose_postit(
+            state, rates, now, enabled=bool(self.engine.autonomy_enabled),
+            quiet=quiet, proposal_pending=(int(health["pending_proposals"]) > 0
+                                           or int(health["proposal_queue"]) > 0))
+        if template is None:
+            return
+        emotion = {"alerta": "estressado", "conversa": "atencao",
+                   "pausa": "entediado", "curiosidade": "curioso"}[template]
+        if not self._postit_text(template):
+            return
+        screens = list(QGuiApplication.screens())
+        if not screens:
+            return
+        screen = QGuiApplication.screenAt(self.frameGeometry().center()) or screens[0]
+        area = screen.availableGeometry()
+        width, height = 286, 132
+        center = self.frameGeometry().center()
+        x = center.x() + self._teleport_rng.choice((-1, 1)) * 150 - width // 2
+        y = center.y() - height // 2 - 56
+        x = max(area.left(), min(x, area.right() - width + 1))
+        y = max(area.top(), min(y, area.bottom() - height + 1))
+        postit_cfg = self.autonomy_config.get("postits", {})
+        note = self._postit_store.add(
+            template, emotion, x, y, float(postit_cfg.get("expires_s", 600.0)))
+        origin = center - QPoint(width // 2, height // 2)
+        self._spawn_postit(note, animate=True, origin=origin)
+
+    def _spawn_postit(self, note: StoredPostIt, *, animate: bool,
+                      origin: QPoint | None = None) -> None:
+        if note.note_id in self._postit_windows:
+            return
+        if len(self._postit_windows) >= self._max_postits():
+            return
+        screen = QGuiApplication.screenAt(QPoint(note.x, note.y)) or QGuiApplication.primaryScreen()
+        if screen is not None:
+            area = screen.availableGeometry()
+            x = max(area.left(), min(note.x, area.right() - 285))
+            y = max(area.top(), min(note.y, area.bottom() - 131))
+            if (x, y) != (note.x, note.y):
+                self._postit_store.move(note.note_id, x, y)
+                note = replace(note, x=x, y=y)
+        postit_cfg = self.autonomy_config.get("postits", {})
+        window = PostItWindow(
+            note, self._postit_text(note.template),
+            quick_dismiss_s=float(postit_cfg.get("quick_dismiss_s", 10.0)),
+            on_interact=self._postit_interacted,
+            on_close=self._postit_closed,
+            parent=self, origin=origin, animate=animate)
+        self._postit_windows[note.note_id] = window
+
+    def _postit_interacted(self, _note_id: int) -> None:
+        self.engine.submit_feedback(0.15, context="postit_interaction")
+
+    def _postit_closed(self, note_id: int, reason: str, position: QPoint,
+                       created_at: float, quick_dismiss_s: float) -> None:
+        if reason == "moved":
+            self._postit_store.move(note_id, position.x(), position.y())
+            return
+        self._postit_windows.pop(note_id, None)
+        if reason == "app_exit":
+            return
+        self._postit_store.remove(note_id)
+        if reason == "dismissed" and time.time() - created_at <= quick_dismiss_s:
+            self.engine.submit_feedback(-0.10, context="postit_quick_dismiss")
+
+    def _is_fullscreen_foreground(self) -> bool:
+        rect = self._active_window_rect()
+        if rect is None:
+            return False
+        screen = QGuiApplication.screenAt(rect.center())
+        if screen is None:
+            return False
+        bounds = screen.geometry()
+        return (rect.width() >= bounds.width() * 0.94
+                and rect.height() >= bounds.height() * 0.94)
+
     def _quit_from_tray(self) -> None:
         self._requested_exit = True
         if self._global_hotkey is not None:
             self._global_hotkey.stop()
+        for note_window in tuple(self._postit_windows.values()):
+            note_window._close_reason = "app_exit"
+            note_window.close()
         self.close()
 
     def _build_sensor_menu(self) -> None:
@@ -1149,6 +1258,7 @@ class PetWindow(QMainWindow):
         self.canvas.set_state(render_state)
         health = self.engine.health_snapshot()
         self._consider_teleport(render_state, health, now)
+        self._consider_autonomy(render_state, health, now)
         stopped = health["status"] in {"stalled", "stopped"}
         paused = health["status"] == "paused"
         if paused:
