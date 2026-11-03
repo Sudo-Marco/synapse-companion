@@ -8,12 +8,16 @@ from collections import deque
 from dataclasses import replace
 from pathlib import Path
 
-from PySide6.QtCore import QEvent, QPoint, Qt, QTimer, QUrl
-from PySide6.QtGui import (QBrush, QColor, QCursor, QDesktopServices, QFont, QPainter, QPen,
-                           QSurfaceFormat, QShortcut, QKeySequence)
+from PySide6.QtCore import (QEvent, QEasingCurve, QPoint, QPropertyAnimation,
+                            QSettings, Qt, QTimer, QUrl, Signal)
+from PySide6.QtGui import (QAction, QBrush, QColor, QCursor, QDesktopServices,
+                           QFont, QGuiApplication, QIcon, QPainter, QPainterPath,
+                           QPen, QPixmap, QRegion, QSurfaceFormat, QShortcut,
+                           QKeySequence)
 from PySide6.QtWidgets import (QApplication, QDialog, QFileDialog, QFrame,
                                QHBoxLayout, QLabel, QMainWindow, QMenu,
-                               QMessageBox, QProgressBar, QPushButton, QVBoxLayout, QWidget)
+                               QMessageBox, QProgressBar, QPushButton,
+                               QSystemTrayIcon, QVBoxLayout, QWidget)
 
 from ..runtime.visual_state import VisualState
 from .gl_renderer import EyeCanvas
@@ -230,6 +234,7 @@ class DebugPanel(QDialog):
 
 class PetWindow(QMainWindow):
     MODES = (("ascii", "ASCII"), ("hud", "HUD"))
+    panelHotkeyPressed = Signal()
 
     def __init__(self, engine) -> None:
         self.application = ensure_application()
@@ -238,12 +243,33 @@ class PetWindow(QMainWindow):
         self.config = engine.config
         self.visual_config = self.config.get("visual", {})
         self.interaction_config = self.config.get("interaction", {})
+        self.pet_config = self.config.get("pet", {})
+        self._pet_mode_enabled = str(self.pet_config.get("mode", "window")).lower() == "floating"
+        self._is_floating = False
+        self._pet_width = max(180, int(self.pet_config.get("width", 320)))
+        self._pet_height = max(104, int(self.pet_config.get("height", 180)))
+        self._pet_drag_offset: QPoint | None = None
+        self._pet_drag_origin: QPoint | None = None
+        self._pet_drag_started = 0.0
+        self._pet_drag_moved = False
+        self._pet_drag_rewarded = False
+        self._pet_hovering = False
+        self._autostart_enabled = False
+        self._requested_exit = False
+        self._settings = QSettings("SynapsePet", "Oculus")
+        self._panel_size = (1000, 790)
+        self._pet_animation = None
+        self._global_hotkey = None
         self.setWindowTitle("Synapse Pet — Oculus")
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint |
-                            Qt.WindowType.WindowStaysOnTopHint)
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
+        window_flags = (Qt.WindowType.FramelessWindowHint |
+                        Qt.WindowType.WindowStaysOnTopHint)
+        if self._pet_mode_enabled:
+            window_flags |= Qt.WindowType.Tool
+        self.setWindowFlags(window_flags)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground,
+                          self._pet_mode_enabled)
         self.setStyleSheet(STYLESHEET)
-        self.resize(1000, 790)
+        self.resize(self._panel_size[0], self._panel_size[1])
         self.last_state = VisualState()
         self.render_mode = "ascii"
         self.last_interaction = time.monotonic()
@@ -269,8 +295,9 @@ class PetWindow(QMainWindow):
         self.header = DragHeader(self)
         layout.addWidget(self.header)
 
+        configured_renderer = str(self.config.get("renderer", "ascii"))
         self.canvas = EyeCanvas(
-            str(self.config.get("renderer", "ascii")),
+            "ascii" if self._pet_mode_enabled else configured_renderer,
             int(self.visual_config.get("width", 960)),
             int(self.visual_config.get("height", 540)),
             int(self.visual_config.get("ascii_columns", 100)),
@@ -282,7 +309,8 @@ class PetWindow(QMainWindow):
             ascii_max_columns=int(self.visual_config.get("ascii_max_columns", 170)),
             ascii_max_rows=int(self.visual_config.get("ascii_max_rows", 96)),
             affection_drag_min_s=float(self.interaction_config.get(
-                "affection_drag_min_s", 1.0)))
+                "affection_drag_min_s", 1.0)),
+            compact=self._pet_mode_enabled)
         layout.addWidget(self.canvas, 1)
         self.canvas.petRequested.connect(self._give_affection)
         self.canvas.activityDetected.connect(self._register_visual_activity)
@@ -380,6 +408,18 @@ class PetWindow(QMainWindow):
 
         self._build_sensor_menu()
         self._build_shortcuts()
+        self.panelHotkeyPressed.connect(self._show_panel)
+        self._panel_only_widgets = [
+            self.header, name, self.mood_label, self.system_label,
+            self.happiness_card, self.energy_card, self.stress_card,
+            self.proposal, self.love_button, self.feedback_button,
+            self.debug_button, self.sensor_button, self.mode_button,
+            self.undo_button, self.save_button, self.status_label,
+        ]
+        self._root_widget = root
+        self._root_layout = layout
+        self._create_tray_icon()
+        self._start_global_panel_hotkey()
         self.engine.start()
         self.frame_timer = QTimer(self)
         self.frame_timer.timeout.connect(self._refresh)
@@ -395,6 +435,294 @@ class PetWindow(QMainWindow):
                                    ("Escape", self._leave_fullscreen)):
             shortcut = QShortcut(QKeySequence(sequence), self)
             shortcut.activated.connect(callback)
+            shortcut.setEnabled(not self._pet_mode_enabled)
+
+    def _create_tray_icon(self) -> None:
+        pixmap = QPixmap(32, 32)
+        pixmap.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setPen(QPen(QColor(CYAN), 2))
+        painter.setBrush(QColor("#07131b"))
+        painter.drawEllipse(3, 3, 26, 26)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(CYAN))
+        painter.drawEllipse(11, 11, 10, 10)
+        painter.end()
+        self._tray_icon = QSystemTrayIcon(QIcon(pixmap), self)
+        menu = QMenu(self)
+        self._tray_panel_action = menu.addAction("Abrir painel")
+        self._tray_panel_action.triggered.connect(self._show_panel)
+        menu.addSeparator()
+        self._pause_action = QAction("Pausar simulação", self)
+        self._pause_action.setCheckable(True)
+        self._pause_action.toggled.connect(self._toggle_simulation_pause)
+        menu.addAction(self._pause_action)
+        self._autonomy_action = QAction("Silenciar autonomia", self)
+        self._autonomy_action.setCheckable(True)
+        self._autonomy_action.setChecked(True)
+        self._autonomy_action.toggled.connect(self._toggle_autonomy)
+        menu.addAction(self._autonomy_action)
+        self._autostart_action = QAction("Iniciar com o Windows", self)
+        self._autostart_action.setCheckable(True)
+        self._autostart_action.setChecked(self._read_windows_startup())
+        self._autostart_action.toggled.connect(self._set_windows_startup)
+        menu.addAction(self._autostart_action)
+        menu.addSeparator()
+        quit_action = menu.addAction("Sair")
+        quit_action.triggered.connect(self._quit_from_tray)
+        self._tray_icon.setContextMenu(menu)
+        self._tray_icon.activated.connect(self._tray_activated)
+        if QSystemTrayIcon.isSystemTrayAvailable():
+            self._tray_icon.show()
+
+    def _toggle_simulation_pause(self, paused: bool) -> None:
+        self.engine.set_paused(paused)
+        self._pause_action.setText("Retomar simulação" if paused else
+                                   "Pausar simulação")
+
+    def _toggle_autonomy(self, enabled: bool) -> None:
+        self.engine.set_autonomy_enabled(enabled)
+        self._autonomy_action.setText("Silenciar autonomia" if enabled else
+                                      "Ativar autonomia")
+
+    def _start_global_panel_hotkey(self) -> None:
+        if not self._pet_mode_enabled:
+            return
+        hotkey = str(self.pet_config.get("panel_hotkey", "<ctrl>+<alt>+o"))
+        try:
+            from pynput.keyboard import GlobalHotKeys
+            self._global_hotkey = GlobalHotKeys({
+                hotkey: self.panelHotkeyPressed.emit,
+            })
+            self._global_hotkey.start()
+        except Exception as exc:
+            self.engine.logger.warning("Atalho global indisponível: %s", exc)
+
+    def _tray_activated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
+        if reason in {QSystemTrayIcon.ActivationReason.Trigger,
+                      QSystemTrayIcon.ActivationReason.DoubleClick}:
+            self._show_panel()
+
+    def _set_windows_startup(self, enabled: bool) -> None:
+        try:
+            import winreg
+            key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0,
+                                winreg.KEY_SET_VALUE) as key:
+                if enabled:
+                    command = f'"{sys.executable}" -m synapse_pet.main'
+                    winreg.SetValueEx(key, "SynapsePet", 0,
+                                      winreg.REG_SZ, command)
+                else:
+                    try:
+                        winreg.DeleteValue(key, "SynapsePet")
+                    except FileNotFoundError:
+                        pass
+            self._autostart_enabled = bool(enabled)
+        except (OSError, ImportError) as exc:
+            self._autostart_action.blockSignals(True)
+            self._autostart_action.setChecked(not enabled)
+            self._autostart_action.blockSignals(False)
+            QMessageBox.warning(self, "Inicialização", f"Não foi possível alterar: {exc}")
+
+    @staticmethod
+    def _read_windows_startup() -> bool:
+        try:
+            import winreg
+            with winreg.OpenKey(
+                    winreg.HKEY_CURRENT_USER,
+                    r"Software\Microsoft\Windows\CurrentVersion\Run") as key:
+                winreg.QueryValueEx(key, "SynapsePet")
+            return True
+        except (OSError, ImportError):
+            return False
+
+    def _show_panel(self) -> None:
+        if not self._pet_mode_enabled or not self._is_floating:
+            self.showNormal()
+            self.raise_()
+            self.activateWindow()
+            return
+        self._settings.setValue("pet/x", self.x())
+        self._settings.setValue("pet/y", self.y())
+        self.hide()
+        self._is_floating = False
+        self.clearMask()
+        self.removeEventFilter(self)
+        for child in self.canvas.findChildren(QWidget):
+            child.removeEventFilter(self)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
+        self.setStyleSheet(STYLESHEET)
+        self._root_widget.setStyleSheet("")
+        self._root_layout.setContentsMargins(12, 12, 12, 10)
+        self._root_layout.setSpacing(9)
+        for widget in self._panel_only_widgets:
+            widget.show()
+        if self._proposal_name and self.engine.proposal_is_pending(self._proposal_name):
+            self.proposal.show()
+        self.canvas.set_mode(self.render_mode)
+        self.resize(*self._panel_size)
+        self.setMinimumSize(700, 390)
+        for shortcut in self.findChildren(QShortcut):
+            shortcut.setEnabled(True)
+        self.showNormal()
+        self.raise_()
+        self.activateWindow()
+
+    def _enter_floating_mode(self) -> None:
+        if not self._pet_mode_enabled:
+            return
+        self._panel_size = (max(700, self.width()), max(390, self.height()))
+        self.hide()
+        self._is_floating = True
+        for widget in self._panel_only_widgets:
+            widget.hide()
+        self._root_layout.setContentsMargins(0, 0, 0, 0)
+        self._root_layout.setSpacing(0)
+        self.canvas.set_mode("pet")
+        self._root_widget.setStyleSheet("background: transparent; border: none;")
+        self.setStyleSheet("QMainWindow { background: transparent; border: none; }")
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self.setMinimumSize(180, 104)
+        self.resize(self._pet_width, self._pet_height)
+        target = self.canvas._stack.currentWidget()
+        target.installEventFilter(self)
+        self.setMask(self._pet_mask())
+        self._restore_pet_position()
+        for shortcut in self.findChildren(QShortcut):
+            shortcut.setEnabled(False)
+        self.show()
+        self.raise_()
+
+    def _pet_mask(self) -> QRegion:
+        width, height = self.width(), self.height()
+        path = QPainterPath()
+        path.moveTo(width * 0.025, height * 0.50)
+        path.cubicTo(width * 0.18, height * 0.08, width * 0.82,
+                     height * 0.08, width * 0.975, height * 0.50)
+        path.cubicTo(width * 0.82, height * 0.92, width * 0.18,
+                     height * 0.92, width * 0.025, height * 0.50)
+        path.closeSubpath()
+        return QRegion(path.toFillPolygon().toPolygon())
+
+    def _restore_pet_position(self) -> None:
+        saved_x = self._settings.value("pet/x", None)
+        saved_y = self._settings.value("pet/y", None)
+        if saved_x is not None and saved_y is not None:
+            point = QPoint(int(saved_x), int(saved_y))
+            screen = QGuiApplication.screenAt(point) or QGuiApplication.primaryScreen()
+        else:
+            screen = QGuiApplication.primaryScreen()
+            point = QPoint()
+        if screen is None:
+            return
+        area = screen.availableGeometry()
+        anchor = str(self.pet_config.get("anchor", "none")).lower()
+        margin = max(0, int(self.pet_config.get("margin", 24)))
+        if anchor == "top_left":
+            point = QPoint(area.left() + margin, area.top() + margin)
+        elif anchor == "top_right":
+            point = QPoint(area.right() - self.width() - margin,
+                           area.top() + margin)
+        elif anchor == "bottom_left":
+            point = QPoint(area.left() + margin,
+                           area.bottom() - self.height() - margin)
+        elif anchor == "bottom_right" or saved_x is None:
+            point = QPoint(area.right() - self.width() - margin,
+                           area.bottom() - self.height() - margin)
+        point.setX(max(area.left(), min(point.x(), area.right() - self.width())))
+        point.setY(max(area.top(), min(point.y(), area.bottom() - self.height())))
+        self.move(point)
+
+    def eventFilter(self, watched, event) -> bool:
+        if not self._is_floating:
+            return super().eventFilter(watched, event)
+        event_type = event.type()
+        if event_type == QEvent.Type.Enter and not self._pet_hovering:
+            self._pet_hovering = True
+            self._grow_pet()
+        elif event_type == QEvent.Type.Leave:
+            self._pet_hovering = False
+        if event_type == QEvent.Type.MouseButtonDblClick and event.button() == Qt.MouseButton.LeftButton:
+            self._show_panel()
+            return True
+        if event_type == QEvent.Type.MouseButtonPress:
+            if event.button() == Qt.MouseButton.RightButton:
+                self._show_pet_context_menu()
+                return True
+            if event.button() == Qt.MouseButton.LeftButton:
+                point = event.globalPosition().toPoint()
+                self._pet_drag_offset = point - self.frameGeometry().topLeft()
+                self._pet_drag_origin = point
+                self._pet_drag_started = time.monotonic()
+                self._pet_drag_moved = False
+                self._pet_drag_rewarded = False
+        elif event_type == QEvent.Type.MouseMove and self._pet_drag_offset is not None:
+            if event.buttons() & Qt.MouseButton.LeftButton:
+                point = event.globalPosition().toPoint()
+                if self._pet_drag_origin is not None:
+                    self._pet_drag_moved |= (
+                        (point - self._pet_drag_origin).manhattanLength()
+                        >= QApplication.startDragDistance())
+                self.move(point - self._pet_drag_offset)
+                if (self._pet_drag_moved and not self._pet_drag_rewarded
+                        and time.monotonic() - self._pet_drag_started >= float(
+                            self.interaction_config.get("affection_drag_min_s", 1.0))):
+                    self._give_affection()
+                    self._pet_drag_rewarded = True
+        elif event_type == QEvent.Type.MouseButtonRelease:
+            if event.button() == Qt.MouseButton.LeftButton:
+                self._settings.setValue("pet/x", self.x())
+                self._settings.setValue("pet/y", self.y())
+                self._pet_drag_offset = None
+                self._pet_drag_origin = None
+                self._pet_drag_moved = False
+                self._pet_drag_rewarded = False
+        return super().eventFilter(watched, event)
+
+    def _show_pet_context_menu(self) -> None:
+        menu = QMenu(self)
+        open_panel = menu.addAction("Abrir painel")
+        menu.addSeparator()
+        quit_action = menu.addAction("Sair")
+        selected = menu.exec(QCursor.pos())
+        if selected is open_panel:
+            self._show_panel()
+        elif selected is quit_action:
+            self._quit_from_tray()
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        if self._is_floating:
+            self.setMask(self._pet_mask())
+        elif self.isVisible():
+            self._panel_size = (max(700, self.width()), max(390, self.height()))
+
+    def _grow_pet(self) -> None:
+        if not self._is_floating:
+            return
+        start = self.geometry()
+        grown_width, grown_height = round(start.width() * 1.08), round(start.height() * 1.08)
+        center = start.center()
+        grown = start.__class__(center.x() - grown_width // 2,
+                                center.y() - grown_height // 2,
+                                grown_width, grown_height)
+        animation = QPropertyAnimation(self, b"geometry", self)
+        animation.setDuration(700)
+        animation.setStartValue(start)
+        animation.setKeyValueAt(0.28, grown)
+        animation.setKeyValueAt(0.72, grown)
+        animation.setEndValue(start)
+        animation.setEasingCurve(QEasingCurve.Type.InOutCubic)
+        animation.start()
+        self._pet_animation = animation
+
+    def _quit_from_tray(self) -> None:
+        self._requested_exit = True
+        if self._global_hotkey is not None:
+            self._global_hotkey.stop()
+        self.close()
 
     def _build_sensor_menu(self) -> None:
         self.sensor_menu = QMenu(self)
@@ -426,6 +754,7 @@ class PetWindow(QMainWindow):
     def _give_affection(self) -> None:
         self.engine.submit_affection()
         self.last_interaction = time.monotonic()
+        self._grow_pet()
 
     def _register_visual_activity(self) -> None:
         self.last_interaction = time.monotonic()
@@ -551,7 +880,13 @@ class PetWindow(QMainWindow):
             self._proposal_name = candidate.name
             self._proposal_context = candidate.context
             self.proposal_text.setText(manifest.description)
-            self.proposal.show()
+            if self._is_floating:
+                if self._tray_icon.isVisible():
+                    self._tray_icon.showMessage(
+                        "Synapse Pet", "Há uma proposta aguardando no painel.",
+                        QSystemTrayIcon.MessageIcon.Information, 4000)
+            else:
+                self.proposal.show()
         while True:
             try:
                 result = self.engine.action_results.get_nowait()
@@ -568,8 +903,13 @@ class PetWindow(QMainWindow):
                     self.proposal.hide()
                 self._notice = "PROPOSTA EXPIRADA"
             elif operation == "runtime":
-                self._notice = ("SIMULAÇÃO RECUPERADA" if status == "restarted"
-                                else f"SIMULAÇÃO: {status}")
+                self._notice = {
+                    "restarted": "SIMULAÇÃO RECUPERADA",
+                    "paused": "SIMULAÇÃO PAUSADA",
+                    "resumed": "SIMULAÇÃO RETOMADA",
+                    "autonomy_on": "AUTONOMIA ATIVADA",
+                    "autonomy_off": "AUTONOMIA SILENCIADA",
+                }.get(str(status), f"SIMULAÇÃO: {status}")
             elif operation == "tool" and status == "configuration_required":
                 self._notice = "PASTA NECESSÁRIA PARA EXPLORAR"
                 if result.get("tool") in {"abrir_pasta", "resumo_arquivos_alterados"}:
@@ -599,7 +939,12 @@ class PetWindow(QMainWindow):
         self.canvas.set_state(render_state)
         health = self.engine.health_snapshot()
         stopped = health["status"] in {"stalled", "stopped"}
-        if stopped:
+        paused = health["status"] == "paused"
+        if paused:
+            self.mood_label.setText("SIMULAÇÃO PAUSADA")
+            self.system_label.setText("SNN · PAUSADA")
+            self.system_label.setStyleSheet("color: #e9b725; font: 8pt Consolas;")
+        elif stopped:
             self.mood_label.setText("SIMULAÇÃO PARADA — valores emocionais congelados")
             self.system_label.setText("SNN · PARADA")
             self.system_label.setStyleSheet("color: #e58665; font: 8pt Consolas;")
@@ -612,7 +957,9 @@ class PetWindow(QMainWindow):
         self.stress_card.set_value(self.last_state.stress)
         enabled = [name for name, action in self.sensor_actions.items() if action.isChecked()]
         sensor_text = "SENSORES: " + " · ".join(enabled) if enabled else "SENSORES DESLIGADOS"
-        if stopped:
+        if paused:
+            self.status_label.setText(f"SIMULAÇÃO PAUSADA · TICK {health['tick']}")
+        elif stopped:
             self.status_label.setText(
                 f"SIMULAÇÃO PARADA · TICK {health['tick']} · "
                 f"THREAD {'VIVA' if health['thread_alive'] else 'MORTA'} · "
@@ -622,7 +969,7 @@ class PetWindow(QMainWindow):
         else:
             self.status_label.setText(f"{sensor_text.upper()} · {self._fps:02d} FPS · M / F11 / T")
         active = (self.last_state.active or now - self.last_interaction < 3.0
-                  or self.canvas.attention_animating)
+                  or (not self._is_floating and self.canvas.attention_animating))
         fps = int(self.visual_config.get("fps_active", 30) if active
                   else self.visual_config.get("fps_idle", 5))
         interval = max(1, round(1000 / max(1, fps)))
@@ -653,11 +1000,19 @@ class PetWindow(QMainWindow):
             event.accept()
             self.application.quit()
             return
+        if self._pet_mode_enabled and not self._requested_exit:
+            event.ignore()
+            if self._debug_panel is not None:
+                self._debug_panel.hide()
+            if not self._is_floating:
+                self._enter_floating_mode()
+            return
         event.ignore()
         if self._closing:
             return
         self._closing = True
         self.frame_timer.stop()
+        self._tray_icon.hide()
         self.hide()
         self._shutdown_thread = threading.Thread(target=self.engine.stop,
                                                 name="synapse-pet-shutdown", daemon=True)
@@ -672,5 +1027,8 @@ class PetWindow(QMainWindow):
         self.close()
 
     def run(self) -> None:
-        self.show()
+        if self._pet_mode_enabled:
+            self._enter_floating_mode()
+        else:
+            self.show()
         self.application.exec()

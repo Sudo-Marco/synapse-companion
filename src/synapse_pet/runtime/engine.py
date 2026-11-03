@@ -54,6 +54,10 @@ class PetEngine:
         self.config = load_config()
         network_config = self.config.get("network", {})
         self.runtime_config = self.config.get("runtime", {})
+        self.pet_mode = str(self.config.get("pet", {}).get("mode", "window")).lower() == "floating"
+        idle_interval_key = "pet_idle_tick_interval_s" if self.pet_mode else "idle_tick_interval_s"
+        self._idle_tick_interval_s = max(0.05, float(
+            self.runtime_config.get(idle_interval_key, 0.4 if self.pet_mode else 0.25)))
         self.visual_config = self.config.get("visual", {})
         self.learning_config = self.config.get("learning", {})
         self.plasticity_config = self.config.get("plasticity", {})
@@ -160,6 +164,9 @@ class PetEngine:
         self._watchdog_stop = threading.Event()
         self._thread_lock = threading.Lock()
         self._started = False
+        self._user_paused = threading.Event()
+        self.autonomy_enabled = bool(
+            self.config.get("autonomy", {}).get("enabled", True))
         self._sensors_started = False
         self._watchdog_thread: threading.Thread | None = None
         self._watchdog_timeout_s = max(1.0, float(
@@ -278,7 +285,8 @@ class PetEngine:
         alive = bool(thread and thread.is_alive())
         age = max(0.0, now - self._last_tick_at)
         stalled = self._started and age > self._watchdog_timeout_s
-        status = "stalled" if stalled else ("running" if alive else "stopped")
+        status = ("paused" if self._user_paused.is_set() else
+                  "stalled" if stalled else ("running" if alive else "stopped"))
         return {
             "status": status,
             "tick": int(self.network.tick_count),
@@ -705,6 +713,22 @@ class PetEngine:
     def set_sensor_enabled(self, name: str, enabled: bool) -> None:
         self.sensor_manager.set_enabled(name, enabled)
 
+    def set_paused(self, paused: bool) -> None:
+        if paused:
+            self._user_paused.set()
+            self._last_regime = "pausado"
+        else:
+            self._last_tick_at = time.monotonic()
+            self._stall_reported = False
+            self._user_paused.clear()
+        self.action_results.put({"operation": "runtime",
+                                 "status": "paused" if paused else "resumed"})
+
+    def set_autonomy_enabled(self, enabled: bool) -> None:
+        self.autonomy_enabled = bool(enabled)
+        self.action_results.put({"operation": "runtime",
+                                 "status": "autonomy_on" if enabled else "autonomy_off"})
+
     def _launch_simulation_thread(self) -> None:
         with self._thread_lock:
             if self._thread and self._thread.is_alive():
@@ -734,6 +758,8 @@ class PetEngine:
         while not self._watchdog_stop.wait(0.5):
             if not self._started:
                 return
+            if self._user_paused.is_set():
+                continue
             try:
                 thread = self._thread
                 if thread is None or not thread.is_alive():
@@ -792,7 +818,7 @@ class PetEngine:
 
     def _run_iteration(self) -> None:
         try:
-            context = self.events.get(timeout=0.25)
+            context = self.events.get(timeout=self._idle_tick_interval_s)
         except queue.Empty:
             context = {}
         if context.pop("_save", False):
@@ -843,6 +869,11 @@ class PetEngine:
                 self.reward(tool_context, 1.0, tool_request,
                             source="proposal_rejected")
         self._expire_pending_proposals()
+        if self._user_paused.is_set():
+            self._last_regime = "pausado"
+            self._last_tick_at = time.monotonic()
+            self._stall_reported = False
+            return
         sensor_context = self.sensor_manager.sample_context()
         active = bool(context) or self.sensor_manager.activity_detected or contacted
         context = {**sensor_context, **context}
@@ -861,13 +892,15 @@ class PetEngine:
         self._last_regime = self.scheduler.regime(now, self.sleep.sleeping)
         tick_ms = float(self.config.get("network", {}).get(
             "tick_active_ms" if active else "tick_idle_ms", 50 if active else 250))
+        if not active and self.pet_mode:
+            tick_ms = max(tick_ms, self._idle_tick_interval_s * 1000.0)
         self._tick_in_progress = True
         self.tick(context, tick_ms, active=active, contacted=contacted)
         self._tick_in_progress = False
         self._last_tick_at = time.monotonic()
         self._stall_reported = False
         category = str(context.get("window_category", "outro"))
-        candidate = self.decide_action(category)
+        candidate = self.decide_action(category) if self.autonomy_enabled else None
         if candidate is not None:
             manifest = self.registry.get(candidate.name)
             try:

@@ -89,10 +89,14 @@ class AnimatedAsciiEyeWidget(QWidget):
                  max_particles: int = 8,
                  parent: QWidget | None = None,
                  max_columns: int = 170, max_rows: int = 96,
-                 affection_drag_min_s: float = 1.0) -> None:
+                 affection_drag_min_s: float = 1.0,
+                 compact: bool = False) -> None:
         super().__init__(parent)
-        self.base_columns = max(72, min(240, int(columns)))
-        self.base_rows = max(42, min(135, int(rows)))
+        self.compact = bool(compact)
+        min_columns = 28 if self.compact else 72
+        min_rows = 16 if self.compact else 42
+        self.base_columns = max(min_columns, min(240, int(columns)))
+        self.base_rows = max(min_rows, min(135, int(rows)))
         self.max_columns = max(self.base_columns, min(300, int(max_columns)))
         self.max_rows = max(self.base_rows, min(180, int(max_rows)))
         self.columns = self.base_columns
@@ -100,7 +104,7 @@ class AnimatedAsciiEyeWidget(QWidget):
         self.scene_time = str(scene_time).strip().lower()
         self.design = "B" if str(design).strip().upper() == "B" else "A"
         self.max_particles = max(0, min(48, int(max_particles)))
-        self.setMinimumSize(700, 390)
+        self.setMinimumSize(180, 104) if self.compact else self.setMinimumSize(700, 390)
         self.setMouseTracking(True)
         self.setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent)
         self.setToolTip(
@@ -171,11 +175,11 @@ class AnimatedAsciiEyeWidget(QWidget):
         dpr = max(1.0, float(self.devicePixelRatioF()))
         physical_width = max(1, round(self.width() * dpr))
         physical_height = max(1, round(self.height() * dpr))
-        columns = max(72, min(
+        columns = max(28 if self.compact else 72, min(
             self.max_columns,
             round(physical_width / self.CELL_WIDTH * self.base_columns / 100.0),
         ))
-        rows = max(42, min(
+        rows = max(16 if self.compact else 42, min(
             self.max_rows,
             round(physical_height / self.CELL_HEIGHT * self.base_rows / 56.0),
         ))
@@ -278,7 +282,8 @@ class AnimatedAsciiEyeWidget(QWidget):
         return now < self._attention_anim_until or blinking
 
     def set_mode(self, mode: str) -> None:
-        self.mode = "hud" if mode == "hud" else "ascii"
+        self.mode = mode if mode in {"ascii", "hud", "pet"} else "ascii"
+        self.setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent, self.mode != "pet")
         self.update()
 
     def mouseMoveEvent(self, event) -> None:
@@ -689,7 +694,7 @@ class AnimatedAsciiEyeWidget(QWidget):
                           round(cy - ry - 3 - rise), "♥", palette["rose"])
 
     def _render_cells(self, chars: list[list[str]], colors: list[list[Color]],
-                      background: Color) -> QImage:
+                      background: Color, *, transparent: bool = False) -> QImage:
         cell_colors = np.asarray(colors, dtype=np.uint8)
         codepoints = np.asarray(chars, dtype="<U1").view(np.uint32)
         glyph_ids = self._glyph_lut[codepoints]
@@ -698,11 +703,14 @@ class AnimatedAsciiEyeWidget(QWidget):
             self.rows * self.CELL_HEIGHT, self.columns * self.CELL_WIDTH)
         expanded = np.repeat(np.repeat(cell_colors, self.CELL_HEIGHT, axis=0),
                              self.CELL_WIDTH, axis=1)
-        output = np.empty((*mask.shape, 3), dtype=np.uint8)
-        output[:] = background
-        output[mask] = expanded[mask]
+        output = np.zeros((*mask.shape, 4), dtype=np.uint8)
+        if not transparent:
+            output[:, :, :3] = background
+            output[:, :, 3] = 255
+        output[mask, :3] = expanded[mask]
+        output[mask, 3] = 255
         return QImage(output.data, output.shape[1], output.shape[0],
-                      output.shape[1] * 3, QImage.Format.Format_RGB888).copy()
+                      output.shape[1] * 4, QImage.Format.Format_RGBA8888).copy()
 
     def render_frame(self, now: float | None = None,
                      local_time: datetime | None = None) -> QImage:
@@ -712,17 +720,20 @@ class AnimatedAsciiEyeWidget(QWidget):
         self.state = self.animator.advance(self.target_state, now)
         palette, daylight, twilight, label = self._cycle(local_time)
         chars, colors = self._new_grid(palette["sky"])
-        self._draw_sky(chars, colors, palette, daylight, twilight, label, local_time, now)
-        self._draw_landscape(chars, colors, palette, daylight, twilight, now)
-        self._draw_eye(chars, colors, palette, now)
-
-        accent = palette["accent"]
-        muted = _mix(palette["sky"], palette["star"], 0.58)
-        self._text(chars, colors, 2, 2, f"> OCULUS  /  {label}", accent,
-                   self.columns // 2)
-        clock_text = local_time.strftime("%H:%M:%S")
-        self._text(chars, colors, self.columns - len(clock_text) - 3, 2,
-                   clock_text, palette["amber"])
+        if self.mode == "pet":
+            self._draw_eye(chars, colors, palette, now)
+        else:
+            self._draw_sky(chars, colors, palette, daylight, twilight, label,
+                           local_time, now)
+            self._draw_landscape(chars, colors, palette, daylight, twilight, now)
+            self._draw_eye(chars, colors, palette, now)
+            accent = palette["accent"]
+            muted = _mix(palette["sky"], palette["star"], 0.58)
+            self._text(chars, colors, 2, 2, f"> OCULUS  /  {label}", accent,
+                       self.columns // 2)
+            clock_text = local_time.strftime("%H:%M:%S")
+            self._text(chars, colors, self.columns - len(clock_text) - 3, 2,
+                       clock_text, palette["amber"])
         if self.mode == "hud":
             state_label = self.state.emotion.upper()[:12]
             self._text(chars, colors, 2, 4, f"> HUMOR {self.state.happiness:.0%}", muted)
@@ -730,10 +741,12 @@ class AnimatedAsciiEyeWidget(QWidget):
             fps_text = f"{self.state.render_fps:02.0f} FPS"
             self._text(chars, colors, self.columns - len(fps_text) - 3, 4,
                        fps_text, muted)
-        legend = "O OLHO E UMA JANELA"
-        self._text(chars, colors, max(2, (self.columns - len(legend)) // 2),
-                   self.rows - 2, legend, muted)
-        self._last_frame = self._render_cells(chars, colors, palette["sky"])
+        if self.mode != "pet":
+            legend = "O OLHO E UMA JANELA"
+            self._text(chars, colors, max(2, (self.columns - len(legend)) // 2),
+                       self.rows - 2, legend, muted)
+        self._last_frame = self._render_cells(
+            chars, colors, palette["sky"], transparent=self.mode == "pet")
         self.rendered_frames += 1
         return self._last_frame
 

@@ -1,5 +1,13 @@
 seed: 41
 renderer: ascii
+pet:
+  mode: floating          # floating (somente o olho) ou window (painel ao iniciar)
+  width: 320
+  height: 180
+  anchor: none             # none, top_left, top_right, bottom_left, bottom_right
+  margin: 24
+  panel_hotkey: "<ctrl>+<alt>+o"
+  start_with_windows: false
 visual:
   width: 800
   height: 450
@@ -93,6 +101,8 @@ runtime:
   autosave_s: 60
   proposal_timeout_s: 120
   watchdog_timeout_s: 3
+  idle_tick_interval_s: 0.25
+  pet_idle_tick_interval_s: 0.4
 privacy:
   sensors:
     input_activity: false
@@ -107,3 +117,5 @@ tools:
   allowed_folders: []
   allowed_apps: []
   allowed_commands: []
+autonomy:
+  enabled: true

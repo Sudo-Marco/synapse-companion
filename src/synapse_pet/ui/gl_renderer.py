@@ -298,7 +298,8 @@ class EyeCanvas(QWidget):
                  scene_time: str = "auto", eye_design: str = "A",
                  ascii_max_columns: int = 170,
                  ascii_max_rows: int = 96,
-                 affection_drag_min_s: float = 1.0) -> None:
+                 affection_drag_min_s: float = 1.0,
+                 compact: bool = False) -> None:
         super().__init__(parent)
         self.renderer_config = renderer.lower()
         self._state = VisualState()
@@ -312,7 +313,7 @@ class EyeCanvas(QWidget):
             self._ascii_eye = AnimatedAsciiEyeWidget(
                 ascii_columns, ascii_rows, scene_time, eye_design, max_particles,
                 max_columns=ascii_max_columns, max_rows=ascii_max_rows,
-                affection_drag_min_s=affection_drag_min_s)
+                affection_drag_min_s=affection_drag_min_s, compact=compact)
             self._cpu = self._ascii_eye
             self._ascii_eye.petRequested.connect(self.petRequested.emit)
             self._ascii_eye.activityDetected.connect(self.activityDetected.emit)
@@ -349,7 +350,7 @@ class EyeCanvas(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self._stack)
-        self.setMinimumSize(700, 390)
+        self.setMinimumSize(180, 104) if compact else self.setMinimumSize(700, 390)
 
     @property
     def mode(self) -> str:
