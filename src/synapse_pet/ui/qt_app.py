@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import math
 import queue
+import random
 import sys
 import threading
 import time
@@ -8,8 +10,9 @@ from collections import deque
 from dataclasses import replace
 from pathlib import Path
 
-from PySide6.QtCore import (QEvent, QEasingCurve, QPoint, QPropertyAnimation,
-                            QSettings, Qt, QTimer, QUrl, Signal)
+from PySide6.QtCore import (QEvent, QEasingCurve, QPoint, QPointF,
+                            QPropertyAnimation, QRect, QSettings, Qt, QTimer,
+                            QUrl, QVariantAnimation, Signal)
 from PySide6.QtGui import (QAction, QBrush, QColor, QCursor, QDesktopServices,
                            QFont, QGuiApplication, QIcon, QPainter, QPainterPath,
                            QPen, QPixmap, QRegion, QSurfaceFormat, QShortcut,
@@ -20,6 +23,7 @@ from PySide6.QtWidgets import (QApplication, QDialog, QFileDialog, QFrame,
                                QSystemTrayIcon, QVBoxLayout, QWidget)
 
 from ..runtime.visual_state import VisualState
+from .teleport import STYLES as TELEPORT_STYLES, TeleportTrail, teleport_geometry
 from .gl_renderer import EyeCanvas
 
 
@@ -244,6 +248,7 @@ class PetWindow(QMainWindow):
         self.visual_config = self.config.get("visual", {})
         self.interaction_config = self.config.get("interaction", {})
         self.pet_config = self.config.get("pet", {})
+        self.teleport_config = self.config.get("teleport", {})
         self._pet_mode_enabled = str(self.pet_config.get("mode", "window")).lower() == "floating"
         self._is_floating = False
         self._pet_width = max(180, int(self.pet_config.get("width", 320)))
@@ -259,6 +264,16 @@ class PetWindow(QMainWindow):
         self._settings = QSettings("SynapsePet", "Oculus")
         self._panel_size = (1000, 790)
         self._pet_animation = None
+        self._teleport_animation: QVariantAnimation | None = None
+        self._teleport_trail: TeleportTrail | None = None
+        self._teleport_start_geometry: QRect | None = None
+        self._teleport_destination_geometry: QRect | None = None
+        self._teleport_style = None
+        self._teleport_history: deque[float] = deque()
+        self._last_teleport_at = 0.0
+        self._teleport_blink_until = 0.0
+        self._teleport_look_target: QPointF | None = None
+        self._teleport_rng = random.Random(int(self.config.get("seed", 41)) ^ 0x54454C45)
         self._global_hotkey = None
         self.setWindowTitle("Synapse Pet — Oculus")
         window_flags = (Qt.WindowType.FramelessWindowHint |
@@ -539,6 +554,7 @@ class PetWindow(QMainWindow):
             return False
 
     def _show_panel(self) -> None:
+        self._finish_teleport()
         if not self._pet_mode_enabled or not self._is_floating:
             self.showNormal()
             self.raise_()
@@ -584,7 +600,7 @@ class PetWindow(QMainWindow):
         self._root_widget.setStyleSheet("background: transparent; border: none;")
         self.setStyleSheet("QMainWindow { background: transparent; border: none; }")
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
-        self.setMinimumSize(180, 104)
+        self.setMinimumSize(80, 52)
         self.resize(self._pet_width, self._pet_height)
         target = self.canvas._stack.currentWidget()
         target.installEventFilter(self)
@@ -652,6 +668,7 @@ class PetWindow(QMainWindow):
                 self._show_pet_context_menu()
                 return True
             if event.button() == Qt.MouseButton.LeftButton:
+                self._finish_teleport()
                 point = event.globalPosition().toPoint()
                 self._pet_drag_offset = point - self.frameGeometry().topLeft()
                 self._pet_drag_origin = point
@@ -717,6 +734,198 @@ class PetWindow(QMainWindow):
         animation.setEasingCurve(QEasingCurve.Type.InOutCubic)
         animation.start()
         self._pet_animation = animation
+
+    def _teleport_enabled(self) -> bool:
+        return bool(self.teleport_config.get("enabled", True))
+
+    def _consider_teleport(self, state: VisualState, health: dict[str, object],
+                            now: float) -> None:
+        if (not self._is_floating or not self._teleport_enabled()
+                or not self.engine.autonomy_enabled or self._teleport_animation is not None
+                or self._pet_drag_offset is not None or self._pet_hovering
+                or health["status"] != "running"
+                or int(health["pending_proposals"]) > 0
+                or int(health["proposal_queue"]) > 0
+                or now - self.last_interaction < float(
+                    self.teleport_config.get("quiet_after_interaction_s", 15.0))):
+            return
+
+        cooldown = max(0.0, float(self.teleport_config.get("cooldown_s", 75.0)))
+        while self._teleport_history and now - self._teleport_history[0] >= 3600.0:
+            self._teleport_history.popleft()
+        if now - self._last_teleport_at < cooldown:
+            return
+        hourly_limit = max(0, int(self.teleport_config.get("max_per_hour", 4)))
+        if hourly_limit == 0 or len(self._teleport_history) >= hourly_limit:
+            return
+
+        rates = dict(state.rates)
+        initiative = max(0.0, float(rates.get("iniciativa", 0.0)))
+        if initiative < float(self.teleport_config.get("initiative_rate_hz", 1.25)):
+            return
+        if state.energy < 0.22 or rates.get("sonolento", 0.0) > 0.8:
+            style_name = "sleepy"
+        elif state.stress >= 0.62 or rates.get("assustado", 0.0) > 0.8:
+            style_name = "stress"
+        elif rates.get("atencao", 0.0) > 1.2:
+            style_name = "communicate"
+        elif state.happiness >= 0.72 or rates.get("feliz", 0.0) > 0.8:
+            style_name = "happy"
+        elif state.curiosity >= 0.68 or rates.get("curioso", 0.0) > 0.8:
+            style_name = "curious"
+        else:
+            return
+
+        destination = self._teleport_destination(style_name)
+        if destination is None:
+            return
+        self._begin_teleport(style_name, destination, now)
+
+    def _teleport_destination(self, style_name: str) -> QPoint | None:
+        screens = list(QGuiApplication.screens())
+        if not screens:
+            return None
+        targets = [str(value).lower() for value in self.teleport_config.get(
+            "targets", ("corners", "near_cursor", "active_window", "center"))]
+        style_targets = {
+            "curious": ("near_cursor", "active_window", "corners", "center"),
+            "happy": ("corners", "center"),
+            "stress": ("corners", "center"),
+            "sleepy": ("center", "corners"),
+            "communicate": ("near_cursor", "active_window", "center"),
+        }.get(style_name, ("center",))
+        available = [name for name in style_targets if name in targets]
+        if not available:
+            available = ["center"]
+        target = self._teleport_rng.choice(available)
+        current = self.frameGeometry().center()
+        current_screen = QGuiApplication.screenAt(current) or QGuiApplication.primaryScreen()
+        screen = current_screen or screens[0]
+        area = screen.availableGeometry()
+        width, height = self.width(), self.height()
+
+        if target == "corners":
+            screen = self._teleport_rng.choice(screens)
+            area = screen.availableGeometry()
+            margin = max(24, int(self.pet_config.get("margin", 24)))
+            x = self._teleport_rng.choice((area.left() + margin + width // 2,
+                                           area.right() - margin - width // 2))
+            y = self._teleport_rng.choice((area.top() + margin + height // 2,
+                                           area.bottom() - margin - height // 2))
+        elif target == "center":
+            x, y = area.center().x(), area.center().y()
+        elif target == "near_cursor":
+            point = QCursor.pos()
+            screen = QGuiApplication.screenAt(point) or screen
+            area = screen.availableGeometry()
+            angle = self._teleport_rng.uniform(-math.pi, math.pi)
+            distance = self._teleport_rng.uniform(110, 190)
+            x = point.x() + round(math.cos(angle) * distance)
+            y = point.y() + round(math.sin(angle) * distance)
+        else:
+            rect = self._active_window_rect()
+            if rect is None:
+                return self._teleport_destination("center") if target != "center" else None
+            screen = QGuiApplication.screenAt(rect.center()) or screen
+            area = screen.availableGeometry()
+            x, y = rect.right() + width // 2 + 22, rect.bottom() + height // 2 + 22
+
+        area = screen.availableGeometry()
+        x = max(area.left() + width // 2,
+                min(int(x), area.right() - width // 2))
+        y = max(area.top() + height // 2,
+                min(int(y), area.bottom() - height // 2))
+        if math.hypot(x - current.x(), y - current.y()) < 110:
+            x = max(area.left() + width // 2,
+                    min(x + 150, area.right() - width // 2))
+        return QPoint(x, y)
+
+    def _active_window_rect(self) -> QRect | None:
+        if sys.platform != "win32":
+            return None
+        try:
+            import ctypes
+            from ctypes import wintypes
+            class RECT(ctypes.Structure):
+                _fields_ = [("left", wintypes.LONG), ("top", wintypes.LONG),
+                            ("right", wintypes.LONG), ("bottom", wintypes.LONG)]
+            user32 = ctypes.windll.user32
+            hwnd = user32.GetForegroundWindow()
+            if (not hwnd or int(hwnd) == int(self.winId())
+                    or not user32.IsWindowVisible(hwnd)):
+                return None
+            rect = RECT()
+            if not user32.GetWindowRect(hwnd, ctypes.byref(rect)):
+                return None
+            if rect.right <= rect.left or rect.bottom <= rect.top:
+                return None
+            return QRect(rect.left, rect.top, rect.right - rect.left,
+                         rect.bottom - rect.top)
+        except Exception:
+            return None
+
+    def _begin_teleport(self, style_name: str, destination_center: QPoint,
+                        now: float | None = None) -> None:
+        if not self._is_floating or self._teleport_animation is not None:
+            return
+        if self._pet_animation is not None:
+            self._pet_animation.stop()
+            self._pet_animation = None
+        start = QRect(self.geometry())
+        end = QRect(destination_center.x() - (start.width() - 1) // 2,
+                    destination_center.y() - (start.height() - 1) // 2,
+                    start.width(), start.height())
+        style = TELEPORT_STYLES[style_name]
+        self._teleport_start_geometry = start
+        self._teleport_destination_geometry = end
+        self._teleport_style = style
+        self.setMinimumSize(80, 52)
+        self._teleport_trail = TeleportTrail(
+            QPointF(start.center()), QPointF(end.center()), style, style.duration_ms)
+        self._teleport_trail.show()
+        animation = QVariantAnimation(self)
+        animation.setStartValue(0.0)
+        animation.setEndValue(1.0)
+        animation.setDuration(style.duration_ms)
+        animation.setEasingCurve(QEasingCurve.Type.InOutCubic)
+        animation.valueChanged.connect(self._teleport_frame)
+        animation.finished.connect(self._finish_teleport)
+        self._teleport_animation = animation
+        self._last_teleport_at = time.monotonic() if now is None else now
+        self._teleport_history.append(self._last_teleport_at)
+        animation.start()
+
+    def _teleport_frame(self, value) -> None:
+        if self._teleport_start_geometry is None or self._teleport_destination_geometry is None:
+            return
+        geometry, opacity = teleport_geometry(
+            self._teleport_start_geometry, self._teleport_destination_geometry,
+            float(value), self._teleport_style)
+        self.setGeometry(geometry)
+        self.setWindowOpacity(opacity)
+        if self._teleport_trail is not None:
+            self._teleport_trail.set_progress(float(value))
+
+    def _finish_teleport(self) -> None:
+        animation = self._teleport_animation
+        self._teleport_animation = None
+        if animation is not None:
+            animation.stop()
+            animation.deleteLater()
+        if self._teleport_destination_geometry is not None and self._is_floating:
+            self.setGeometry(self._teleport_destination_geometry)
+            self._teleport_blink_until = time.monotonic() + 0.32
+            widget = self.canvas._stack.currentWidget()
+            if hasattr(widget, "gaze_target"):
+                widget.gaze_target = (0.15, -0.12)
+        self.setWindowOpacity(1.0)
+        if self._teleport_trail is not None:
+            self._teleport_trail.close()
+            self._teleport_trail.deleteLater()
+        self._teleport_trail = None
+        self._teleport_start_geometry = None
+        self._teleport_destination_geometry = None
+        self._teleport_style = None
 
     def _quit_from_tray(self) -> None:
         self._requested_exit = True
@@ -933,11 +1142,13 @@ class PetWindow(QMainWindow):
         render_state = replace(
             self.last_state,
             render_fps=float(self._fps),
-            expression_override=("dormindo" if sleeping
-                                 else self.last_state.expression_override),
+            expression_override=("dormindo" if sleeping else
+                                 "piscar" if now < self._teleport_blink_until else
+                                 self.last_state.expression_override),
         )
         self.canvas.set_state(render_state)
         health = self.engine.health_snapshot()
+        self._consider_teleport(render_state, health, now)
         stopped = health["status"] in {"stalled", "stopped"}
         paused = health["status"] == "paused"
         if paused:

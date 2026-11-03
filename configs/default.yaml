@@ -8,6 +8,13 @@ pet:
   margin: 24
   panel_hotkey: "<ctrl>+<alt>+o"
   start_with_windows: false
+teleport:
+  enabled: true
+  initiative_rate_hz: 1.25
+  cooldown_s: 75
+  max_per_hour: 4
+  quiet_after_interaction_s: 15
+  targets: [corners, near_cursor, active_window, center]
 visual:
   width: 800
   height: 450

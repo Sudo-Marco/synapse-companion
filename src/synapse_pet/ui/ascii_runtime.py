@@ -104,7 +104,7 @@ class AnimatedAsciiEyeWidget(QWidget):
         self.scene_time = str(scene_time).strip().lower()
         self.design = "B" if str(design).strip().upper() == "B" else "A"
         self.max_particles = max(0, min(48, int(max_particles)))
-        self.setMinimumSize(180, 104) if self.compact else self.setMinimumSize(700, 390)
+        self.setMinimumSize(80, 52) if self.compact else self.setMinimumSize(700, 390)
         self.setMouseTracking(True)
         self.setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent)
         self.setToolTip(

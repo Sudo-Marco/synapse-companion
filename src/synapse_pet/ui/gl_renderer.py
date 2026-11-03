@@ -350,7 +350,7 @@ class EyeCanvas(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self._stack)
-        self.setMinimumSize(180, 104) if compact else self.setMinimumSize(700, 390)
+        self.setMinimumSize(80, 52) if compact else self.setMinimumSize(700, 390)
 
     @property
     def mode(self) -> str:
