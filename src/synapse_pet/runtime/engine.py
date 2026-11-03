@@ -54,6 +54,8 @@ class PetEngine:
         self.config = load_config()
         network_config = self.config.get("network", {})
         self.runtime_config = self.config.get("runtime", {})
+        self.sleep_config = self.config.get("sleep", {})
+        self.habit_config = self.config.get("habits", {})
         self.pet_mode = str(self.config.get("pet", {}).get("mode", "window")).lower() == "floating"
         idle_interval_key = "pet_idle_tick_interval_s" if self.pet_mode else "idle_tick_interval_s"
         self._idle_tick_interval_s = max(0.05, float(
@@ -136,7 +138,12 @@ class PetEngine:
                 self.learning_config.get("neural_score_scale_hz", 15.0)))
         self._restore_mind(saved_state)
         self.sleep = SleepConsolidator(
-            sleep_after_s=float(self.runtime_config.get("sleep_after_s", 1800)))
+            sleep_after_s=float(self.runtime_config.get("sleep_after_s", 1800)),
+            replay_enabled=bool(self.sleep_config.get("replay_enabled", False)),
+            max_replay_episodes=max(0, int(self.sleep_config.get(
+                "max_replay_episodes", 12))),
+            replay_noise=max(0.0, float(self.sleep_config.get("replay_noise", 0.005))),
+            replay_steps=max(1, int(self.sleep_config.get("replay_steps", 2))))
         self.homeostasis = Homeostasis()
         self.scheduler = RuntimeScheduler(
             active_timeout_s=float(self.runtime_config.get("active_timeout_s", 20)))
@@ -547,6 +554,31 @@ class PetEngine:
                 self.learners[name].apply_reward(projection, self.learning_rpe)
 
         self.memory.add(context, action, target_reward, str(asdict(self.emotions)))
+        if bool(self.habit_config.get("enabled", True)):
+            safe_contexts = {"codigo", "navegador", "chat", "jogo", "outro",
+                             "manual", "mouse", "sistema", "postit"}
+            if context.startswith("postit"):
+                habit_context = "postit"
+            else:
+                habit_context = context if context in safe_contexts else "outro"
+            tool_names = {tool.name for tool in self.registry.all()}
+            safe_actions = tool_names | set(self.reward_channels) | {"carinho"}
+            fallback_action = (source if source in self.reward_channels else
+                               ("feedback_positive" if value >= 0.0
+                                else "feedback_negative"))
+            habit_action = action if action in safe_actions else fallback_action
+            learned = self.memory.observe_habit(
+                habit_context, habit_action, self.learning_rpe,
+                minimum_observations=max(2, int(self.habit_config.get(
+                    "minimum_observations", 4))),
+                minimum_mean_rpe=max(0.0, float(self.habit_config.get(
+                    "minimum_mean_rpe", 0.015))))
+            if learned:
+                self.action_results.put({
+                    "operation": "habit_learned",
+                    "context": habit_context,
+                    "action": habit_action,
+                })
         self.personality.update(target_reward)
         if action in {tool.name for tool in self.registry.all()} and target_reward != 0.0:
             self.selector.feedback(context, action, target_reward)

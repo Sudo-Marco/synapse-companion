@@ -132,6 +132,7 @@ autonomy:
     conversa: 1200
     pausa: 1800
     curiosidade: 1200
+    habit_learned: 3600
   state_behaviors:
     estressado: alerta
     atencao: conversa
@@ -152,6 +153,7 @@ autonomy:
     birra: true
     pausa: true
     conversa: true
+    habit_notice: true
   postits:
     enabled: true
     max_active: 4
@@ -166,3 +168,13 @@ autonomy:
       conversa: "Estou aqui. Quer me contar no que está trabalhando?"
       pausa: "Faz um tempinho de atividade. Uma pausa curta pode ajudar."
       curiosidade: "Notei algo novo por aqui. Quer explorar comigo?"
+      habit: "Reconheci um padrão novo no meu aprendizado. Você pode vê-lo na aba Aprendizado."
+sleep:
+  replay_enabled: false
+  max_replay_episodes: 12
+  replay_noise: 0.005
+  replay_steps: 2
+habits:
+  enabled: true
+  minimum_observations: 4
+  minimum_mean_rpe: 0.015

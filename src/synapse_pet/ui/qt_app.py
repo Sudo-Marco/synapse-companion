@@ -20,7 +20,8 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QCursor, QDesktopServices,
 from PySide6.QtWidgets import (QApplication, QDialog, QFileDialog, QFrame,
                                QHBoxLayout, QLabel, QMainWindow, QMenu,
                                QMessageBox, QProgressBar, QPushButton,
-                               QSystemTrayIcon, QVBoxLayout, QWidget)
+                               QSystemTrayIcon, QVBoxLayout, QWidget,
+                               QHeaderView, QTableWidget, QTableWidgetItem)
 
 from ..runtime.visual_state import VisualState
 from ..runtime.autonomy import AutonomyController, PostItStore, StoredPostIt
@@ -238,6 +239,49 @@ class DebugPanel(QDialog):
         self.rate_plot.update()
 
 
+class LearningPanel(QDialog):
+    """On-demand, privacy-safe view of aggregate habits."""
+
+    def __init__(self, parent: QWidget, memory) -> None:
+        super().__init__(parent, Qt.WindowType.Tool | Qt.WindowType.WindowStaysOnTopHint)
+        self.memory = memory
+        self.setWindowTitle("Synapse Pet — Aprendizado")
+        self.resize(640, 360)
+        self.setStyleSheet(f"QDialog {{ background: {BG}; color: {TEXT}; }}")
+        layout = QVBoxLayout(self)
+        intro = QLabel("PADRÕES AGREGADOS · categorias e contagens, sem texto digitado ou títulos")
+        intro.setStyleSheet(f"color: {CYAN}; font: bold 9pt Consolas;")
+        layout.addWidget(intro)
+        self.table = QTableWidget(0, 5)
+        self.table.setHorizontalHeaderLabels(
+            ["Contexto", "Ação", "Observações", "RPE médio", "Atualizado"])
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        layout.addWidget(self.table)
+        self.timer = QTimer(self)
+        self.timer.setInterval(2000)
+        self.timer.timeout.connect(self.refresh)
+
+    def refresh(self) -> None:
+        rows = self.memory.habits(100)
+        self.table.setRowCount(len(rows))
+        for row_index, row in enumerate(rows):
+            context, action, count, mean_rpe, last_rpe, updated = row
+            values = (str(context), str(action), str(count),
+                      f"{float(mean_rpe):+.3f} ({float(last_rpe):+.3f})", str(updated))
+            for column, value in enumerate(values):
+                self.table.setItem(row_index, column, QTableWidgetItem(value))
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        self.refresh()
+        self.timer.start()
+
+    def hideEvent(self, event) -> None:
+        self.timer.stop()
+        super().hideEvent(event)
+
+
 class PetWindow(QMainWindow):
     MODES = (("ascii", "ASCII"), ("hud", "HUD"))
     panelHotkeyPressed = Signal()
@@ -306,6 +350,7 @@ class PetWindow(QMainWindow):
         self._shutdown_thread: threading.Thread | None = None
         self._saved_opacity = 1.0
         self._debug_panel: DebugPanel | None = None
+        self._learning_panel: LearningPanel | None = None
 
         root = QWidget()
         root.setObjectName("Root")
@@ -410,6 +455,10 @@ class PetWindow(QMainWindow):
         self.mode_button.setToolTip(
             "Alterna a arte ASCII animada e o painel HUD. Atalho: M.")
         self.mode_button.clicked.connect(self._cycle_mode)
+        self.learning_button = QPushButton("APRENDIZADO")
+        self.learning_button.setToolTip(
+            "Mostra padrões agregados que a SNN reforçou; não registra texto digitado.")
+        self.learning_button.clicked.connect(self._open_learning)
         self.undo_button = QPushButton("DESFAZER")
         self.undo_button.clicked.connect(self.engine.submit_undo)
         self.save_button = QPushButton("SALVAR")
@@ -419,6 +468,7 @@ class PetWindow(QMainWindow):
         layout.addLayout(feedback_row)
         toolbar = QHBoxLayout()
         for button in (self.debug_button, self.sensor_button, self.mode_button,
+                       self.learning_button,
                        self.undo_button, self.save_button):
             toolbar.addWidget(button, 1)
         layout.addLayout(toolbar)
@@ -435,6 +485,7 @@ class PetWindow(QMainWindow):
             self.happiness_card, self.energy_card, self.stress_card,
             self.proposal, self.love_button, self.feedback_button,
             self.debug_button, self.sensor_button, self.mode_button,
+            self.learning_button,
             self.undo_button, self.save_button, self.status_label,
         ]
         self._root_widget = root
@@ -1010,6 +1061,33 @@ class PetWindow(QMainWindow):
     def _postit_interacted(self, _note_id: int) -> None:
         self.engine.submit_feedback(0.15, context="postit_interaction")
 
+    def _show_habit_postit(self) -> None:
+        if (not self.engine.autonomy_enabled
+                or not bool(self.autonomy_config.get("behaviors", {}).get(
+                    "habit_notice", True))
+                or not bool(self.autonomy_config.get("postits", {}).get("enabled", True))
+                or self._is_fullscreen_foreground()
+                or len(self._postit_windows) >= self._max_postits()):
+            return
+        cooldown = float(self.autonomy_config.get("cooldowns_s", {}).get(
+            "habit_learned", 3600.0))
+        if not self.autonomy.reserve_action("habit_learned", time.monotonic(), cooldown):
+            return
+        text = self._postit_text("habit")
+        screens = list(QGuiApplication.screens())
+        if not text or not screens:
+            return
+        center = self.frameGeometry().center()
+        screen = QGuiApplication.screenAt(center) or screens[0]
+        area = screen.availableGeometry()
+        x = max(area.left(), min(center.x() + 110, area.right() - 285))
+        y = max(area.top(), min(center.y() - 100, area.bottom() - 131))
+        postit_cfg = self.autonomy_config.get("postits", {})
+        note = self._postit_store.add(
+            "habit", "curioso", x, y, float(postit_cfg.get("expires_s", 600.0)))
+        origin = center - QPoint(143, 66)
+        self._spawn_postit(note, animate=True, origin=origin)
+
     def _postit_closed(self, note_id: int, reason: str, position: QPoint,
                        created_at: float, quick_dismiss_s: float) -> None:
         if reason == "moved":
@@ -1119,6 +1197,14 @@ class PetWindow(QMainWindow):
         self._debug_panel.show()
         self._debug_panel.raise_()
 
+    def _open_learning(self) -> None:
+        if self._learning_panel is None:
+            self._learning_panel = LearningPanel(self, self.engine.memory)
+        self._learning_panel.show()
+        self._learning_panel.raise_()
+        self._learning_panel.activateWindow()
+        self.last_interaction = time.monotonic()
+
     def _cycle_mode(self) -> None:
         current = next((i for i, (mode, _) in enumerate(self.MODES)
                         if mode == self.render_mode), 0)
@@ -1215,6 +1301,9 @@ class PetWindow(QMainWindow):
             if operation == "save":
                 self._notice = ("SALVO" if status == "saved"
                                 else f"ERRO AO SALVAR: {result.get('error', '')}")
+            elif operation == "habit_learned":
+                self._notice = "PADRÃO DE APRENDIZADO OBSERVADO"
+                QTimer.singleShot(0, self._show_habit_postit)
             elif operation == "proposal" and status in {"timeout", "expired"}:
                 if getattr(self, "_proposal_name", None) == result.get("tool"):
                     self._proposal_name = None

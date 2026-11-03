@@ -26,6 +26,17 @@ class AutonomyController:
         self.history: deque[float] = deque()
         self.last_by_template: dict[str, float] = {}
 
+    def reserve_action(self, key: str, now: float, cooldown_s: float) -> bool:
+        while self.history and now - self.history[0] >= 3600.0:
+            self.history.popleft()
+        if len(self.history) >= max(0, int(self.config.get("max_actions_per_hour", 6))):
+            return False
+        if now - self.last_by_template.get(key, float("-inf")) < max(0.0, cooldown_s):
+            return False
+        self.history.append(now)
+        self.last_by_template[key] = now
+        return True
+
     def choose_postit(self, state, rates: dict[str, float], now: float,
                       *, enabled: bool, quiet: bool, proposal_pending: bool) -> str | None:
         cfg = self.config
@@ -52,11 +63,8 @@ class AutonomyController:
             if not active or state_map.get(emotion) != template:
                 continue
             cooldown = max(0.0, float(cooldowns.get(template, 900.0)))
-            if now - self.last_by_template.get(template, float("-inf")) < cooldown:
-                continue
-            self.history.append(now)
-            self.last_by_template[template] = now
-            return template
+            if self.reserve_action(template, now, cooldown):
+                return template
         return None
 
 
