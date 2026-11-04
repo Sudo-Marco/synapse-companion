@@ -217,6 +217,237 @@ class SpikingNetwork:
             raise ValueError("sensory spike vector length mismatch")
         self.population.spikes[:self.n_sensor] = spikes
 
+    def grow_population(self, target_neurons: int, seed: int = 41) -> "SpikingNetwork":
+        """Safely expand the network population to target_neurons, preserving state, weights, and context readouts."""
+        tool_names = [key[5:] for key in self.output_groups if key.startswith("tool:")]
+        tool_count = len(tool_names)
+        tool_neurons = tool_count * self.tool_group_size
+        old_base_total = self.population.size - tool_neurons
+
+        if target_neurons < 50:
+            raise ValueError("network requires at least 50 neurons")
+        if target_neurons < old_base_total:
+            raise ValueError(f"cannot shrink network from {old_base_total} to {target_neurons} neurons")
+        if target_neurons == old_base_total:
+            return self
+
+        migration_rng = np.random.default_rng(seed)
+
+        old_n_sensor = self.n_sensor
+        old_n_hidden = self.n_hidden
+        old_base_n_output = self.n_output - tool_neurons
+
+        new_base_total = target_neurons
+        new_n_sensor = int(new_base_total * 0.16)
+        new_n_hidden = int(new_base_total * 0.64)
+        new_base_n_output = new_base_total - new_n_sensor - new_n_hidden
+        new_output_start = new_n_sensor + new_n_hidden
+        new_n_output = new_base_n_output + tool_neurons
+        new_total_pop = new_base_total + tool_neurons
+
+        # 1. Expand LIF population while preserving states of existing neurons
+        new_pop = LIFPopulation(
+            new_total_pop,
+            tau_m_ms=self.population.tau_m_ms,
+            threshold=self.population.threshold,
+            reset=self.population.reset,
+            refractory_ms=self.population.refractory_ms,
+            adaptive_increment=self.population.adaptive_increment,
+            adaptive_tau_ms=self.population.adaptive_tau_ms,
+        )
+        for attr in ("voltage", "threshold_offset", "refractory", "spikes"):
+            old_val = getattr(self.population, attr)
+            new_val = getattr(new_pop, attr)
+            # Sensors (indices 0..old_n_sensor)
+            new_val[0:old_n_sensor] = old_val[0:old_n_sensor]
+            # Hidden (shifted by new_n_sensor)
+            new_val[new_n_sensor:new_n_sensor + old_n_hidden] = old_val[old_n_sensor:old_n_sensor + old_n_hidden]
+            # Base output (shifted by new_output_start)
+            new_val[new_output_start:new_output_start + old_base_n_output] = old_val[self.output_start:self.output_start + old_base_n_output]
+            # Dynamic tools
+            if tool_neurons > 0:
+                new_val[new_base_total:new_base_total + tool_neurons] = old_val[old_base_total:old_base_total + tool_neurons]
+
+        # 2. Hidden Dale signs: preserve old, deterministically sample new
+        new_hidden_signs = np.where(migration_rng.random(new_n_hidden - old_n_hidden) < 0.8, 1.0, -1.0).astype(np.float32)
+        new_full_hidden_sign = np.concatenate([self.hidden_sign, new_hidden_signs])
+
+        # 3. sensor_to_hidden projection
+        post1_loc, pre1_loc = np.nonzero(migration_rng.random((old_n_hidden, new_n_sensor - old_n_sensor)) < self.connectivity)
+        post1 = post1_loc.astype(np.int32)
+        pre1 = (pre1_loc + old_n_sensor).astype(np.int32)
+
+        post2_loc, pre2_loc = np.nonzero(migration_rng.random((new_n_hidden - old_n_hidden, new_n_sensor)) < self.connectivity)
+        post2 = (post2_loc + old_n_hidden).astype(np.int32)
+        pre2 = pre2_loc.astype(np.int32)
+
+        new_s2h_pre = np.concatenate([pre1, pre2])
+        new_s2h_post = np.concatenate([post1, post2])
+        new_s2h_w = migration_rng.uniform(0.02, 0.12, len(new_s2h_pre)).astype(np.float32)
+
+        all_s2h_pre = np.concatenate([self.sensor_to_hidden.pre, new_s2h_pre])
+        all_s2h_post = np.concatenate([self.sensor_to_hidden.post, new_s2h_post])
+        all_s2h_w = np.concatenate([self.sensor_to_hidden.weights, new_s2h_w])
+        new_s2h = SparseProjection(new_n_sensor, new_n_hidden, all_s2h_pre, all_s2h_post, all_s2h_w,
+                                   np.ones(new_n_sensor, dtype=np.float32), name="sensor_hidden")
+
+        # 4. recurrent projection
+        post1_loc, pre1_loc = np.nonzero(migration_rng.random((old_n_hidden, new_n_hidden - old_n_hidden)) < self.connectivity)
+        post1 = post1_loc.astype(np.int32)
+        pre1 = (pre1_loc + old_n_hidden).astype(np.int32)
+
+        post2_loc, pre2_loc = np.nonzero(migration_rng.random((new_n_hidden - old_n_hidden, new_n_hidden)) < self.connectivity)
+        post2 = (post2_loc + old_n_hidden).astype(np.int32)
+        pre2 = pre2_loc.astype(np.int32)
+
+        new_rec_pre = np.concatenate([pre1, pre2])
+        new_rec_post = np.concatenate([post1, post2])
+        new_rec_w = migration_rng.uniform(0.02, 0.08, len(new_rec_pre)).astype(np.float32) * new_full_hidden_sign[new_rec_pre]
+
+        all_rec_pre = np.concatenate([self.recurrent.pre, new_rec_pre])
+        all_rec_post = np.concatenate([self.recurrent.post, new_rec_post])
+        all_rec_w = np.concatenate([self.recurrent.weights, new_rec_w])
+        new_rec = SparseProjection(new_n_hidden, new_n_hidden, all_rec_pre, all_rec_post, all_rec_w,
+                                   new_full_hidden_sign, name="recurrent")
+
+        # 5. hidden_to_output projection and context projections
+        h2o_post_shifted = np.where(self.hidden_to_output.post >= old_base_n_output,
+                                    self.hidden_to_output.post + (new_base_n_output - old_base_n_output),
+                                    self.hidden_to_output.post).astype(np.int32)
+        h2o_pre = self.hidden_to_output.pre.copy()
+
+        postA_loc, preA_loc = np.nonzero(migration_rng.random((new_base_n_output - old_base_n_output, old_n_hidden)) < self.connectivity)
+        postA = (postA_loc + old_base_n_output).astype(np.int32)
+        preA = preA_loc.astype(np.int32)
+
+        postB_loc, preB_loc = np.nonzero(migration_rng.random((new_n_output, new_n_hidden - old_n_hidden)) < self.connectivity)
+        postB = postB_loc.astype(np.int32)
+        preB = (preB_loc + old_n_hidden).astype(np.int32)
+
+        new_h2o_pre = np.concatenate([preA, preB])
+        new_h2o_post = np.concatenate([postA, postB])
+        new_h2o_w = migration_rng.uniform(0.02, 0.12, len(new_h2o_pre)).astype(np.float32) * new_full_hidden_sign[new_h2o_pre]
+
+        all_h2o_pre = np.concatenate([h2o_pre, new_h2o_pre])
+        all_h2o_post = np.concatenate([h2o_post_shifted, new_h2o_post])
+        all_h2o_base_w = np.concatenate([self._base_hidden_output_weights, new_h2o_w])
+
+        try:
+            from scipy.sparse import csr_matrix
+            use_csr = True
+        except ImportError:
+            use_csr = False
+
+        if use_csr:
+            m_base = csr_matrix((all_h2o_base_w, (all_h2o_post, all_h2o_pre)), shape=(new_n_output, new_n_hidden), dtype=np.float32)
+            m_base.sum_duplicates()
+            m_base.sort_indices()
+            new_h2o = SparseProjection(
+                new_n_hidden, new_n_output,
+                m_base.indices.astype(np.int32, copy=False),
+                np.repeat(np.arange(new_n_output, dtype=np.int32), np.diff(m_base.indptr)).astype(np.int32, copy=False),
+                m_base.data, new_full_hidden_sign, name="hidden_output"
+            )
+            self._base_hidden_output_weights = m_base.data.copy()
+
+            for ctx_id, ctx_state in self._context_output_weights.items():
+                all_ctx_w = np.concatenate([ctx_state.weights, new_h2o_w])
+                m_ctx = csr_matrix((all_ctx_w, (all_h2o_post, all_h2o_pre)), shape=(new_n_output, new_n_hidden), dtype=np.float32)
+                m_ctx.sum_duplicates()
+                m_ctx.sort_indices()
+                ctx_state.weights = m_ctx.data.astype(np.float32, copy=False)
+        else:
+            new_h2o = SparseProjection(new_n_hidden, new_n_output, all_h2o_pre, all_h2o_post, all_h2o_base_w,
+                                       new_full_hidden_sign, name="hidden_output")
+            self._base_hidden_output_weights = all_h2o_base_w.copy()
+            for ctx_id, ctx_state in self._context_output_weights.items():
+                ctx_state.weights = np.concatenate([ctx_state.weights, new_h2o_w]).astype(np.float32, copy=False)
+
+        # 6. Apply state and rewire references
+        self.population = new_pop
+        self.n_sensor = new_n_sensor
+        self.n_hidden = new_n_hidden
+        self.hidden_start = new_n_sensor
+        self.output_start = new_output_start
+        self.n_output = new_n_output
+        self.hidden_sign = new_full_hidden_sign
+        self.sensor_to_hidden = new_s2h
+        self.recurrent = new_rec
+        self.hidden_to_output = new_h2o
+
+        if self._active_output_context in self._context_output_weights:
+            self.hidden_to_output.bind_weights(self._context_output_weights[self._active_output_context].weights)
+        else:
+            self._active_output_context = None
+            self.hidden_to_output.bind_weights(self._base_hidden_output_weights)
+
+        # 7. Update output groups
+        for i, name in enumerate(("feliz", "sonolento", "curioso", "assustado", "atencao", "brincando")):
+            self.output_groups[name] = np.array([self.output_start + i % max(1, self.n_output)], dtype=np.int32)
+        self.initiative_index = self.output_start + min(6, self.n_output - 1)
+        self.output_groups["iniciativa"] = np.array([self.initiative_index], dtype=np.int32)
+        for j, tool_name in enumerate(tool_names):
+            key = f"tool:{tool_name}"
+            ids = np.arange(new_base_total + j * self.tool_group_size,
+                            new_base_total + (j + 1) * self.tool_group_size, dtype=np.int32)
+            self.output_groups[key] = ids
+
+        return self
+
     def dale_is_respected(self) -> bool:
         return bool(np.all(self.recurrent.weights * self.hidden_sign[self.recurrent.pre] >= -1e-7)
                     and np.all(self.hidden_to_output.weights * self.hidden_sign[self.hidden_to_output.pre] >= -1e-7))
+
+
+def grow_population(network: SpikingNetwork, target_neurons: int, seed: int = 41) -> SpikingNetwork:
+    """Safely grow a SpikingNetwork population."""
+    return network.grow_population(target_neurons, seed=seed)
+
+
+def _merge_projection(
+    old_proj: SparseProjection,
+    n_pre_new: int,
+    n_post_new: int,
+    connectivity: float,
+    rng: np.random.Generator,
+    scale: float,
+    source_sign_new: NDArray[np.float32] | None = None,
+    post_shift: int = 0,
+    post_split: int = 0,
+    name: str = "projection",
+) -> SparseProjection:
+    """Helper to merge and expand a sparse projection."""
+    signs = np.ones(n_pre_new, dtype=np.float32) if source_sign_new is None else source_sign_new.astype(np.float32)
+    post_shifted = old_proj.post.copy()
+    if post_shift > 0 and post_split > 0:
+        post_shifted = np.where(post_shifted >= post_split, post_shifted + post_shift, post_shifted).astype(np.int32)
+
+    old_n_pre = old_proj.n_pre
+    old_n_post = old_proj.n_post
+
+    if post_shift > 0 and post_split > 0:
+        postA_loc, preA_loc = np.nonzero(rng.random((n_post_new - old_n_post, old_n_pre)) < connectivity)
+        postA = (postA_loc + post_split).astype(np.int32)
+        preA = preA_loc.astype(np.int32)
+
+        postB_loc, preB_loc = np.nonzero(rng.random((n_post_new, n_pre_new - old_n_pre)) < connectivity)
+        postB = postB_loc.astype(np.int32)
+        preB = (preB_loc + old_n_pre).astype(np.int32)
+        new_pre = np.concatenate([preA, preB])
+        new_post = np.concatenate([postA, postB])
+    else:
+        post1_loc, pre1_loc = np.nonzero(rng.random((old_n_post, n_pre_new - old_n_pre)) < connectivity)
+        post1 = post1_loc.astype(np.int32)
+        pre1 = (pre1_loc + old_n_pre).astype(np.int32)
+
+        post2_loc, pre2_loc = np.nonzero(rng.random((n_post_new - old_n_post, n_pre_new)) < connectivity)
+        post2 = (post2_loc + old_n_post).astype(np.int32)
+        pre2 = pre2_loc.astype(np.int32)
+        new_pre = np.concatenate([pre1, pre2])
+        new_post = np.concatenate([post1, post2])
+
+    new_w = rng.uniform(0.02, scale, len(new_pre)).astype(np.float32) * signs[new_pre]
+    all_pre = np.concatenate([old_proj.pre, new_pre])
+    all_post = np.concatenate([post_shifted, new_post])
+    all_w = np.concatenate([old_proj.weights, new_w])
+    return SparseProjection(n_pre_new, n_post_new, all_pre, all_post, all_w, signs, name=name)

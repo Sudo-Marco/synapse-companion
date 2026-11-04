@@ -105,6 +105,7 @@ Edit [`configs/default.yaml`](configs/default.yaml) and restart the application.
 | `teleport.enabled`, `teleport.cooldown_s`, `teleport.max_per_hour`, `teleport.targets` | Control autonomous teleport triggers, rate limits, and allowed destinations. |
 | `autonomy.enabled`, `autonomy.max_actions_per_hour`, `autonomy.postits.*` | Silence autonomy or set post-it budgets, expiry, thresholds, and templates. Templates are local configuration text. |
 | `sleep.replay_enabled` | Enables bounded replay of high-reward episodes during sleep. Default: `false`. |
+| `network.allow_neuron_growth_migration` | Authorizes explicit snapshot migration when configured neuron count exceeds saved snapshot (e.g. 600→800). Creates a verified backup before migrating, preserves all existing weights, neuronal states, context projections, and dynamic tool groups. Never shrinks a larger saved network. Default: `false`. |
 | `habits.enabled`, `habits.minimum_observations`, `habits.minimum_mean_rpe` | Enable aggregate habit counts. The habit table stores only a fixed category, action key, counts, reward averages, and timestamp. |
 | `privacy.sensors.*` | Configure the opt-in sensors; all default to `false`. |
 

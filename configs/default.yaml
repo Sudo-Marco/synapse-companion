@@ -41,6 +41,7 @@ network:
   tick_idle_ms: 250
   background_noise: 0.015
   synaptic_gain: 1.7
+  allow_neuron_growth_migration: false
 plasticity:
   learning_rate: 0.0005
   eligibility_tau_s: 3.0

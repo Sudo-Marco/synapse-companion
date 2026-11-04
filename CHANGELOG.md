@@ -2,6 +2,16 @@
 
 Notable changes are recorded here. This project follows a simple Keep a Changelog structure and Semantic Versioning from the first tagged release.
 
+## [Unreleased]
+
+### Added
+
+- Safe SNN snapshot migration (600→800 neurons) gated by explicit YAML configuration flag `network.allow_neuron_growth_migration` (default `false`).
+- Verifiable pre-migration backup creation with SHA-256 checksum validation and atomic file replacement/rollback safety.
+- Full semantic preservation of synaptic weights, LIF neuronal states, context-dependent output projections, and dynamic tool groups.
+- Network reduction guard that preserves larger existing snapshots and logs a clear warning when configured with fewer neurons.
+- Comprehensive migration test suite (`tests/test_neuron_growth_migration.py`) validating population scaling, determinism, idempotency, failure rollback, and tool edge persistence.
+
 ## [0.1.0] - 2026-11-03
 
 ### Added
