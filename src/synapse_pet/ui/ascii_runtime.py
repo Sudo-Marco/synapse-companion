@@ -12,7 +12,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QColor, QCursor, QImage, QPainter
+from PySide6.QtGui import QColor, QCursor, QImage, QPainter, QPainterPath, QPen
 from PySide6.QtWidgets import QWidget
 
 from ..runtime.visual_state import StateAnimator, VisualState
@@ -78,6 +78,7 @@ class AnimatedAsciiEyeWidget(QWidget):
     """Direct character-grid eye and parallax scene for the live Qt window."""
 
     petRequested = Signal()
+    panelRequested = Signal()
     activityDetected = Signal()
     animationStarted = Signal()
     CELL_WIDTH = 8
@@ -108,8 +109,9 @@ class AnimatedAsciiEyeWidget(QWidget):
         self.setMouseTracking(True)
         self.setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent)
         self.setToolTip(
-            f"Mova para direcionar o olhar; arraste sobre o olho por {affection_drag_min_s:g}s "
-            "ou use CARINHO.")
+            "Clique duas vezes para abrir o painel; clique direito para opções. "
+            f"Mova para direcionar o olhar; arraste sobre o olho por "
+            f"{affection_drag_min_s:g}s ou use CARINHO.")
 
         self.target_state = VisualState()
         self.state = self.target_state
@@ -285,6 +287,14 @@ class AnimatedAsciiEyeWidget(QWidget):
         self.mode = mode if mode in {"ascii", "hud", "pet"} else "ascii"
         self.setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent, self.mode != "pet")
         self.update()
+
+    def mouseDoubleClickEvent(self, event) -> None:
+        if (self.mode == "pet"
+                and event.button() == Qt.MouseButton.LeftButton):
+            self.panelRequested.emit()
+            event.accept()
+            return
+        super().mouseDoubleClickEvent(event)
 
     def mouseMoveEvent(self, event) -> None:
         point = event.globalPosition().toPoint()
@@ -701,13 +711,29 @@ class AnimatedAsciiEyeWidget(QWidget):
         tiles = self._glyph_atlas[glyph_ids]
         mask = tiles.transpose(0, 2, 1, 3).reshape(
             self.rows * self.CELL_HEIGHT, self.columns * self.CELL_WIDTH)
-        expanded = np.repeat(np.repeat(cell_colors, self.CELL_HEIGHT, axis=0),
-                             self.CELL_WIDTH, axis=1)
+        glyph_rgb = np.repeat(np.repeat(cell_colors, self.CELL_HEIGHT, axis=0),
+                              self.CELL_WIDTH, axis=1)
         output = np.zeros((*mask.shape, 4), dtype=np.uint8)
         if not transparent:
             output[:, :, :3] = background
             output[:, :, 3] = 255
-        output[mask, :3] = expanded[mask]
+        else:
+            # The floating pet sits over arbitrary desktop content. A one-pixel
+            # ink edge keeps pale glyphs legible on bright wallpapers without
+            # changing the eye's colors or adding a solid backdrop.
+            outline_mask = np.zeros_like(mask)
+            outline_mask[1:, 1:] |= mask[:-1, :-1]
+            outline_mask[1:, :] |= mask[:-1, :]
+            outline_mask[1:, :-1] |= mask[:-1, 1:]
+            outline_mask[:, 1:] |= mask[:, :-1]
+            outline_mask[:, :-1] |= mask[:, 1:]
+            outline_mask[:-1, 1:] |= mask[1:, :-1]
+            outline_mask[:-1, :] |= mask[1:, :]
+            outline_mask[:-1, :-1] |= mask[1:, 1:]
+            outline = outline_mask & ~mask
+            output[outline, :3] = (5, 12, 20)
+            output[outline, 3] = 230
+        output[mask, :3] = glyph_rgb[mask]
         output[mask, 3] = 255
         return QImage(output.data, output.shape[1], output.shape[0],
                       output.shape[1] * 4, QImage.Format.Format_RGBA8888).copy()
@@ -753,6 +779,25 @@ class AnimatedAsciiEyeWidget(QWidget):
     def paintEvent(self, _event) -> None:
         image = self.render_frame()
         painter = QPainter(self)
+        if self.mode == "pet":
+            # A translucent glassy eye rim gives the transparent avatar a
+            # stable silhouette over both bright and dark desktop backgrounds.
+            width, height = float(self.width()), float(self.height())
+            rim = QPainterPath()
+            rim.moveTo(width * 0.045, height * 0.50)
+            rim.cubicTo(width * 0.18, height * 0.15, width * 0.82,
+                        height * 0.15, width * 0.955, height * 0.50)
+            rim.cubicTo(width * 0.82, height * 0.85, width * 0.18,
+                        height * 0.85, width * 0.045, height * 0.50)
+            rim.closeSubpath()
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+            painter.fillPath(rim, QColor(5, 15, 23, 58))
+            painter.setPen(QPen(QColor(3, 12, 21, 205), 5.0))
+            painter.drawPath(rim)
+            painter.setPen(QPen(QColor(62, 216, 227, 190), 2.4))
+            painter.drawPath(rim)
+            painter.setPen(QPen(QColor(235, 246, 238, 155), 0.8))
+            painter.drawPath(rim)
         painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, False)
         painter.drawImage(self.rect(), image)
         painter.end()

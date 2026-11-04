@@ -73,7 +73,7 @@ O workflow configurado no GitHub Actions executa os testes em Windows e Linux co
 
 ## Pet flutuante e controles
 
-`pet.mode: floating` é o padrão. Ele mostra somente o olho em uma janela sem borda, transparente e sempre no topo. A máscara do olho deixa cliques passarem fora da área visível; arrastar move o pet. Clique duplo abre o painel e clique direito abre o menu compacto. A bandeja permite abrir o painel, pausar/retomar a simulação, silenciar autonomia, configurar a inicialização do Windows ou sair. O atalho global padrão é `Ctrl+Alt+O` e depende do pacote opcional `pynput`.
+`pet.mode: floating` é o padrão. Ele mostra somente o olho em uma janela sem borda, transparente e sempre no topo. A máscara do olho deixa cliques passarem fora da área visível; arrastar move o pet. Clique duplo abre o painel e clique direito abre o menu compacto. Ao retornar, o olho recupera sua posição anterior; o botão **◉ OLHO** e o botão de fechar do cabeçalho retornam ao avatar. A bandeja permite abrir o painel, pausar/retomar a simulação, silenciar autonomia, configurar a inicialização do Windows ou sair. O atalho global padrão é `Ctrl+Alt+O` e depende do pacote opcional `pynput`.
 
 Altere `pet.mode: window` em `configs/default.yaml` para iniciar com o painel aberto. Fechar o painel retorna ao modo flutuante.
 
@@ -98,6 +98,7 @@ Edite [`configs/default.yaml`](configs/default.yaml) e reinicie o aplicativo.
 | Opção | Efeito |
 | --- | --- |
 | `pet.mode`, `pet.width`, `pet.height`, `pet.anchor`, `pet.margin` | Escolhe painel ou modo flutuante e configura tamanho e posição inicial. |
+| `pet_motion.enabled`, `pet_motion.interval_min_s`, `pet_motion.interval_max_s`, `pet_motion.amplitude_px` | Ativa saltos autônomos espaçados e ajusta a altura conforme o estado emocional. |
 | `pet.panel_hotkey` | Atalho global para abrir o painel (opcional `pynput`). |
 | `renderer` | `ascii` é o padrão. `cpu` força fallback QPainter. `auto` tenta OpenGL e usa QPainter se a inicialização falhar. |
 | `visual.ascii_columns`, `visual.ascii_rows` | Densidade inicial da grade ASCII. `ascii_max_*` limita a resolução quando o painel cresce. |
@@ -112,6 +113,8 @@ Edite [`configs/default.yaml`](configs/default.yaml) e reinicie o aplicativo.
 ### Teleporte e notas autônomas
 
 O estilo de teleporte acompanha o estado: curiosidade e alegria usam um arco luminoso; estresse produz um movimento curto e tremido; baixa energia deixa o movimento lento; atenção pode aproximar o olho do cursor ou do retângulo da janela ativa. Para posicionar, são consultadas somente coordenadas e geometria da janela; títulos e conteúdo não são lidos. O destino respeita a área útil de cada monitor e evita a barra de tarefas.
+
+Saltos curtos dão um movimento mais vivo ao avatar: alegria usa um pulo duplo, curiosidade um salto leve, estresse um pulinho inquieto, tristeza um pequeno abaixamento e sonolência uma flutuação lenta. Durante o sono ele mantém os olhos fechados e não pula. Um aro translúcido de alto contraste ajuda a distinguir o ASCII em fundos claros e escuros sem transformar o fundo em uma janela opaca.
 
 O teleporte requer iniciativa suficiente da SNN, respeita cooldown e limite por hora, e é suspenso durante arrasto, interação recente, proposta pendente ou simulação pausada/parada. Post-its são janelas próprias e sem borda, limitadas a quatro por padrão e com expiração em dez minutos. Fechar rapidamente envia um sinal negativo pequeno; clicar em **Entendi** envia um sinal positivo pequeno. O SQLite guarda somente identificador do template, categoria do estado, geometria e expiração — não o texto renderizado. No Windows, a supressão durante tela cheia usa os limites da janela sem ler o título.
 

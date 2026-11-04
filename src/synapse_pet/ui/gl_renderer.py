@@ -288,6 +288,7 @@ class OpenGLEyeWidget(QOpenGLWidget):
 
 class EyeCanvas(QWidget):
     petRequested = Signal()
+    panelRequested = Signal()
     rendererChanged = Signal(str)
     activityDetected = Signal()
     animationStarted = Signal()
@@ -316,6 +317,7 @@ class EyeCanvas(QWidget):
                 affection_drag_min_s=affection_drag_min_s, compact=compact)
             self._cpu = self._ascii_eye
             self._ascii_eye.petRequested.connect(self.petRequested.emit)
+            self._ascii_eye.panelRequested.connect(self.panelRequested.emit)
             self._ascii_eye.activityDetected.connect(self.activityDetected.emit)
             self._ascii_eye.animationStarted.connect(self.animationStarted.emit)
             self._stack.addWidget(self._ascii_eye)

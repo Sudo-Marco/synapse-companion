@@ -8,6 +8,17 @@ pet:
   margin: 24
   panel_hotkey: "<ctrl>+<alt>+o"
   start_with_windows: false
+pet_motion:
+  enabled: true
+  interval_min_s: 6.0
+  interval_max_s: 12.0
+  amplitude_px:
+    alegre: 26
+    curioso: 18
+    estressado: 8
+    triste: 4
+    sonolento: 2
+    neutro: 8
 teleport:
   enabled: true
   initiative_rate_hz: 1.25

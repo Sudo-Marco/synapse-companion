@@ -8,6 +8,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import numpy as np
 from PySide6.QtCore import QSettings, Qt
+from PySide6.QtTest import QTest
 
 from synapse_pet.runtime.engine import PetEngine
 from synapse_pet.ui.ascii_runtime import AnimatedAsciiEyeWidget
@@ -46,11 +47,32 @@ def test_floating_pet_switches_to_panel_and_back(tmp_path, monkeypatch):
         assert window.canvas.mode == "pet"
         assert window.testAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         assert not window.mask().isEmpty()
+        original_position = window.pos()
 
-        window._show_panel()
+        eye = window.canvas._stack.currentWidget()
+        QTest.mouseDClick(eye, Qt.MouseButton.LeftButton,
+                          pos=eye.rect().center())
         assert not window._is_floating
         assert window.canvas.mode == "ascii"
         assert window.mask().isEmpty()
+
+        window.move(original_position.x() + 120, original_position.y() + 90)
+        window._enter_floating_mode()
+        assert window._is_floating
+        assert window.pos() == original_position
+        assert window.isVisible()
+
+        base_geometry = window.geometry()
+        window._begin_jump("happy", 24, 640)
+        window._jump_frame(0.25, "happy", 24)
+        assert window.y() < base_geometry.y()
+        window._stop_jump(restore_start=True)
+        assert window.geometry() == base_geometry
+
+        window._begin_jump("sad", 4, 900)
+        window._jump_frame(0.5, "sad", 4)
+        assert window.y() > base_geometry.y()
+        window._stop_jump(restore_start=True)
     finally:
         window._requested_exit = True
         window.close()
