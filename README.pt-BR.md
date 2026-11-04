@@ -105,6 +105,7 @@ Edite [`configs/default.yaml`](configs/default.yaml) e reinicie o aplicativo.
 | `teleport.enabled`, `teleport.cooldown_s`, `teleport.max_per_hour`, `teleport.targets` | Controla teleporte autônomo, limites e destinos permitidos. |
 | `autonomy.enabled`, `autonomy.max_actions_per_hour`, `autonomy.postits.*` | Silencia a autonomia ou configura limites, expiração, limiares e templates dos post-its. |
 | `sleep.replay_enabled` | Ativa replay limitado de episódios com recompensa alta durante o sono. Padrão: `false`. |
+| `network.allow_neuron_growth_migration` | Autoriza migração explícita de snapshot quando a contagem configurada de neurônios é maior que a salva (ex.: 600→800). Cria backup verificável antes de migrar, preserva pesos, estados neuronais, projeções contextuais e grupos dinâmicos de ferramentas. Nunca reduz uma rede salva maior. Padrão: `false`. |
 | `habits.enabled`, `habits.minimum_observations`, `habits.minimum_mean_rpe` | Ativa contagens agregadas de hábitos. A tabela salva categoria e ação fixa, contagens, médias de recompensa e data. |
 | `privacy.sensors.*` | Configura os sensores opcionais; todos vêm como `false`. |
 

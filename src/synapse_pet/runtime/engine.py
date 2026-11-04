@@ -88,10 +88,15 @@ class PetEngine:
         self.reward_channels = self.config.get("reward_channels", {})
         seed = int(self.config.get("seed", 41) if seed is None else seed)
         neurons = int(network_config.get("neurons", 600) if neurons is None else neurons)
+        allow_growth = bool(network_config.get("allow_neuron_growth_migration", False))
         self.store = SnapshotStore(data_dir / "creature")
         saved_state: dict[str, object] = {}
         if self.store.path.with_suffix(".json").exists():
-            self.network, saved_state = self.store.load()
+            self.network, saved_state = self.store.load(
+                target_neurons=neurons,
+                allow_growth=allow_growth,
+                seed=seed,
+            )
         else:
             self.network = SpikingNetwork(
                 neurons, connectivity=float(network_config.get("recurrent_connectivity", .1)),

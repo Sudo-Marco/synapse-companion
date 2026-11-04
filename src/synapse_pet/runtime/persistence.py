@@ -10,7 +10,31 @@ import zipfile
 from copy import deepcopy
 from dataclasses import dataclass
 import numpy as np
-from ..core.network import SpikingNetwork
+from ..core.network import SpikingNetwork, grow_population, _merge_projection
+
+
+def _migration_blockers(metadata: dict[str, object], target_neurons: int,
+                        npz_data: dict[str, np.ndarray] | None = None) -> list[str]:
+    """Identify any blockers that prevent a safe migration to target_neurons."""
+    blockers: list[str] = []
+    if target_neurons < 50:
+        blockers.append("target_neurons must be at least 50")
+    version = metadata.get("version")
+    if version not in (1, SnapshotStore.VERSION):
+        blockers.append(f"unsupported snapshot version {version}")
+    for req in ("n_sensor", "n_hidden", "base_n_output"):
+        if req not in metadata:
+            blockers.append(f"missing metadata field {req}")
+    if not blockers:
+        saved_total = int(metadata["n_sensor"]) + int(metadata["n_hidden"]) + int(metadata["base_n_output"])
+        if target_neurons < saved_total:
+            blockers.append(f"cannot shrink network from {saved_total} to {target_neurons}")
+    if npz_data is not None:
+        for key, arr in npz_data.items():
+            if np.issubdtype(arr.dtype, np.floating) and not np.all(np.isfinite(arr)):
+                blockers.append(f"non-finite values in array {key}")
+                break
+    return blockers
 
 
 @dataclass(slots=True)
@@ -171,9 +195,145 @@ class SnapshotStore:
         self._prune()
         return state
 
-    def load(self) -> tuple[SpikingNetwork, dict[str, object]]:
+    def create_migration_backup(self) -> tuple[Path, Path]:
+        """Create a verifiable backup of the current snapshot before migration."""
+        json_path = self.path.with_suffix(".json")
+        if not json_path.exists():
+            raise FileNotFoundError(f"snapshot manifest {json_path} does not exist")
+        metadata = json.loads(json_path.read_text(encoding="utf-8"))
+        npz_name = metadata.get("npz_file")
+        if not isinstance(npz_name, str) or Path(npz_name).name != npz_name:
+            raise ValueError("invalid snapshot data filename")
+        npz_path = self.path.parent / npz_name
+        if not npz_path.exists():
+            raise FileNotFoundError(f"snapshot data file {npz_path} does not exist")
+
+        npz_bytes = npz_path.read_bytes()
+        digest = hashlib.sha256(npz_bytes).hexdigest()
+        if digest != metadata.get("digest"):
+            raise ValueError("snapshot checksum mismatch before backup")
+
+        backup_uuid = uuid.uuid4().hex
+        backup_npz_name = f"{self.path.stem}_backup_{backup_uuid}.npz"
+        backup_json_name = f"{self.path.stem}_backup_{backup_uuid}.json"
+
+        backup_npz_path = self.path.parent / backup_npz_name
+        backup_json_path = self.path.parent / backup_json_name
+
+        try:
+            backup_npz_path.write_bytes(npz_bytes)
+            backup_meta = deepcopy(metadata)
+            backup_meta["npz_file"] = backup_npz_name
+            backup_json_path.write_text(json.dumps(backup_meta, ensure_ascii=False), encoding="utf-8")
+
+            # Also maintain standard backup file pairs with underscore and dot
+            std_npz_name = f"{self.path.stem}_backup.npz"
+            std_json_name = f"{self.path.stem}_backup.json"
+            std_npz_path = self.path.parent / std_npz_name
+            std_json_path = self.path.parent / std_json_name
+            std_npz_path.write_bytes(npz_bytes)
+            std_meta = deepcopy(metadata)
+            std_meta["npz_file"] = std_npz_name
+            std_json_path.write_text(json.dumps(std_meta, ensure_ascii=False), encoding="utf-8")
+
+            # Also dot backup for compatibility
+            dot_npz_name = f"{self.path.stem}.backup.npz"
+            dot_json_name = f"{self.path.stem}.backup.json"
+            dot_npz_path = self.path.parent / dot_npz_name
+            dot_json_path = self.path.parent / dot_json_name
+            dot_npz_path.write_bytes(npz_bytes)
+            dot_meta = deepcopy(metadata)
+            dot_meta["npz_file"] = dot_npz_name
+            dot_json_path.write_text(json.dumps(dot_meta, ensure_ascii=False), encoding="utf-8")
+
+            # Verify backup integrity
+            if hashlib.sha256(backup_npz_path.read_bytes()).hexdigest() != digest:
+                raise RuntimeError("backup NPZ checksum mismatch")
+        except Exception:
+            backup_npz_path.unlink(missing_ok=True)
+            backup_json_path.unlink(missing_ok=True)
+            raise
+
+        return backup_json_path, backup_npz_path
+
+    def verify_migration_backup(self, backup_json: Path, backup_npz: Path) -> bool:
+        """Verify that a migration backup pair exists and has valid checksums and loadable state."""
+        if not backup_json.exists() or not backup_npz.exists():
+            return False
+        try:
+            metadata = json.loads(backup_json.read_text(encoding="utf-8"))
+            digest = hashlib.sha256(backup_npz.read_bytes()).hexdigest()
+            return digest == metadata.get("digest")
+        except Exception:
+            return False
+
+    def migrate(self, target_neurons: int, allow_growth: bool = True,
+                seed: int = 41, backup: bool = True) -> tuple[SpikingNetwork, dict[str, object]]:
+        """Migrate snapshot to target_neurons with backup, rollback safety, and atomicity."""
+        json_path = self.path.with_suffix(".json")
+        if not json_path.exists():
+            raise FileNotFoundError(f"snapshot manifest {json_path} does not exist")
+        metadata = json.loads(json_path.read_text(encoding="utf-8"))
+        saved_total = metadata["n_sensor"] + metadata["n_hidden"] + metadata["base_n_output"]
+
+        if target_neurons == saved_total:
+            return self.load()
+        if target_neurons < saved_total:
+            raise ValueError(f"cannot shrink network from {saved_total} to {target_neurons} neurons")
+        if not allow_growth:
+            raise ValueError("neuron growth migration is disabled")
+
+        npz_name = metadata.get("npz_file")
+        if not isinstance(npz_name, str) or Path(npz_name).name != npz_name:
+            raise ValueError("invalid snapshot data filename")
+        npz_path = self.path.parent / npz_name
+
+        with np.load(npz_path, allow_pickle=False) as raw_data:
+            data_dict = {k: raw_data[k] for k in raw_data.files}
+        blockers = _migration_blockers(metadata, target_neurons, npz_data=data_dict)
+        if blockers:
+            raise ValueError(f"migration blocked: {'; '.join(blockers)}")
+
+        original_json_bytes = json_path.read_bytes()
+        original_npz_bytes = npz_path.read_bytes()
+
+        if backup:
+            self.create_migration_backup()
+
+        net, state = self.load()
+        try:
+            net.grow_population(target_neurons, seed=seed)
+            self.save(net, state)
+        except Exception:
+            json_path.write_bytes(original_json_bytes)
+            npz_path.write_bytes(original_npz_bytes)
+            raise
+
+        return net, state
+
+    def load(self, target_neurons: int | None = None, allow_growth: bool = False,
+             seed: int | None = None) -> tuple[SpikingNetwork, dict[str, object]]:
         json_path = self.path.with_suffix(".json")
         metadata = json.loads(json_path.read_text(encoding="utf-8"))
+        saved_total = metadata["n_sensor"] + metadata["n_hidden"] + metadata["base_n_output"]
+
+        if target_neurons is not None and target_neurons > saved_total:
+            if allow_growth:
+                return self.migrate(target_neurons, allow_growth=True,
+                                    seed=41 if seed is None else seed, backup=True)
+            else:
+                import logging
+                logging.getLogger("synapse_pet.runtime.persistence").warning(
+                    "Migration from %d to %d neurons requested but allow_neuron_growth_migration is false; maintaining saved network size %d.",
+                    saved_total, target_neurons, saved_total
+                )
+        elif target_neurons is not None and target_neurons < saved_total:
+            import logging
+            logging.getLogger("synapse_pet.runtime.persistence").warning(
+                "Configured neurons (%d) is less than saved snapshot neurons (%d); maintaining saved network size without shrinking.",
+                target_neurons, saved_total
+            )
+
         version = metadata.get("version")
         if version not in (1, self.VERSION):
             raise ValueError("unsupported snapshot version")

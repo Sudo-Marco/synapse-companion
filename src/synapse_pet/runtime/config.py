@@ -62,7 +62,8 @@ def load_config(config_path: Path | None = None) -> dict[str, Any]:
     path = config_path or CONFIG_DIR / "default.yaml"
     if not path.exists():
         return {"seed": 41, "network": {"neurons": 600, "dt_ms": 2.0,
-                "recurrent_connectivity": .1, "background_noise": .015, "tool_group_size": 8},
+                "recurrent_connectivity": .1, "background_noise": .015, "tool_group_size": 8,
+                "allow_neuron_growth_migration": False},
                 "privacy": {"sensors": {}},"tools": {}}
     return _read_yaml(path)
 
