@@ -1,0 +1,59 @@
+{
+  "phase": "before",
+  "heights_px": [
+    48,
+    64,
+    96,
+    128,
+    192,
+    256
+  ],
+  "aspect_ratio": 1.9,
+  "scale": "direct render to native output dimensions",
+  "backgrounds": [
+    "preto",
+    "branco",
+    "cinza_medio",
+    "azul_escuro",
+    "xadrez_ruido",
+    "foto_paisagem"
+  ],
+  "lod": {
+    "48": {
+      "width_px": 91,
+      "grid_columns": 24,
+      "grid_rows": 14,
+      "lod_level": "legacy"
+    },
+    "64": {
+      "width_px": 122,
+      "grid_columns": 24,
+      "grid_rows": 14,
+      "lod_level": "legacy"
+    },
+    "96": {
+      "width_px": 182,
+      "grid_columns": 24,
+      "grid_rows": 14,
+      "lod_level": "legacy"
+    },
+    "128": {
+      "width_px": 243,
+      "grid_columns": 24,
+      "grid_rows": 14,
+      "lod_level": "legacy"
+    },
+    "192": {
+      "width_px": 365,
+      "grid_columns": 24,
+      "grid_rows": 14,
+      "lod_level": "legacy"
+    },
+    "256": {
+      "width_px": 486,
+      "grid_columns": 36,
+      "grid_rows": 18,
+      "lod_level": "legacy"
+    }
+  }
+}

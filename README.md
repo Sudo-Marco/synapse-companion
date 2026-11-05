@@ -100,6 +100,7 @@ Edit [`configs/default.yaml`](configs/default.yaml) and restart the application.
 | `pet.mode`, `pet.width`, `pet.height`, `pet.anchor`, `pet.margin` | Select panel or floating mode and set the eye's size and initial placement. |
 | `pet_motion.enabled`, `pet_motion.interval_min_s`, `pet_motion.interval_max_s`, `pet_motion.amplitude_px` | Enable spaced autonomous hops and configure their height for each emotional state. |
 | `pet.panel_hotkey` | Global shortcut to show the panel (optional `pynput`). |
+| `pet.density`, `pet.outline.*` | Set `bold|normal|fine` ASCII density, minimum cell size (8 px by default), contrast keylines, silhouette plate, and Windows theme preference. See [ASCII rendering](docs/ASCII_RENDERING.md) and the [LOD contrast report](docs/screenshots/legibility/lod_final/RELATORIO_CONTRASTE.md). |
 | `renderer` | `ascii` is the default. `cpu` forces the QPainter fallback. `auto` tries the OpenGL-compatible renderer and falls back to QPainter if initialization fails. |
 | `visual.ascii_columns`, `visual.ascii_rows` | Set the starting ASCII grid density. The `ascii_max_*` values cap resolution as the panel grows. |
 | `visual.scene_time` | `auto`, `dia`, `entardecer`, or `noite`. |
@@ -114,7 +115,7 @@ Edit [`configs/default.yaml`](configs/default.yaml) and restart the application.
 
 Teleport styles follow the current state: curious and happy states use a brighter arc; stress uses a short, shaky movement; low energy uses a slower movement; attention can move the eye near the cursor or active-window rectangle. Only screen coordinates and window geometry are queried for placement; window titles and contents are not read. Destinations are clamped to each monitor's available geometry so the pet avoids the taskbar.
 
-Short hops add movement to the avatar: joy gets a playful double hop, curiosity a light jump, stress a brief restless hop, sadness a small dip, and low energy a slow float. It stays still while asleep. A translucent high-contrast eye rim helps the ASCII artwork remain visible over bright and dark backgrounds while keeping the desktop visible through the pet window.
+Short hops add movement to the avatar: joy gets a playful double hop, curiosity a light jump, stress a brief restless hop, sadness a small dip, and low energy a slow float. It stays still while asleep. A subtle edge around the ASCII glyphs improves legibility without drawing a frame around the eye.
 
 A teleport requires sufficient SNN initiative, respects the hourly cap and cooldown, and is suppressed during drag, recent interaction, a pending proposal, or paused/stopped simulation. Post-its are independent frameless app windows, at most four by default, and expire after ten minutes. Closing one quickly gives a small negative signal; selecting **Entendi** gives a small positive signal. SQLite stores only the template ID, state category, geometry, and expiry—not the rendered note text. Full-screen suppression uses window bounds on Windows and does not inspect the window title.
 

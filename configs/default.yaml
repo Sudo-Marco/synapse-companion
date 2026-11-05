@@ -8,6 +8,18 @@ pet:
   margin: 24
   panel_hotkey: "<ctrl>+<alt>+o"
   start_with_windows: false
+  density: normal
+  outline:
+    theme_auto: true
+    double: true
+    thickness_px: 1
+    min_cell_px: 8
+    font_size: 7
+    dark: [7, 13, 23]
+    light: [250, 252, 255]
+    plate_alpha: 0.42
+    plate_dark: [12, 20, 32]
+    plate_light: [235, 242, 246]
 pet_motion:
   enabled: true
   interval_min_s: 6.0
