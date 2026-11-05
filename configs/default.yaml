@@ -81,6 +81,13 @@ learning:
   curiosity_base: 0.25
   curiosity_inactivity_gain: 0.40
   curiosity_energy_gain: 0.15
+personality:
+  enabled: true
+  initiative_threshold_base: 0.50
+  initiative_threshold_strength: 0.08
+  caution_threshold_strength: 0.04
+  reward_feedback_min_multiplier: 0.85
+  reward_feedback_max_multiplier: 1.15
 interaction:
   affection_drag_min_s: 1.0
   mouse_observation_interval_s: 0.5

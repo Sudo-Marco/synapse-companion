@@ -11,6 +11,7 @@ class ActionCandidate:
 @dataclass
 class ActionSelector:
     threshold: float = 0.2
+    initiative_threshold: float = 0.5
     neural_score_scale_hz: float = 15.0
     min_silence_s: float = 120.0
     feedback_rate: float = 0.30
@@ -20,7 +21,7 @@ class ActionSelector:
     def choose(self, candidates: list[ActionCandidate], initiative: float,
                explicit: bool = False) -> ActionCandidate | None:
         eligible = [c for c in candidates if c.neural_score >= self.threshold]
-        if not eligible or (initiative < 0.5 and not explicit):
+        if not eligible or (initiative < self.initiative_threshold and not explicit):
             return None
         def score(c: ActionCandidate) -> float:
             scale = max(1e-6, float(self.neural_score_scale_hz))
