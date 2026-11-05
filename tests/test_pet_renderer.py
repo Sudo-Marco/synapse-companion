@@ -93,6 +93,21 @@ def test_ascii_lod_transition_has_no_large_geometry_jump():
             assert abs(after_size - before_size) / max(after_size, before_size) < 0.12
 
 
+def test_pet_rebuilds_ascii_resolution_when_display_dpi_changes(monkeypatch):
+    ensure_application()
+    widget = AnimatedAsciiEyeWidget(columns=24, rows=14, compact=True,
+                                    max_columns=100, max_rows=60)
+    widget.resize(320, 180)
+    widget._resize_resolution()
+    before = (widget.columns, widget.rows)
+    monkeypatch.setattr(widget, "devicePixelRatioF", lambda: 2.0)
+
+    widget.event(QEvent(QEvent.Type.DevicePixelRatioChange))
+
+    assert widget.columns > before[0]
+    assert widget.rows > before[1]
+
+
 def test_ascii_lod_contrast_targets_on_six_backgrounds_at_six_heights():
     from PIL import Image
     from scripts.legibility_lod_review import (
@@ -130,7 +145,15 @@ def test_floating_pet_switches_to_panel_and_back(tmp_path, monkeypatch):
         assert window._is_floating
         assert window.canvas.mode == "pet"
         assert window.testAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        assert window.windowFlags() & Qt.WindowType.FramelessWindowHint
+        assert window.windowFlags() & Qt.WindowType.WindowStaysOnTopHint
+        assert window.windowFlags() & Qt.WindowType.Tool
         assert not window.mask().isEmpty()
+        assert window.mask().contains(window.rect().center())
+        assert not window.mask().contains(window.rect().topLeft())
+        tray_actions = {action.text() for action in window._tray_icon.contextMenu().actions()}
+        assert {"Abrir painel", "Pausar simulação", "Silenciar autonomia",
+                "Iniciar com o Windows", "Sair"} <= tray_actions
         original_position = window.pos()
 
         eye = window.canvas._stack.currentWidget()

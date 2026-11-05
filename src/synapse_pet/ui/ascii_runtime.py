@@ -12,7 +12,7 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QEvent, Qt, Signal
 from PySide6.QtGui import QColor, QCursor, QImage, QPainter, QPainterPath, QPen
 from PySide6.QtWidgets import QWidget
 
@@ -337,6 +337,14 @@ class AnimatedAsciiEyeWidget(QWidget):
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
         self._resize_resolution()
+
+    def event(self, event) -> bool:
+        result = super().event(event)
+        if event.type() in {QEvent.Type.DevicePixelRatioChange,
+                            QEvent.Type.ScreenChangeInternal}:
+            self._resize_resolution()
+            self.update()
+        return result
 
     def _gaze_for_global(self, point) -> tuple[float, float]:
         local = self.mapFromGlobal(point)
