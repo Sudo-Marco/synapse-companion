@@ -380,6 +380,7 @@ class PetWindow(QMainWindow):
         layout.addWidget(self.header)
 
         configured_renderer = str(self.config.get("renderer", "ascii"))
+        pet_config = self.config.get("pet", {})
         self.canvas = EyeCanvas(
             "ascii" if self._pet_mode_enabled else configured_renderer,
             int(self.visual_config.get("width", 960)),
@@ -394,7 +395,9 @@ class PetWindow(QMainWindow):
             ascii_max_rows=int(self.visual_config.get("ascii_max_rows", 96)),
             affection_drag_min_s=float(self.interaction_config.get(
                 "affection_drag_min_s", 1.0)),
-            compact=self._pet_mode_enabled)
+            compact=self._pet_mode_enabled,
+            render_style=str(pet_config.get("render_style", "spectral")),
+            spectral_config=pet_config.get("spectral", {}))
         layout.addWidget(self.canvas, 1)
         self.canvas.petRequested.connect(self._give_affection)
         self.canvas.panelRequested.connect(self._show_panel)

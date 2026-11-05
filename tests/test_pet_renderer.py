@@ -2,17 +2,111 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
+from pathlib import Path
 import time
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import numpy as np
 from PySide6.QtCore import QSettings, Qt
+from PySide6.QtGui import QImage
 from PySide6.QtTest import QTest
+import yaml
 
 from synapse_pet.runtime.engine import PetEngine
+from synapse_pet.runtime.visual_state import VisualState
 from synapse_pet.ui.ascii_runtime import AnimatedAsciiEyeWidget
+from synapse_pet.ui.gl_renderer import EyeCanvas
 from synapse_pet.ui.qt_app import PetWindow, ensure_application
+from synapse_pet.ui.spectral_eye import SpectralEyeRenderer
+
+
+def test_spectral_style_is_default_and_documented_in_config():
+    config_path = Path(__file__).resolve().parents[1] / "configs" / "default.yaml"
+    config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    pet = config["pet"]
+
+    assert pet["render_style"] == "spectral"
+    assert 0 <= pet["spectral"]["glow_strength"] <= 1
+    assert 0 <= pet["spectral"]["rune_count"] <= 12
+    assert 0 <= pet["spectral"]["smoke_density"] <= 1
+
+
+def test_eye_canvas_selects_each_render_style_without_changing_pet_mode():
+    ensure_application()
+    for style in ("spectral", "ascii", "vector"):
+        canvas = EyeCanvas("auto", 800, 450, 80, 45, "cyan_amber_white", 8,
+                           compact=True, render_style=style)
+        try:
+            assert canvas._ascii_eye is not None
+            assert canvas._ascii_eye.render_style == style
+            canvas.set_mode("pet")
+            frame = canvas._ascii_eye.render_frame(
+                now=4.0, local_time=datetime(2026, 11, 5, 12).astimezone())
+            assert frame.format().name == "Format_RGBA8888"
+            assert frame.pixelColor(frame.width() // 2, frame.height() // 2).alpha() > 0
+        finally:
+            canvas.close()
+
+
+def test_spectral_renderer_draws_emotional_states_and_caches_static_base():
+    ensure_application()
+    renderer = SpectralEyeRenderer(glow_strength=0.82, rune_count=10,
+                                   smoke_density=0.62)
+    open_image = QImage(640, 360, QImage.Format.Format_ARGB32_Premultiplied)
+    open_image.fill(Qt.GlobalColor.transparent)
+    renderer.draw(open_image, VisualState(happiness=0.82, affection=0.8),
+                  3.0, 0.9, (0.0, 0.0), style="spectral")
+    open_bytes = open_image.bits().tobytes()
+
+    sleeping_image = QImage(640, 360, QImage.Format.Format_ARGB32_Premultiplied)
+    sleeping_image.fill(Qt.GlobalColor.transparent)
+    renderer.draw(sleeping_image,
+                  VisualState(expression_override="dormindo", energy=0.0),
+                  3.0, 0.0, (0.0, 0.0), style="spectral")
+    sleeping_bytes = sleeping_image.bits().tobytes()
+
+    assert open_bytes != sleeping_bytes
+    sleep_rgba = sleeping_image.convertToFormat(QImage.Format.Format_RGBA8888)
+    sleep_pixels = np.frombuffer(sleep_rgba.constBits().tobytes(),
+                                 dtype=np.uint8).reshape(360, 640, 4)
+    sleep_cyan = ((sleep_pixels[:, :, 1] > 100)
+                  & (sleep_pixels[:, :, 2] > 120)
+                  & (sleep_pixels[:, :, 0] < 120))
+    assert sleep_cyan[:70].any()  # The animated Zs stay visible above the eye.
+    assert renderer.cached_size_count == 1
+    assert len(renderer._iris_cache) == 1
+    assert len(renderer._rune_cache) == 1
+
+    # Reusing a cached size does not add another static silhouette entry.
+    for _ in range(5):
+        renderer.draw(open_image, VisualState(), 3.1, 0.9,
+                      (0.1, -0.1), style="spectral")
+    assert renderer.cached_size_count == 1
+    assert len(renderer._rune_cache) == 1
+
+    # The cache remains bounded while the window is resized repeatedly.
+    for width in range(120, 140):
+        renderer._base_pixmap(width, width // 2, False, "spectral")
+    assert renderer.cached_size_count <= renderer._CACHE_LIMIT
+
+
+def test_legacy_ascii_renderer_remains_distinct_from_spectral_eye():
+    ensure_application()
+    images = {}
+    for style in ("ascii", "spectral"):
+        widget = AnimatedAsciiEyeWidget(columns=40, rows=22, compact=True,
+                                        max_columns=48, max_rows=30,
+                                        render_style=style)
+        widget.resize(320, 180)
+        widget.set_mode("pet")
+        images[style] = widget.render_frame(
+            now=8.0, local_time=datetime(2026, 11, 5, 12).astimezone())
+        pixels = np.frombuffer(images[style].constBits().tobytes(), dtype=np.uint8)
+        assert pixels[3::4].max() > 0
+        widget.close()
+
+    assert images["ascii"].bits().tobytes() != images["spectral"].bits().tobytes()
 
 
 def test_compact_pet_mode_renders_only_eye_on_transparent_buffer():
@@ -42,6 +136,8 @@ def test_floating_pet_switches_to_panel_and_back(tmp_path, monkeypatch):
     engine.config["pet"].update({"mode": "floating", "anchor": "bottom_right"})
     window = PetWindow(engine)
     try:
+        assert window.canvas.render_style == "spectral"
+        assert window.canvas._ascii_eye.render_style == "spectral"
         window._enter_floating_mode()
         assert window._is_floating
         assert window.canvas.mode == "pet"

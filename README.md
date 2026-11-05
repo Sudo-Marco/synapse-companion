@@ -20,7 +20,7 @@ The default experience is a transparent, floating eye. The configuration panel o
 | Area | Current implementation |
 | --- | --- |
 | Desktop UI | PySide6; transparent floating mode and an on-demand panel, tray controls, click-through mask, position persistence, and global panel shortcut when `pynput` is installed. |
-| Avatar | Animated ASCII eye with emotional expressions, gaze, day/night lighting, blinking, sleep, and a CPU-compatible renderer. |
+| Avatar | Animated spectral eye by default, with a smooth vector shape, ASCII aura, glow, runes, smoke, expressions, and a QPainter/CPU renderer; the previous ASCII eye remains available. |
 | Teleport | Short, emotion-dependent animation with a particle trail, destination bounds, cooldown, hourly limit, and proposal/drag guards. |
 | SNN | Sparse LIF network; 600 requested neurons by default (tool output groups increase the runtime population). |
 | Learning | Reward-modulated STDP, eligibility traces, homeostasis, affect impulses, and contextual action preferences. Sleep replay is optional and disabled by default. |
@@ -98,9 +98,13 @@ Edit [`configs/default.yaml`](configs/default.yaml) and restart the application.
 | Setting | Purpose |
 | --- | --- |
 | `pet.mode`, `pet.width`, `pet.height`, `pet.anchor`, `pet.margin` | Select panel or floating mode and set the eye's size and initial placement. |
+| `pet.render_style` | `spectral` (default), `ascii` (previous ASCII eye), or `vector` (vector eye without the aura). Restart the app after changing it. |
+| `pet.spectral.glow_strength` | Spectral glow intensity from `0` to `1`; the static outline is cached by size. |
+| `pet.spectral.rune_count` | Maximum orbiting rune count, from `0` to `12`; smaller sizes reduce it automatically. |
+| `pet.spectral.smoke_density` | ASCII smoke density from `0` to `1`; visible density also follows energy and stress. |
 | `pet_motion.enabled`, `pet_motion.interval_min_s`, `pet_motion.interval_max_s`, `pet_motion.amplitude_px` | Enable spaced autonomous hops and configure their height for each emotional state. |
 | `pet.panel_hotkey` | Global shortcut to show the panel (optional `pynput`). |
-| `renderer` | `ascii` is the default. `cpu` forces the QPainter fallback. `auto` tries the OpenGL-compatible renderer and falls back to QPainter if initialization fails. |
+| `renderer` | Selects the drawing backend, separate from the visual style: `ascii` is the default, `cpu` forces QPainter, and `auto` tries OpenGL before falling back. |
 | `visual.ascii_columns`, `visual.ascii_rows` | Set the starting ASCII grid density. The `ascii_max_*` values cap resolution as the panel grows. |
 | `visual.scene_time` | `auto`, `dia`, `entardecer`, or `noite`. |
 | `teleport.enabled`, `teleport.cooldown_s`, `teleport.max_per_hour`, `teleport.targets` | Control autonomous teleport triggers, rate limits, and allowed destinations. |
@@ -110,6 +114,10 @@ Edit [`configs/default.yaml`](configs/default.yaml) and restart the application.
 | `network.allow_neuron_growth_migration` | Authorizes explicit snapshot migration when configured neuron count exceeds saved snapshot (e.g. 600→800). Creates a verified backup before migrating, preserves all existing weights, neuronal states, context projections, and dynamic tool groups. Never shrinks a larger saved network. Default: `false`. |
 | `habits.enabled`, `habits.minimum_observations`, `habits.minimum_mean_rpe` | Enable aggregate habit counts. The habit table stores only a fixed category, action key, counts, reward averages, and timestamp. |
 | `privacy.sensors.*` | Configure the opt-in sensors; all default to `false`. |
+
+The `spectral` style reads only the Windows app-theme preference to choose detail colors. It does not capture screen pixels or analyze screen content. Systems without that preference use the dark palette. To switch styles, edit `pet.render_style` in `configs/default.yaml` and restart the app. The transparent floating window, double-click panel action, and legacy ASCII style remain available.
+
+The CPU and FPS benchmark comparing the legacy ASCII eye with the spectral style is documented in [`docs/spectral_eye_performance.md`](docs/spectral_eye_performance.md).
 
 ### Teleport and autonomous notes
 

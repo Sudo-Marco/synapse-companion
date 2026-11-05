@@ -17,6 +17,7 @@ from PySide6.QtWidgets import QWidget
 
 from ..runtime.visual_state import StateAnimator, VisualState
 from .interaction import AffectionDragTracker
+from .spectral_eye import SpectralEyeRenderer
 
 
 Color = tuple[int, int, int]
@@ -91,7 +92,8 @@ class AnimatedAsciiEyeWidget(QWidget):
                  parent: QWidget | None = None,
                  max_columns: int = 170, max_rows: int = 96,
                  affection_drag_min_s: float = 1.0,
-                 compact: bool = False) -> None:
+                 compact: bool = False, render_style: str = "ascii",
+                 spectral_config: dict | None = None) -> None:
         super().__init__(parent)
         self.compact = bool(compact)
         min_columns = 28 if self.compact else 72
@@ -104,6 +106,16 @@ class AnimatedAsciiEyeWidget(QWidget):
         self.rows = self.base_rows
         self.scene_time = str(scene_time).strip().lower()
         self.design = "B" if str(design).strip().upper() == "B" else "A"
+        self.render_style = (render_style if render_style in {"spectral", "ascii", "vector"}
+                             else "spectral")
+        spectral_config = spectral_config or {}
+        self._spectral_eye = SpectralEyeRenderer(
+            glow_strength=spectral_config.get("glow_strength", 0.82),
+            rune_count=spectral_config.get("rune_count", 10),
+            smoke_density=spectral_config.get("smoke_density", 0.62))
+        self._spectral_opening = 0.84
+        self._spectral_last_time = 0.0
+        self._spectral_gaze = (0.0, 0.0)
         self.max_particles = max(0, min(48, int(max_particles)))
         self.setMinimumSize(80, 52) if self.compact else self.setMinimumSize(700, 390)
         self.setMouseTracking(True)
@@ -295,6 +307,43 @@ class AnimatedAsciiEyeWidget(QWidget):
         self.mode = mode if mode in {"ascii", "hud", "pet"} else "ascii"
         self.setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent, self.mode != "pet")
         self.update()
+
+    def _spectral_pose(self, now: float) -> tuple[float, tuple[float, float]]:
+        emotion = self.state.emotion
+        target_open = 0.46 + 0.49 * max(0.0, min(1.0, self.state.energy))
+        if emotion == "alegre":
+            target_open = 0.79 + 0.035 * math.sin(now * 1.2)
+        elif emotion == "triste":
+            target_open = 0.64
+        elif emotion == "estressado":
+            target_open = 0.70 + 0.025 * math.sin(now * 24.0)
+        elif emotion == "curioso":
+            target_open = 0.95
+        elif emotion == "sonolento":
+            target_open = 0.42
+        elif emotion == "dormindo":
+            target_open = 0.0
+        elif emotion in {"aberto", "arregalado"}:
+            target_open = 0.98 if emotion == "aberto" else 1.0
+        elif emotion == "semicerrado":
+            target_open = 0.54
+        dt = (1.0 / 30.0 if self._spectral_last_time == 0.0 else
+              max(0.0, min(0.5, now - self._spectral_last_time)))
+        self._spectral_last_time = now
+        smooth = 1.0 - math.exp(-dt / 0.18)
+        self._spectral_opening += (target_open - self._spectral_opening) * smooth
+        blink = self._blink(now, emotion)
+        if emotion == "piscar":
+            blink = max(blink, 0.96)
+        opening = self._spectral_opening * (1.0 - blink * 0.99)
+        gaze_blend = 1.0 - math.exp(-dt / 0.22)
+        self._spectral_gaze = (
+            self._spectral_gaze[0]
+            + (self.gaze_target[0] - self._spectral_gaze[0]) * gaze_blend,
+            self._spectral_gaze[1]
+            + (self.gaze_target[1] - self._spectral_gaze[1]) * gaze_blend,
+        )
+        return max(0.0, min(1.0, opening)), self._spectral_gaze
 
     def mouseDoubleClickEvent(self, event) -> None:
         if (self.mode == "pet"
@@ -754,13 +803,18 @@ class AnimatedAsciiEyeWidget(QWidget):
         self.state = self.animator.advance(self.target_state, now)
         palette, daylight, twilight, label = self._cycle(local_time)
         chars, colors = self._new_grid(palette["sky"])
+        vector_style = self.render_style in {"spectral", "vector"}
+        spectral_opening, spectral_gaze = (self._spectral_pose(now)
+                                            if vector_style else (1.0, self.gaze))
         if self.mode == "pet":
-            self._draw_eye(chars, colors, palette, now)
+            if not vector_style:
+                self._draw_eye(chars, colors, palette, now)
         else:
             self._draw_sky(chars, colors, palette, daylight, twilight, label,
                            local_time, now)
             self._draw_landscape(chars, colors, palette, daylight, twilight, now)
-            self._draw_eye(chars, colors, palette, now)
+            if not vector_style:
+                self._draw_eye(chars, colors, palette, now)
             accent = palette["accent"]
             muted = _mix(palette["sky"], palette["star"], 0.58)
             self._text(chars, colors, 2, 2, f"> OCULUS  /  {label}", accent,
@@ -781,13 +835,17 @@ class AnimatedAsciiEyeWidget(QWidget):
                        self.rows - 2, legend, muted)
         self._last_frame = self._render_cells(
             chars, colors, palette["sky"], transparent=self.mode == "pet")
+        if vector_style:
+            self._spectral_eye.draw(self._last_frame, self.state, now,
+                                    spectral_opening, spectral_gaze,
+                                    style=self.render_style)
         self.rendered_frames += 1
         return self._last_frame
 
     def paintEvent(self, _event) -> None:
         image = self.render_frame()
         painter = QPainter(self)
-        if self.mode == "pet":
+        if self.mode == "pet" and self.render_style == "ascii":
             # A translucent glassy eye rim gives the transparent avatar a
             # stable silhouette over both bright and dark desktop backgrounds.
             width, height = float(self.width()), float(self.height())
@@ -806,7 +864,14 @@ class AnimatedAsciiEyeWidget(QWidget):
             painter.drawPath(rim)
             painter.setPen(QPen(QColor(235, 246, 238, 155), 0.8))
             painter.drawPath(rim)
-        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, False)
+        width_scale = self.width() / max(1, image.width())
+        height_scale = self.height() / max(1, image.height())
+        scale_deviation = max(width_scale, height_scale,
+                              1.0 / max(width_scale, 0.001),
+                              1.0 / max(height_scale, 0.001)) - 1.0
+        painter.setRenderHint(
+            QPainter.RenderHint.SmoothPixmapTransform,
+            self.render_style != "ascii" and scale_deviation > 0.035)
         painter.drawImage(self.rect(), image)
         painter.end()
 

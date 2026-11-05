@@ -2,6 +2,11 @@ seed: 41
 renderer: ascii
 pet:
   mode: floating          # floating (somente o olho) ou window (painel ao iniciar)
+  render_style: spectral  # spectral (QPainter), ascii ou vector
+  spectral:
+    glow_strength: 0.82   # 0..1
+    rune_count: 10        # 0..12; reduz automaticamente em tamanhos pequenos
+    smoke_density: 0.62   # 0..1
   width: 320
   height: 180
   anchor: none             # none, top_left, top_right, bottom_left, bottom_right

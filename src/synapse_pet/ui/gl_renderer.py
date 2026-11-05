@@ -300,9 +300,14 @@ class EyeCanvas(QWidget):
                  ascii_max_columns: int = 170,
                  ascii_max_rows: int = 96,
                  affection_drag_min_s: float = 1.0,
-                 compact: bool = False) -> None:
+                 compact: bool = False,
+                 render_style: str = "spectral",
+                 spectral_config: dict | None = None) -> None:
         super().__init__(parent)
         self.renderer_config = renderer.lower()
+        self.render_style = (render_style if render_style in {"spectral", "ascii", "vector"}
+                             else "spectral")
+        spectral_config = spectral_config or {}
         self._state = VisualState()
         self._mode = "ascii"
         self._stack = QStackedWidget(self)
@@ -310,11 +315,14 @@ class EyeCanvas(QWidget):
         self._cpu: CpuEyeWidget | AnimatedAsciiEyeWidget | None = None
         self._gl: OpenGLEyeWidget | None = None
         self._fallback_timer: QTimer | None = None
-        if self.renderer_config in {"ascii", "cpu"}:
+        use_direct = (compact or self.render_style in {"spectral", "vector"}
+                      or self.renderer_config in {"ascii", "cpu"})
+        if use_direct:
             self._ascii_eye = AnimatedAsciiEyeWidget(
                 ascii_columns, ascii_rows, scene_time, eye_design, max_particles,
                 max_columns=ascii_max_columns, max_rows=ascii_max_rows,
-                affection_drag_min_s=affection_drag_min_s, compact=compact)
+                affection_drag_min_s=affection_drag_min_s, compact=compact,
+                render_style=self.render_style, spectral_config=spectral_config)
             self._cpu = self._ascii_eye
             self._ascii_eye.petRequested.connect(self.petRequested.emit)
             self._ascii_eye.panelRequested.connect(self.panelRequested.emit)
@@ -322,7 +330,11 @@ class EyeCanvas(QWidget):
             self._ascii_eye.animationStarted.connect(self.animationStarted.emit)
             self._stack.addWidget(self._ascii_eye)
             self._stack.setCurrentWidget(self._ascii_eye)
-            self.renderer_name = "ASCII direto · PySide6"
+            self.renderer_name = {
+                "spectral": "Olho espectral · QPainter",
+                "ascii": "ASCII direto · PySide6",
+                "vector": "Olho vetorial · QPainter",
+            }[self.render_style]
         else:
             self._cpu = CpuEyeWidget(
                 width, height, ascii_columns, ascii_rows, palette,
@@ -367,9 +379,11 @@ class EyeCanvas(QWidget):
         if self._ascii_eye is not None:
             self._ascii_eye.set_mode(mode)
             return
-        self._cpu.set_mode(mode)
+        backend_mode = ("shader" if self.render_style == "vector" and mode == "ascii"
+                        else mode)
+        self._cpu.set_mode(backend_mode)
         if self._gl is not None:
-            self._gl.set_mode(mode)
+            self._gl.set_mode(backend_mode)
 
     def set_state(self, state: VisualState) -> None:
         self._state = state
@@ -385,7 +399,9 @@ class EyeCanvas(QWidget):
         if self._stack.currentWidget() is self._cpu:
             return
         self._cpu.set_state(self._state)
-        self._cpu.set_mode(self._mode)
+        backend_mode = ("shader" if self.render_style == "vector" and self._mode == "ascii"
+                        else self._mode)
+        self._cpu.set_mode(backend_mode)
         self._stack.setCurrentWidget(self._cpu)
         self.renderer_name = "QPainter CPU"
         self.rendererChanged.emit(self.renderer_name + " · " + reason[:90])

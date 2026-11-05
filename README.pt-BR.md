@@ -20,7 +20,7 @@ Por padrão, o pet é um olho transparente e flutuante. O painel de configuraç�
 | Área | Implementação atual |
 | --- | --- |
 | Interface | PySide6; modo flutuante transparente e painel sob demanda, bandeja, máscara de cliques, posição persistida e atalho global quando `pynput` está instalado. |
-| Avatar | Olho ASCII animado com expressões, direção do olhar, ciclo de iluminação, piscadas, sono e renderizador compatível com CPU. |
+| Avatar | Olho espectral animado por padrão, com forma vetorial suave, aura ASCII, brilho, runas, fumaça, expressões e renderizador QPainter/CPU; o olho ASCII anterior continua disponível. |
 | Teleporte | Animação curta por emoção, com rastro, limites por monitor, cooldown, cota horária e bloqueios durante arrasto ou proposta pendente. |
 | SNN | Rede LIF esparsa; 600 neurônios solicitados por padrão (grupos de saída de ferramentas aumentam a população em execução). |
 | Aprendizado | R-STDP modulada por recompensa, traços de elegibilidade, homeostase, impulsos afetivos e preferências contextuais. Replay no sono é opcional e vem desligado. |
@@ -98,9 +98,13 @@ Edite [`configs/default.yaml`](configs/default.yaml) e reinicie o aplicativo.
 | Opção | Efeito |
 | --- | --- |
 | `pet.mode`, `pet.width`, `pet.height`, `pet.anchor`, `pet.margin` | Escolhe painel ou modo flutuante e configura tamanho e posição inicial. |
+| `pet.render_style` | `spectral` (padrão), `ascii` (olho ASCII anterior) ou `vector` (olho vetorial sem aura). Reinicie o app após alterar. |
+| `pet.spectral.glow_strength` | Intensidade do brilho espectral entre `0` e `1`; o contorno base é armazenado em cache por tamanho. |
+| `pet.spectral.rune_count` | Quantidade máxima de runas orbitais, de `0` a `12`; tamanhos pequenos reduzem a quantidade automaticamente. |
+| `pet.spectral.smoke_density` | Densidade da fumaça ASCII entre `0` e `1`; a densidade visível também acompanha energia e estresse. |
 | `pet_motion.enabled`, `pet_motion.interval_min_s`, `pet_motion.interval_max_s`, `pet_motion.amplitude_px` | Ativa saltos autônomos espaçados e ajusta a altura conforme o estado emocional. |
 | `pet.panel_hotkey` | Atalho global para abrir o painel (opcional `pynput`). |
-| `renderer` | `ascii` é o padrão. `cpu` força fallback QPainter. `auto` tenta OpenGL e usa QPainter se a inicialização falhar. |
+| `renderer` | Escolhe o backend de desenho, separado do estilo visual: `ascii` é o padrão, `cpu` força QPainter e `auto` tenta OpenGL antes do fallback. |
 | `visual.ascii_columns`, `visual.ascii_rows` | Densidade inicial da grade ASCII. `ascii_max_*` limita a resolução quando o painel cresce. |
 | `visual.scene_time` | `auto`, `dia`, `entardecer` ou `noite`. |
 | `teleport.enabled`, `teleport.cooldown_s`, `teleport.max_per_hour`, `teleport.targets` | Controla teleporte autônomo, limites e destinos permitidos. |
@@ -110,6 +114,10 @@ Edite [`configs/default.yaml`](configs/default.yaml) e reinicie o aplicativo.
 | `network.allow_neuron_growth_migration` | Autoriza migração explícita de snapshot quando a contagem configurada de neurônios é maior que a salva (ex.: 600→800). Cria backup verificável antes de migrar, preserva pesos, estados neuronais, projeções contextuais e grupos dinâmicos de ferramentas. Nunca reduz uma rede salva maior. Padrão: `false`. |
 | `habits.enabled`, `habits.minimum_observations`, `habits.minimum_mean_rpe` | Ativa contagens agregadas de hábitos. A tabela salva categoria e ação fixa, contagens, médias de recompensa e data. |
 | `privacy.sensors.*` | Configura os sensores opcionais; todos vêm como `false`. |
+
+O estilo `spectral` consulta somente a preferência de tema de aplicativos do Windows para escolher o tom dos detalhes. Ele não captura pixels nem analisa o conteúdo da tela. Em sistemas sem essa preferência, usa a paleta escura. Para trocar o estilo, edite `pet.render_style` em `configs/default.yaml` e reinicie o programa. A forma flutuante transparente, o clique duplo para abrir o painel e o modo ASCII legado continuam disponíveis.
+
+O benchmark de CPU e FPS entre o olho ASCII legado e o estilo espectral está em [`docs/spectral_eye_performance.md`](docs/spectral_eye_performance.md).
 
 ### Teleporte e notas autônomas
 

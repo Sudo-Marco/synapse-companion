@@ -77,7 +77,8 @@ def measure_phase(app: QApplication, canvas: EyeCanvas, seconds: float,
     process = psutil.Process()
     process.cpu_percent(None)
     renderer_label = canvas.current_renderer.lower()
-    cpu_renderer = "cpu" in renderer_label or "ascii direto" in renderer_label
+    cpu_renderer = ("cpu" in renderer_label or "ascii direto" in renderer_label
+                    or "qpainter" in renderer_label)
     vram, vram_scope = ((0, "cpu_renderer_no_opengl") if cpu_renderer
                         else vram_snapshot())
     timer_ticks = 0
@@ -137,6 +138,9 @@ def main() -> None:
     parser.add_argument("--seconds", type=float, default=3.0,
                         help="duration per mode and activity phase")
     parser.add_argument("--renderer", choices=("ascii", "cpu", "auto"), default="ascii")
+    parser.add_argument("--render-style", choices=("spectral", "ascii", "vector"),
+                        default=None,
+                        help="estilo do olho; por padrão usa pet.render_style do YAML")
     parser.add_argument("--size", type=parse_size, default=(1000, 600),
                         metavar="WIDTHxHEIGHT",
                         help="tamanho da janela; use a resolução da tela para testar tela cheia")
@@ -147,6 +151,8 @@ def main() -> None:
     app.setStyle("Fusion")
     config = yaml.safe_load((ROOT / "configs" / "default.yaml").read_text(encoding="utf-8"))
     visual = config.get("visual", {})
+    pet = config.get("pet", {})
+    render_style = args.render_style or str(pet.get("render_style", "spectral"))
     window = QMainWindow()
     canvas = EyeCanvas(args.renderer,
                        int(visual.get("width", 800)), int(visual.get("height", 450)),
@@ -155,7 +161,9 @@ def main() -> None:
                        str(visual.get("palette", "cyan_amber_white")),
                        int(visual.get("max_particles", 48)), window,
                        ascii_max_columns=int(visual.get("ascii_max_columns", 170)),
-                       ascii_max_rows=int(visual.get("ascii_max_rows", 96)))
+                       ascii_max_rows=int(visual.get("ascii_max_rows", 96)),
+                       render_style=render_style,
+                       spectral_config=pet.get("spectral", {}))
     window.setCentralWidget(canvas)
     window.resize(*args.size)
     window.setWindowFlags(Qt.WindowType.Window | Qt.WindowType.WindowStaysOnTopHint)
@@ -167,6 +175,7 @@ def main() -> None:
 
     result: dict[str, object] = {
         "renderer_requested": args.renderer,
+        "render_style": render_style,
         "renderer_used": canvas.current_renderer,
         "window_size": list(args.size),
         "opengl_driver": (canvas._gl._ctx.info.get("GL_RENDERER")
