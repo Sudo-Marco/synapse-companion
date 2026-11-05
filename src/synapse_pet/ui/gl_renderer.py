@@ -300,9 +300,7 @@ class EyeCanvas(QWidget):
                  ascii_max_columns: int = 170,
                  ascii_max_rows: int = 96,
                  affection_drag_min_s: float = 1.0,
-                 compact: bool = False,
-                 outline: dict[str, object] | None = None,
-                 density: str = "normal") -> None:
+                 compact: bool = False) -> None:
         super().__init__(parent)
         self.renderer_config = renderer.lower()
         self._state = VisualState()
@@ -316,8 +314,7 @@ class EyeCanvas(QWidget):
             self._ascii_eye = AnimatedAsciiEyeWidget(
                 ascii_columns, ascii_rows, scene_time, eye_design, max_particles,
                 max_columns=ascii_max_columns, max_rows=ascii_max_rows,
-                affection_drag_min_s=affection_drag_min_s, compact=compact,
-                outline=outline, density=density)
+                affection_drag_min_s=affection_drag_min_s, compact=compact)
             self._cpu = self._ascii_eye
             self._ascii_eye.petRequested.connect(self.petRequested.emit)
             self._ascii_eye.panelRequested.connect(self.panelRequested.emit)
