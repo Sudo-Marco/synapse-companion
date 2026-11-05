@@ -6,11 +6,20 @@ Notable changes are recorded here. This project follows a simple Keep a Changelo
 
 ### Added
 
+- Adaptive, rounded ASCII eye LOD with a configurable minimum glyph size, stable features at small sizes, and a six-background/six-size contrast review with native and enlarged captures.
+- Bounded personality mapping for action initiative and contextual preference learning; defaults are configurable and the mapping can be disabled.
+- Focus-safe post-it UI and RPE/habit regression tests.
+- Floating-eye grid and geometry reflow after display/DPI changes, with offscreen regression coverage.
 - Safe SNN snapshot migration (600→800 neurons) gated by explicit YAML configuration flag `network.allow_neuron_growth_migration` (default `false`).
 - Verifiable pre-migration backup creation with SHA-256 checksum validation and atomic file replacement/rollback safety.
 - Full semantic preservation of synaptic weights, LIF neuronal states, context-dependent output projections, and dynamic tool groups.
 - Network reduction guard that preserves larger existing snapshots and logs a clear warning when configured with fewer neurons.
 - Comprehensive migration test suite (`tests/test_neuron_growth_migration.py`) validating population scaling, determinism, idempotency, failure rollback, and tool edge persistence.
+
+### Changed
+
+- Tool dispatch now reports missing/invalid required parameters safely and enforces cooldown notices before proposals or execution.
+- Documentation now describes the delivered features, limits, contrast metrics, and current benchmark sample without claiming live desktop validation.
 
 ## [0.1.0] - 2026-11-03
 

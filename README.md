@@ -219,13 +219,13 @@ The engine validates required fields and types before showing a proposal or disp
 .\.venv\Scripts\python.exe benchmarks\snn_baseline.py --ticks 60 --profile-steps 40 --idle-seconds 2
 ```
 
-The automated suite includes determinism, snapshots/migrations, reward separation, sensor privacy, tool schemas, sleep/replay gating, autonomy budgets, teleport geometry, and runtime recovery. GitHub Actions is configured to run the suite headlessly on Windows and Linux; the first hosted result is pending the release push. Benchmarks are local diagnostics, not stable hardware guarantees. Contribution guidance is in [CONTRIBUTING.md](CONTRIBUTING.md).
+The automated suite includes determinism, snapshots/migrations, reward separation, sensor privacy, tool schemas, sleep/replay gating, autonomy budgets, post-it focus/feedback, teleport geometry, personality effects, and runtime recovery. GitHub Actions runs the suite headlessly on Windows and Linux; this feature branch still needs its own hosted run after push. Benchmarks are local diagnostics, not stable hardware guarantees. Contribution guidance is in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Honest limitations and roadmap
 
 The SNN operates on numerical features and coarse categories; it is not a language model. Scenario evaluation is synthetic. The combined action policy relies on both the SNN and contextual preferences. Sleep replay uses reconstructed, simplified inputs and has not been evaluated against the scenario-e performance target. Teleport and post-it behavior has been checked offscreen, not validated as a live desktop experience across Windows/GPU/multi-monitor combinations.
 
-Remaining work is tracked in [ROADMAP.md](ROADMAP.md), including larger post-it behavior coverage, 600→800 snapshot migration, personality parameters that affect neural decisions, and targeted profiling. Optional future directions include a skills layer, a local LLM-backed narrator provider, MCP integration, and browser actions; none is implemented today.
+Remaining work is tracked in [ROADMAP.md](ROADMAP.md), including broader post-it behavior coverage, evaluating sleep replay, user-facing personality controls, and targeted profiling. Optional future directions include a skills layer, a local LLM-backed narrator provider, MCP integration, and browser actions; none is implemented today.
 
 ## License
 

@@ -219,13 +219,13 @@ O engine valida campos obrigatórios e tipos antes de propor ou executar a ferra
 .\.venv\Scripts\python.exe benchmarks\snn_baseline.py --ticks 60 --profile-steps 40 --idle-seconds 2
 ```
 
-A suíte cobre determinismo, snapshots/migrações, separação de recompensa, privacidade dos sensores, schema de ferramentas, replay opt-in, orçamento da autonomia, geometria do teleporte e recuperação do runtime. GitHub Actions está configurado para executar a suíte headless em Windows e Linux; o primeiro resultado hospedado depende do push de lançamento. Benchmarks são diagnósticos locais, não garantias de hardware. Consulte [CONTRIBUTING.md](CONTRIBUTING.md).
+A suíte cobre determinismo, snapshots/migrações, separação de recompensa, privacidade dos sensores, schema de ferramentas, replay opt-in, orçamento da autonomia, foco e feedback de post-its, geometria do teleporte, efeitos da personalidade e recuperação do runtime. GitHub Actions executa a suíte headless em Windows e Linux; esta branch ainda precisa de sua própria execução hospedada após o push. Benchmarks são diagnósticos locais, não garantias de hardware. Consulte [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Limitações honestas e roadmap
 
 A SNN opera em números e categorias; não é um modelo de linguagem. A avaliação usa cenários sintéticos. A política combinada depende da SNN e das preferências contextuais. O replay de sono usa entradas reconstruídas e simplificadas e ainda não foi avaliado contra a meta do cenário e. Teleporte e post-its foram verificados offscreen, não validados como experiência de desktop em combinações reais de Windows/GPU/múltiplos monitores.
 
-O [ROADMAP.md](ROADMAP.md) registra o trabalho pendente: ampliar a variedade de comportamentos dos post-its, migrar snapshots de 600 para 800 neurônios, aplicar parâmetros de personalidade às decisões neurais e fazer profiling direcionado. Ideias futuras incluem camada de habilidades, narrador opcional com LLM local, integração MCP e ações no navegador; nada disso está implementado hoje.
+O [ROADMAP.md](ROADMAP.md) registra o trabalho pendente: ampliar a variedade de comportamentos dos post-its, avaliar replay durante o sono, adicionar controles de personalidade para o usuário e fazer profiling direcionado. Ideias futuras incluem camada de habilidades, narrador opcional com LLM local, integração MCP e ações no navegador; nada disso está implementado hoje.
 
 ## Licença
 
