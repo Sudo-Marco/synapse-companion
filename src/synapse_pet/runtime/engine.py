@@ -640,10 +640,12 @@ class PetEngine:
         try:
             safe_params = tool.prepare_parameters(params)
         except ToolParameterError as exc:
-            status = "configuration_required" if exc.missing else "invalid_parameters"
-            self.action_results.put({"operation": "tool", "status": status,
-                                     "tool": name, "missing": exc.missing,
-                                     "error": str(exc)})
+            if exc.missing:
+                self._report_missing_tool_parameters(name, exc)
+            else:
+                self.action_results.put({"operation": "tool",
+                                         "status": "invalid_parameters",
+                                         "tool": name, "error": str(exc)})
             return
         if not self.permissions.authorize(tool, accepted=accepted):
             self.action_log.record(name, "blocked_or_waiting_for_confirmation", 0.0,
