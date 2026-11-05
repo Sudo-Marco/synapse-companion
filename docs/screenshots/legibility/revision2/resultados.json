@@ -1,0 +1,156 @@
+{
+  "contrast": {
+    "large": [
+      {
+        "fundo": "preto",
+        "contorno_borda_dupla_p05": 20.43,
+        "pupila_borda_vs_fundo_p05": 20.43,
+        "iris_borda_vs_fundo_p05": 20.43,
+        "pupila_vs_fundo_p05": 1.07,
+        "pupila_vs_fundo_mediana": 3.95,
+        "iris_vs_fundo_p05": 1.08,
+        "iris_vs_fundo_mediana": 3.95,
+        "pupila_vs_iris_interno": 4.99
+      },
+      {
+        "fundo": "branco",
+        "contorno_borda_dupla_p05": 19.46,
+        "pupila_borda_vs_fundo_p05": 19.46,
+        "iris_borda_vs_fundo_p05": 19.46,
+        "pupila_vs_fundo_p05": 1.03,
+        "pupila_vs_fundo_mediana": 1.35,
+        "iris_vs_fundo_p05": 1.35,
+        "iris_vs_fundo_mediana": 1.35,
+        "pupila_vs_iris_interno": 4.99
+      },
+      {
+        "fundo": "cinza_medio",
+        "contorno_borda_dupla_p05": 4.93,
+        "pupila_borda_vs_fundo_p05": 4.93,
+        "iris_borda_vs_fundo_p05": 4.93,
+        "pupila_vs_fundo_p05": 1.6,
+        "pupila_vs_fundo_mediana": 1.6,
+        "iris_vs_fundo_p05": 1.31,
+        "iris_vs_fundo_mediana": 1.6,
+        "pupila_vs_iris_interno": 4.99
+      },
+      {
+        "fundo": "azul_escuro",
+        "contorno_borda_dupla_p05": 17.77,
+        "pupila_borda_vs_fundo_p05": 17.77,
+        "iris_borda_vs_fundo_p05": 17.77,
+        "pupila_vs_fundo_p05": 1.07,
+        "pupila_vs_fundo_mediana": 3.91,
+        "iris_vs_fundo_p05": 1.07,
+        "iris_vs_fundo_mediana": 3.91,
+        "pupila_vs_iris_interno": 4.99
+      },
+      {
+        "fundo": "xadrez_ruido",
+        "contorno_borda_dupla_p05": 4.59,
+        "pupila_borda_vs_fundo_p05": 4.63,
+        "iris_borda_vs_fundo_p05": 4.59,
+        "pupila_vs_fundo_p05": 1.04,
+        "pupila_vs_fundo_mediana": 2.06,
+        "iris_vs_fundo_p05": 1.04,
+        "iris_vs_fundo_mediana": 1.76,
+        "pupila_vs_iris_interno": 4.99
+      },
+      {
+        "fundo": "foto_paisagem",
+        "contorno_borda_dupla_p05": 5.96,
+        "pupila_borda_vs_fundo_p05": 7.29,
+        "iris_borda_vs_fundo_p05": 7.82,
+        "pupila_vs_fundo_p05": 1.09,
+        "pupila_vs_fundo_mediana": 2.89,
+        "iris_vs_fundo_p05": 1.04,
+        "iris_vs_fundo_mediana": 2.62,
+        "pupila_vs_iris_interno": 4.99
+      }
+    ],
+    "small": [
+      {
+        "fundo": "preto",
+        "contorno_borda_dupla_p05": 20.43,
+        "pupila_borda_vs_fundo_p05": 20.43,
+        "iris_borda_vs_fundo_p05": 20.43,
+        "pupila_vs_fundo_p05": 1.08,
+        "pupila_vs_fundo_mediana": 3.95,
+        "iris_vs_fundo_p05": 1.08,
+        "iris_vs_fundo_mediana": 3.95,
+        "pupila_vs_iris_interno": 4.99
+      },
+      {
+        "fundo": "branco",
+        "contorno_borda_dupla_p05": 19.46,
+        "pupila_borda_vs_fundo_p05": 19.46,
+        "iris_borda_vs_fundo_p05": 19.46,
+        "pupila_vs_fundo_p05": 1.0,
+        "pupila_vs_fundo_mediana": 1.35,
+        "iris_vs_fundo_p05": 1.03,
+        "iris_vs_fundo_mediana": 1.35,
+        "pupila_vs_iris_interno": 4.99
+      },
+      {
+        "fundo": "cinza_medio",
+        "contorno_borda_dupla_p05": 4.93,
+        "pupila_borda_vs_fundo_p05": 4.93,
+        "iris_borda_vs_fundo_p05": 4.93,
+        "pupila_vs_fundo_p05": 1.6,
+        "pupila_vs_fundo_mediana": 3.84,
+        "iris_vs_fundo_p05": 1.01,
+        "iris_vs_fundo_mediana": 1.6,
+        "pupila_vs_iris_interno": 4.99
+      },
+      {
+        "fundo": "azul_escuro",
+        "contorno_borda_dupla_p05": 17.77,
+        "pupila_borda_vs_fundo_p05": 17.77,
+        "iris_borda_vs_fundo_p05": 17.77,
+        "pupila_vs_fundo_p05": 1.07,
+        "pupila_vs_fundo_mediana": 3.91,
+        "iris_vs_fundo_p05": 1.07,
+        "iris_vs_fundo_mediana": 3.91,
+        "pupila_vs_iris_interno": 4.99
+      },
+      {
+        "fundo": "xadrez_ruido",
+        "contorno_borda_dupla_p05": 4.59,
+        "pupila_borda_vs_fundo_p05": 4.62,
+        "iris_borda_vs_fundo_p05": 4.56,
+        "pupila_vs_fundo_p05": 1.07,
+        "pupila_vs_fundo_mediana": 2.53,
+        "iris_vs_fundo_p05": 1.03,
+        "iris_vs_fundo_mediana": 1.75,
+        "pupila_vs_iris_interno": 4.99
+      },
+      {
+        "fundo": "foto_paisagem",
+        "contorno_borda_dupla_p05": 6.16,
+        "pupila_borda_vs_fundo_p05": 7.54,
+        "iris_borda_vs_fundo_p05": 7.8,
+        "pupila_vs_fundo_p05": 1.2,
+        "pupila_vs_fundo_mediana": 2.93,
+        "iris_vs_fundo_p05": 1.04,
+        "iris_vs_fundo_mediana": 2.62,
+        "pupila_vs_iris_interno": 4.99
+      }
+    ]
+  },
+  "performance": {
+    "ativo_30_fps": {
+      "target_fps": 30,
+      "actual_fps": 30.0,
+      "frames": 240,
+      "cpu_percent_one_core": 8.11,
+      "cpu_ms_per_frame": 2.705
+    },
+    "repouso_5_fps": {
+      "target_fps": 5,
+      "actual_fps": 5.0,
+      "frames": 40,
+      "cpu_percent_one_core": 1.28,
+      "cpu_ms_per_frame": 2.551
+    }
+  }
+}

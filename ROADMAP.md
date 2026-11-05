@@ -4,20 +4,21 @@ This roadmap records incomplete work and possible directions. An item is not a d
 
 ## Current release scope
 
+- Adaptive rounded ASCII LOD, contrast capture/reporting across six sizes and backgrounds, configurable density/outline/theme, and renderer performance review: implemented; physical desktop visibility remains unvalidated.
 - P0 tool parameter validation, safe defaults, failure cooldowns, and configuration-required response: implemented.
 - P1 transparent floating eye, on-demand panel/tray, move/affection behavior, and emotion-aware teleport: implemented; UI verification is headless/offscreen only.
 - P2 budgeted template post-its, local metadata persistence, feedback, and aggregate habits: initial slice implemented.
 - P3 opt-in sleep replay and an aggregate learning view: implemented; replay is disabled by default and its scenario performance has not been evaluated.
-- P4 bilingual documentation and repository release setup: implementation and local validation complete; hosted CI starts with the release push.
+- P4 bilingual documentation and repository release setup: files, issue templates, package metadata, and Windows/Linux CI workflow are present; rerun hosted CI for this feature branch after push.
 
 ## Remaining engineering
 
 1. **Autonomy coverage:** implement remaining state-driven actions from the original plan: more glance paths, yawns, hiding, cursor chasing, time-of-day response, affection particles, repeated-punishment sulking, and break invitations. Add per-behavior deterministic tests and user-facing controls.
 2. **Durable action budgets:** current autonomy and teleport hourly caps/cooldowns reset when the process restarts. Persist and test these counters before treating them as anti-spam guarantees across sessions.
-3. **Post-it lifecycle:** test click, drag, expiry, restart restoration, geometry on mixed-DPI monitors, and feedback thresholds in interactive Windows runs. Add stable IDs and consider reconciliation when users change templates.
+3. **Post-it lifecycle:** headless coverage now checks no-focus ownership, the interaction callback, template-only persistence, and expiry. Still pending: drag/restart restoration tests and interactive Windows validation on mixed-DPI monitors; consider reconciliation when users change templates.
 4. **Sleep replay evaluation:** run the same synthetic scenarios with replay off/on, especially scenario e and a new-context retention check. Keep it disabled unless it improves a measured goal without regressions.
 5. **Snapshot migration:** implemented. Opt-in 600→800 neuron migration (`network.allow_neuron_growth_migration`, false by default) with pre-migration verifiable backup, atomic commit, semantic weight and neuronal state preservation, context readout preservation, dynamic tool group persistence, and rejection of silent shrinking.
-6. **Personality controls:** define and evaluate how traits change dopamine gain, initiative threshold, and exploration without changing the default deterministic topology.
+6. **Personality:** the first bounded mapping is implemented: initiative/caution affect the selector gate and reward sensitivity scales contextual preference updates. Still pending: user-facing trait controls and a synthetic evaluation of policy effects; the mapping does not alter LIF dynamics or topology.
 7. **Profiling:** investigate lazy traces and per-tick allocations only after a repeatable profile shows a measurable opportunity under the ≤3% regression budget.
 8. **Release validation:** run interactive tests on Windows with OpenGL and CPU fallback, multiple monitors/DPI scales, taskbar placements, and tray behavior. The current release's Qt checks are offscreen.
 

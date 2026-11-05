@@ -73,7 +73,7 @@ The configured GitHub Actions workflow runs the test suite on Windows and Linux 
 
 ## Floating pet and controls
 
-`pet.mode: floating` is the default. It shows only the eye in a transparent, borderless, topmost tool window. The eye's mask lets clicks pass through outside its visible body; dragging moves it. Double-click opens the panel, while right-click opens the small pet menu. The system tray can open the panel, pause/resume the simulation, silence autonomy, configure Windows startup, or exit. The default global shortcut is `Ctrl+Alt+O` and requires the optional `pynput` package.
+`pet.mode: floating` is the default. It shows only the eye in a transparent, borderless, topmost tool window. The eye's mask lets clicks pass through outside its visible body; dragging moves it. Double-click opens the panel, while right-click opens the small pet menu. Returning to the pet restores its previous position; the **◉ OLHO** button and the header close button return to the avatar. The system tray can open the panel, pause/resume the simulation, silence autonomy, configure Windows startup, or exit. The default global shortcut is `Ctrl+Alt+O` and requires the optional `pynput` package.
 
 Set `pet.mode: window` in `configs/default.yaml` to open the full panel directly. Close the panel to return to floating mode.
 
@@ -98,13 +98,16 @@ Edit [`configs/default.yaml`](configs/default.yaml) and restart the application.
 | Setting | Purpose |
 | --- | --- |
 | `pet.mode`, `pet.width`, `pet.height`, `pet.anchor`, `pet.margin` | Select panel or floating mode and set the eye's size and initial placement. |
+| `pet_motion.enabled`, `pet_motion.interval_min_s`, `pet_motion.interval_max_s`, `pet_motion.amplitude_px` | Enable spaced autonomous hops and configure their height for each emotional state. |
 | `pet.panel_hotkey` | Global shortcut to show the panel (optional `pynput`). |
+| `pet.density`, `pet.outline.*` | Set `bold|normal|fine` ASCII density, minimum cell size (8 px by default), contrast keylines, silhouette plate, and Windows theme preference. See [ASCII rendering](docs/ASCII_RENDERING.md) and the [LOD contrast report](docs/screenshots/legibility/lod_final/RELATORIO_CONTRASTE.md). |
 | `renderer` | `ascii` is the default. `cpu` forces the QPainter fallback. `auto` tries the OpenGL-compatible renderer and falls back to QPainter if initialization fails. |
 | `visual.ascii_columns`, `visual.ascii_rows` | Set the starting ASCII grid density. The `ascii_max_*` values cap resolution as the panel grows. |
 | `visual.scene_time` | `auto`, `dia`, `entardecer`, or `noite`. |
 | `teleport.enabled`, `teleport.cooldown_s`, `teleport.max_per_hour`, `teleport.targets` | Control autonomous teleport triggers, rate limits, and allowed destinations. |
 | `autonomy.enabled`, `autonomy.max_actions_per_hour`, `autonomy.postits.*` | Silence autonomy or set post-it budgets, expiry, thresholds, and templates. Templates are local configuration text. |
 | `sleep.replay_enabled` | Enables bounded replay of high-reward episodes during sleep. Default: `false`. |
+| `personality.*` | Traits adjust the action selector's initiative threshold and reward-preference update rate within bounded limits. It can be disabled and does not change LIF dynamics or topology. |
 | `network.allow_neuron_growth_migration` | Authorizes explicit snapshot migration when configured neuron count exceeds saved snapshot (e.g. 600→800). Creates a verified backup before migrating, preserves all existing weights, neuronal states, context projections, and dynamic tool groups. Never shrinks a larger saved network. Default: `false`. |
 | `habits.enabled`, `habits.minimum_observations`, `habits.minimum_mean_rpe` | Enable aggregate habit counts. The habit table stores only a fixed category, action key, counts, reward averages, and timestamp. |
 | `privacy.sensors.*` | Configure the opt-in sensors; all default to `false`. |
@@ -112,6 +115,8 @@ Edit [`configs/default.yaml`](configs/default.yaml) and restart the application.
 ### Teleport and autonomous notes
 
 Teleport styles follow the current state: curious and happy states use a brighter arc; stress uses a short, shaky movement; low energy uses a slower movement; attention can move the eye near the cursor or active-window rectangle. Only screen coordinates and window geometry are queried for placement; window titles and contents are not read. Destinations are clamped to each monitor's available geometry so the pet avoids the taskbar.
+
+Short hops add movement to the avatar: joy gets a playful double hop, curiosity a light jump, stress a brief restless hop, sadness a small dip, and low energy a slow float. It stays still while asleep. A subtle edge around the ASCII glyphs improves legibility without drawing a frame around the eye.
 
 A teleport requires sufficient SNN initiative, respects the hourly cap and cooldown, and is suppressed during drag, recent interaction, a pending proposal, or paused/stopped simulation. Post-its are independent frameless app windows, at most four by default, and expire after ten minutes. Closing one quickly gives a small negative signal; selecting **Entendi** gives a small positive signal. SQLite stores only the template ID, state category, geometry, and expiry—not the rendered note text. Full-screen suppression uses window bounds on Windows and does not inspect the window title.
 
@@ -214,13 +219,13 @@ The engine validates required fields and types before showing a proposal or disp
 .\.venv\Scripts\python.exe benchmarks\snn_baseline.py --ticks 60 --profile-steps 40 --idle-seconds 2
 ```
 
-The automated suite includes determinism, snapshots/migrations, reward separation, sensor privacy, tool schemas, sleep/replay gating, autonomy budgets, teleport geometry, and runtime recovery. GitHub Actions is configured to run the suite headlessly on Windows and Linux; the first hosted result is pending the release push. Benchmarks are local diagnostics, not stable hardware guarantees. Contribution guidance is in [CONTRIBUTING.md](CONTRIBUTING.md).
+The automated suite includes determinism, snapshots/migrations, reward separation, sensor privacy, tool schemas, sleep/replay gating, autonomy budgets, post-it focus/feedback, teleport geometry, personality effects, and runtime recovery. GitHub Actions runs the suite headlessly on Windows and Linux; this feature branch still needs its own hosted run after push. Benchmarks are local diagnostics, not stable hardware guarantees. Contribution guidance is in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Honest limitations and roadmap
 
 The SNN operates on numerical features and coarse categories; it is not a language model. Scenario evaluation is synthetic. The combined action policy relies on both the SNN and contextual preferences. Sleep replay uses reconstructed, simplified inputs and has not been evaluated against the scenario-e performance target. Teleport and post-it behavior has been checked offscreen, not validated as a live desktop experience across Windows/GPU/multi-monitor combinations.
 
-Remaining work is tracked in [ROADMAP.md](ROADMAP.md), including larger post-it behavior coverage, 600→800 snapshot migration, personality parameters that affect neural decisions, and targeted profiling. Optional future directions include a skills layer, a local LLM-backed narrator provider, MCP integration, and browser actions; none is implemented today.
+Remaining work is tracked in [ROADMAP.md](ROADMAP.md), including broader post-it behavior coverage, evaluating sleep replay, user-facing personality controls, and targeted profiling. Optional future directions include a skills layer, a local LLM-backed narrator provider, MCP integration, and browser actions; none is implemented today.
 
 ## License
 

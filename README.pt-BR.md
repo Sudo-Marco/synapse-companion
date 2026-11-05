@@ -73,7 +73,7 @@ O workflow configurado no GitHub Actions executa os testes em Windows e Linux co
 
 ## Pet flutuante e controles
 
-`pet.mode: floating` é o padrão. Ele mostra somente o olho em uma janela sem borda, transparente e sempre no topo. A máscara do olho deixa cliques passarem fora da área visível; arrastar move o pet. Clique duplo abre o painel e clique direito abre o menu compacto. A bandeja permite abrir o painel, pausar/retomar a simulação, silenciar autonomia, configurar a inicialização do Windows ou sair. O atalho global padrão é `Ctrl+Alt+O` e depende do pacote opcional `pynput`.
+`pet.mode: floating` é o padrão. Ele mostra somente o olho em uma janela sem borda, transparente e sempre no topo. A máscara do olho deixa cliques passarem fora da área visível; arrastar move o pet. Clique duplo abre o painel e clique direito abre o menu compacto. Ao retornar, o olho recupera sua posição anterior; o botão **◉ OLHO** e o botão de fechar do cabeçalho retornam ao avatar. A bandeja permite abrir o painel, pausar/retomar a simulação, silenciar autonomia, configurar a inicialização do Windows ou sair. O atalho global padrão é `Ctrl+Alt+O` e depende do pacote opcional `pynput`.
 
 Altere `pet.mode: window` em `configs/default.yaml` para iniciar com o painel aberto. Fechar o painel retorna ao modo flutuante.
 
@@ -98,13 +98,16 @@ Edite [`configs/default.yaml`](configs/default.yaml) e reinicie o aplicativo.
 | Opção | Efeito |
 | --- | --- |
 | `pet.mode`, `pet.width`, `pet.height`, `pet.anchor`, `pet.margin` | Escolhe painel ou modo flutuante e configura tamanho e posição inicial. |
+| `pet_motion.enabled`, `pet_motion.interval_min_s`, `pet_motion.interval_max_s`, `pet_motion.amplitude_px` | Ativa saltos autônomos espaçados e ajusta a altura conforme o estado emocional. |
 | `pet.panel_hotkey` | Atalho global para abrir o painel (opcional `pynput`). |
+| `pet.density`, `pet.outline.*` | Ajusta densidade `bold|normal|fine`, célula mínima (8 px por padrão), filetes de contraste, placa e preferência de tema do Windows. Veja [renderização ASCII](docs/ASCII_RENDERING.md) e as [capturas LOD](docs/screenshots/legibility/lod_final/RELATORIO_CONTRASTE.md). |
 | `renderer` | `ascii` é o padrão. `cpu` força fallback QPainter. `auto` tenta OpenGL e usa QPainter se a inicialização falhar. |
 | `visual.ascii_columns`, `visual.ascii_rows` | Densidade inicial da grade ASCII. `ascii_max_*` limita a resolução quando o painel cresce. |
 | `visual.scene_time` | `auto`, `dia`, `entardecer` ou `noite`. |
 | `teleport.enabled`, `teleport.cooldown_s`, `teleport.max_per_hour`, `teleport.targets` | Controla teleporte autônomo, limites e destinos permitidos. |
 | `autonomy.enabled`, `autonomy.max_actions_per_hour`, `autonomy.postits.*` | Silencia a autonomia ou configura limites, expiração, limiares e templates dos post-its. |
 | `sleep.replay_enabled` | Ativa replay limitado de episódios com recompensa alta durante o sono. Padrão: `false`. |
+| `personality.*` | Traits ajustam, dentro de limites, o limiar de iniciativa do seletor e a taxa de atualização das preferências por recompensa. Pode ser desligado; não altera a dinâmica nem a topologia LIF. |
 | `network.allow_neuron_growth_migration` | Autoriza migração explícita de snapshot quando a contagem configurada de neurônios é maior que a salva (ex.: 600→800). Cria backup verificável antes de migrar, preserva pesos, estados neuronais, projeções contextuais e grupos dinâmicos de ferramentas. Nunca reduz uma rede salva maior. Padrão: `false`. |
 | `habits.enabled`, `habits.minimum_observations`, `habits.minimum_mean_rpe` | Ativa contagens agregadas de hábitos. A tabela salva categoria e ação fixa, contagens, médias de recompensa e data. |
 | `privacy.sensors.*` | Configura os sensores opcionais; todos vêm como `false`. |
@@ -112,6 +115,8 @@ Edite [`configs/default.yaml`](configs/default.yaml) e reinicie o aplicativo.
 ### Teleporte e notas autônomas
 
 O estilo de teleporte acompanha o estado: curiosidade e alegria usam um arco luminoso; estresse produz um movimento curto e tremido; baixa energia deixa o movimento lento; atenção pode aproximar o olho do cursor ou do retângulo da janela ativa. Para posicionar, são consultadas somente coordenadas e geometria da janela; títulos e conteúdo não são lidos. O destino respeita a área útil de cada monitor e evita a barra de tarefas.
+
+Saltos curtos dão um movimento mais vivo ao avatar: alegria usa um pulo duplo, curiosidade um salto leve, estresse um pulinho inquieto, tristeza um pequeno abaixamento e sonolência uma flutuação lenta. Durante o sono ele mantém os olhos fechados e não pula. Um contorno discreto nos caracteres melhora a leitura sem desenhar uma moldura ao redor do olho.
 
 O teleporte requer iniciativa suficiente da SNN, respeita cooldown e limite por hora, e é suspenso durante arrasto, interação recente, proposta pendente ou simulação pausada/parada. Post-its são janelas próprias e sem borda, limitadas a quatro por padrão e com expiração em dez minutos. Fechar rapidamente envia um sinal negativo pequeno; clicar em **Entendi** envia um sinal positivo pequeno. O SQLite guarda somente identificador do template, categoria do estado, geometria e expiração — não o texto renderizado. No Windows, a supressão durante tela cheia usa os limites da janela sem ler o título.
 
@@ -214,13 +219,13 @@ O engine valida campos obrigatórios e tipos antes de propor ou executar a ferra
 .\.venv\Scripts\python.exe benchmarks\snn_baseline.py --ticks 60 --profile-steps 40 --idle-seconds 2
 ```
 
-A suíte cobre determinismo, snapshots/migrações, separação de recompensa, privacidade dos sensores, schema de ferramentas, replay opt-in, orçamento da autonomia, geometria do teleporte e recuperação do runtime. GitHub Actions está configurado para executar a suíte headless em Windows e Linux; o primeiro resultado hospedado depende do push de lançamento. Benchmarks são diagnósticos locais, não garantias de hardware. Consulte [CONTRIBUTING.md](CONTRIBUTING.md).
+A suíte cobre determinismo, snapshots/migrações, separação de recompensa, privacidade dos sensores, schema de ferramentas, replay opt-in, orçamento da autonomia, foco e feedback de post-its, geometria do teleporte, efeitos da personalidade e recuperação do runtime. GitHub Actions executa a suíte headless em Windows e Linux; esta branch ainda precisa de sua própria execução hospedada após o push. Benchmarks são diagnósticos locais, não garantias de hardware. Consulte [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Limitações honestas e roadmap
 
 A SNN opera em números e categorias; não é um modelo de linguagem. A avaliação usa cenários sintéticos. A política combinada depende da SNN e das preferências contextuais. O replay de sono usa entradas reconstruídas e simplificadas e ainda não foi avaliado contra a meta do cenário e. Teleporte e post-its foram verificados offscreen, não validados como experiência de desktop em combinações reais de Windows/GPU/múltiplos monitores.
 
-O [ROADMAP.md](ROADMAP.md) registra o trabalho pendente: ampliar a variedade de comportamentos dos post-its, migrar snapshots de 600 para 800 neurônios, aplicar parâmetros de personalidade às decisões neurais e fazer profiling direcionado. Ideias futuras incluem camada de habilidades, narrador opcional com LLM local, integração MCP e ações no navegador; nada disso está implementado hoje.
+O [ROADMAP.md](ROADMAP.md) registra o trabalho pendente: ampliar a variedade de comportamentos dos post-its, avaliar replay durante o sono, adicionar controles de personalidade para o usuário e fazer profiling direcionado. Ideias futuras incluem camada de habilidades, narrador opcional com LLM local, integração MCP e ações no navegador; nada disso está implementado hoje.
 
 ## Licença
 

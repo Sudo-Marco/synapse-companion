@@ -10,6 +10,7 @@ This page describes the committed offline evaluation artifacts. These are simula
 - Homeostasis limits population activity.
 - The production-like action policy combines neural scores with contextual preferences. `SNN-only` disables the preference term at evaluation time; this is not always the same as training a network without any selector involvement.
 - The contextual projection experiment shares sparse topology while allocating each context's output weights on demand. Context creation/reuse and the projection limit are persisted.
+- Personality traits now parameterize the action selector: initiative lowers or raises its initiative gate, caution adjusts that gate in the conservative direction, and reward sensitivity scales contextual preference updates. The mapping is bounded by `personality.*`, can be disabled, and does not feed back into LIF integration, spike generation, or SNN topology.
 
 ## Protocol
 
@@ -58,6 +59,8 @@ Other historical runs remain under `docs/learning/` and are not interchangeable 
 Sleep replay is controlled by `sleep.replay_enabled`, false by default. If enabled, the consolidator selects episodes by highest absolute recorded reward, takes at most `sleep.max_replay_episodes`, derives a synthetic sensor feature from the coarse context hash, adds low seeded noise, and performs a small number of replay steps. It does not preserve/replay the original raw input sequence. **No new scenario-e evaluation has been run for this implementation**, so the previous 67% neural-only e result remains the latest measured number.
 
 The `habits` SQLite table stores a fixed coarse context category, action identifier, observation count, mean/last RPE, learned flag, and update time. A one-time `habit_learned` event is emitted after the configured count and positive mean-RPE threshold. The UI notification is informational and does not change SNN topology or action rules.
+
+The personality mapping is applied at initialization, after loading saved personality state, and after a reward updates traits. Defaults keep initiative gating within 0.44–0.56 and reward-preference updates between 0.85× and 1.15× the configured base rate. These are deterministic functions of the persisted traits; they do not change neural weights or the spike dynamics. This mapping has unit coverage, but its effect on the synthetic scenario accuracy has not been separately benchmarked.
 
 ## Reproduction
 

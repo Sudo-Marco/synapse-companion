@@ -52,6 +52,7 @@ class PetEngine:
             "%(asctime)s %(levelname)s %(threadName)s %(message)s"))
         self.logger.addHandler(self._log_handler)
         self.config = load_config()
+        self.personality_config = self.config.get("personality", {})
         network_config = self.config.get("network", {})
         self.runtime_config = self.config.get("runtime", {})
         self.sleep_config = self.config.get("sleep", {})
@@ -142,6 +143,7 @@ class PetEngine:
             neural_score_scale_hz=float(
                 self.learning_config.get("neural_score_scale_hz", 15.0)))
         self._restore_mind(saved_state)
+        self._apply_personality_effects()
         self.sleep = SleepConsolidator(
             sleep_after_s=float(self.runtime_config.get("sleep_after_s", 1800)),
             replay_enabled=bool(self.sleep_config.get("replay_enabled", False)),
@@ -235,6 +237,33 @@ class PetEngine:
         self.selector.refusal_streak = int(state.get("refusal_streak", 0))
         self.selector.min_silence_s = float(state.get("min_silence_s", self.selector.min_silence_s))
 
+    def _apply_personality_effects(self) -> None:
+        """Map saved personality traits to bounded action-selection parameters."""
+        cfg = self.personality_config
+        if not bool(cfg.get("enabled", True)):
+            self.selector.initiative_threshold = float(
+                cfg.get("initiative_threshold_base", 0.5))
+            self.selector.feedback_rate = float(
+                self.learning_config.get("action_preference_rate", 0.30))
+            return
+
+        base = float(cfg.get("initiative_threshold_base", 0.5))
+        initiative = float(np.clip(self.personality.initiative, 0.0, 1.0))
+        caution = float(np.clip(self.personality.caution, 0.0, 1.0))
+        initiative_effect = float(cfg.get("initiative_threshold_strength", 0.12))
+        caution_effect = float(cfg.get("caution_threshold_strength", 0.06))
+        self.selector.initiative_threshold = float(np.clip(
+            base + (0.5 - initiative) * initiative_effect
+            + (caution - 0.5) * caution_effect, 0.0, 1.0))
+
+        sensitivity = float(np.clip(self.personality.reward_sensitivity, 0.0, 1.0))
+        min_multiplier = float(cfg.get("reward_feedback_min_multiplier", 0.85))
+        max_multiplier = max(min_multiplier, float(
+            cfg.get("reward_feedback_max_multiplier", 1.15)))
+        base_rate = float(self.learning_config.get("action_preference_rate", 0.30))
+        self.selector.feedback_rate = base_rate * (
+            min_multiplier + (max_multiplier - min_multiplier) * sensitivity)
+
     def _make_encoder(self) -> PopulationEncoder:
         group_size, remainder = divmod(self.network.n_sensor, 4)
         groups = {
@@ -273,6 +302,7 @@ class PetEngine:
             neural_score_scale_hz=float(
                 self.learning_config.get("neural_score_scale_hz", 15.0)))
         self._restore_mind(state)
+        self._apply_personality_effects()
         self.homeostasis = Homeostasis()
         self.last_rates = {}
         self._tick_spike_counts = np.zeros_like(
@@ -586,6 +616,7 @@ class PetEngine:
                     "action": habit_action,
                 })
         self.personality.update(target_reward)
+        self._apply_personality_effects()
         if action in {tool.name for tool in self.registry.all()} and target_reward != 0.0:
             self.selector.feedback(context, action, target_reward)
         return self.learning_rpe
@@ -640,10 +671,12 @@ class PetEngine:
         try:
             safe_params = tool.prepare_parameters(params)
         except ToolParameterError as exc:
-            status = "configuration_required" if exc.missing else "invalid_parameters"
-            self.action_results.put({"operation": "tool", "status": status,
-                                     "tool": name, "missing": exc.missing,
-                                     "error": str(exc)})
+            if exc.missing:
+                self._report_missing_tool_parameters(name, exc)
+            else:
+                self.action_results.put({"operation": "tool",
+                                         "status": "invalid_parameters",
+                                         "tool": name, "error": str(exc)})
             return
         if not self.permissions.authorize(tool, accepted=accepted):
             self.action_log.record(name, "blocked_or_waiting_for_confirmation", 0.0,

@@ -31,8 +31,23 @@ def test_teleport_shrinks_travels_and_materializes_at_destination():
     assert final == destination
     assert final_opacity == 1.0
 
+    shrinking, shrinking_opacity = teleport_geometry(start, destination, 0.1, style)
+    materializing, materializing_opacity = teleport_geometry(
+        start, destination, 0.9, style)
+    assert (shrinking.center() - start.center()).manhattanLength() <= 1
+    assert shrinking.size().width() < start.width()
+    assert shrinking_opacity < 1.0
+    assert (materializing.center() - destination.center()).manhattanLength() <= 2
+    assert materializing.size().width() > travelling.size().width()
+    assert materializing.size().width() < destination.width()
+    assert materializing_opacity > travel_opacity
+
 
 def test_emotion_styles_stay_within_requested_duration():
     assert set(STYLES) == {"curious", "happy", "stress", "sleepy", "communicate"}
     assert all(400 <= style.duration_ms <= 900 for style in STYLES.values())
+    assert STYLES["stress"].shake_px > 0
+    assert STYLES["happy"].overshoot > STYLES["curious"].overshoot
+    assert STYLES["sleepy"].duration_ms == max(
+        style.duration_ms for style in STYLES.values())
 

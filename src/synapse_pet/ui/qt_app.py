@@ -11,7 +11,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from PySide6.QtCore import (QEvent, QEasingCurve, QPoint, QPointF,
-                            QPropertyAnimation, QRect, QSettings, Qt, QTimer,
+                            QRect, QSettings, Qt, QTimer,
                             QUrl, QVariantAnimation, Signal)
 from PySide6.QtGui import (QAction, QBrush, QColor, QCursor, QDesktopServices,
                            QFont, QGuiApplication, QIcon, QPainter, QPainterPath,
@@ -113,8 +113,16 @@ class DragHeader(QFrame):
         self.minimize.setFixedWidth(38)
         self.minimize.clicked.connect(parent.showMinimized)
         layout.addWidget(self.minimize)
+        self.return_to_pet = QPushButton("◉ OLHO")
+        self.return_to_pet.setToolTip("Voltar ao olho flutuante")
+        self.return_to_pet.clicked.connect(parent._enter_floating_mode)
+        self.return_to_pet.setVisible(bool(parent._pet_mode_enabled))
+        layout.addWidget(self.return_to_pet)
         self.close_button = QPushButton("×")
         self.close_button.setFixedWidth(38)
+        self.close_button.setToolTip(
+            "Fechar o painel e voltar ao olho flutuante"
+            if parent._pet_mode_enabled else "Fechar")
         self.close_button.clicked.connect(parent.close)
         layout.addWidget(self.close_button)
 
@@ -295,6 +303,7 @@ class PetWindow(QMainWindow):
         self.interaction_config = self.config.get("interaction", {})
         self.pet_config = self.config.get("pet", {})
         self.teleport_config = self.config.get("teleport", {})
+        self.pet_motion_config = self.config.get("pet_motion", {})
         self.autonomy_config = self.config.get("autonomy", {})
         self.autonomy = AutonomyController(self.autonomy_config)
         self._postit_store = PostItStore(engine.data_dir / "postits.sqlite3")
@@ -308,12 +317,19 @@ class PetWindow(QMainWindow):
         self._pet_drag_started = 0.0
         self._pet_drag_moved = False
         self._pet_drag_rewarded = False
+        self._pet_last_click_at = 0.0
+        self._pet_last_click_position: QPoint | None = None
+        self._pet_return_position: QPoint | None = None
         self._pet_hovering = False
         self._autostart_enabled = False
         self._requested_exit = False
         self._settings = QSettings("SynapsePet", "Oculus")
         self._panel_size = (1000, 790)
-        self._pet_animation = None
+        self._jump_animation: QVariantAnimation | None = None
+        self._jump_start_geometry: QRect | None = None
+        jump_seed = int(self.config.get("seed", 41)) ^ 0x4A554D50
+        self._jump_rng = random.Random(jump_seed)
+        self._next_jump_at = time.monotonic() + self._jump_rng.uniform(3.0, 7.0)
         self._teleport_animation: QVariantAnimation | None = None
         self._teleport_trail: TeleportTrail | None = None
         self._teleport_start_geometry: QRect | None = None
@@ -376,9 +392,12 @@ class PetWindow(QMainWindow):
             ascii_max_rows=int(self.visual_config.get("ascii_max_rows", 96)),
             affection_drag_min_s=float(self.interaction_config.get(
                 "affection_drag_min_s", 1.0)),
-            compact=self._pet_mode_enabled)
+            compact=self._pet_mode_enabled,
+            outline=self.pet_config.get("outline", {}),
+            density=str(self.pet_config.get("density", "normal")))
         layout.addWidget(self.canvas, 1)
         self.canvas.petRequested.connect(self._give_affection)
+        self.canvas.panelRequested.connect(self._show_panel)
         self.canvas.activityDetected.connect(self._register_visual_activity)
         self.canvas.animationStarted.connect(self._accelerate_animation)
         self.canvas.rendererChanged.connect(self._renderer_changed)
@@ -618,8 +637,13 @@ class PetWindow(QMainWindow):
             self.raise_()
             self.activateWindow()
             return
+        self._stop_jump(restore_start=True)
+        self._pet_last_click_at = 0.0
+        self._pet_last_click_position = None
+        self._pet_return_position = QPoint(self.pos())
         self._settings.setValue("pet/x", self.x())
         self._settings.setValue("pet/y", self.y())
+        self._settings.sync()
         self.hide()
         self._is_floating = False
         self.clearMask()
@@ -647,6 +671,14 @@ class PetWindow(QMainWindow):
     def _enter_floating_mode(self) -> None:
         if not self._pet_mode_enabled:
             return
+        if self._is_floating:
+            self.showNormal()
+            self.raise_()
+            return
+        self._stop_jump(restore_start=True)
+        for panel in (self._debug_panel, self._learning_panel):
+            if panel is not None:
+                panel.hide()
         self._panel_size = (max(700, self.width()), max(390, self.height()))
         self.hide()
         self._is_floating = True
@@ -663,10 +695,16 @@ class PetWindow(QMainWindow):
         target = self.canvas._stack.currentWidget()
         target.installEventFilter(self)
         self.setMask(self._pet_mask())
-        self._restore_pet_position()
+        self._restore_pet_position(self._pet_return_position)
+        self._pet_return_position = None
+        self._pet_last_click_at = 0.0
+        self._pet_last_click_position = None
+        self._settings.setValue("pet/x", self.x())
+        self._settings.setValue("pet/y", self.y())
+        self._settings.sync()
         for shortcut in self.findChildren(QShortcut):
             shortcut.setEnabled(False)
-        self.show()
+        self.showNormal()
         self.raise_()
 
     def _pet_mask(self) -> QRegion:
@@ -680,10 +718,13 @@ class PetWindow(QMainWindow):
         path.closeSubpath()
         return QRegion(path.toFillPolygon().toPolygon())
 
-    def _restore_pet_position(self) -> None:
+    def _restore_pet_position(self, preferred_position: QPoint | None = None) -> None:
         saved_x = self._settings.value("pet/x", None)
         saved_y = self._settings.value("pet/y", None)
-        if saved_x is not None and saved_y is not None:
+        if preferred_position is not None:
+            point = QPoint(preferred_position)
+            screen = QGuiApplication.screenAt(point) or QGuiApplication.primaryScreen()
+        elif saved_x is not None and saved_y is not None:
             point = QPoint(int(saved_x), int(saved_y))
             screen = QGuiApplication.screenAt(point) or QGuiApplication.primaryScreen()
         else:
@@ -692,7 +733,8 @@ class PetWindow(QMainWindow):
         if screen is None:
             return
         area = screen.availableGeometry()
-        anchor = str(self.pet_config.get("anchor", "none")).lower()
+        anchor = ("none" if preferred_position is not None else
+                  str(self.pet_config.get("anchor", "none")).lower())
         margin = max(0, int(self.pet_config.get("margin", 24)))
         if anchor == "top_left":
             point = QPoint(area.left() + margin, area.top() + margin)
@@ -715,12 +757,8 @@ class PetWindow(QMainWindow):
         event_type = event.type()
         if event_type == QEvent.Type.Enter and not self._pet_hovering:
             self._pet_hovering = True
-            self._grow_pet()
         elif event_type == QEvent.Type.Leave:
             self._pet_hovering = False
-        if event_type == QEvent.Type.MouseButtonDblClick and event.button() == Qt.MouseButton.LeftButton:
-            self._show_panel()
-            return True
         if event_type == QEvent.Type.MouseButtonPress:
             if event.button() == Qt.MouseButton.RightButton:
                 self._show_pet_context_menu()
@@ -728,6 +766,16 @@ class PetWindow(QMainWindow):
             if event.button() == Qt.MouseButton.LeftButton:
                 self._finish_teleport()
                 point = event.globalPosition().toPoint()
+                click_interval = max(200, QApplication.doubleClickInterval()) / 1000.0
+                if (self._pet_last_click_position is not None
+                        and time.monotonic() - self._pet_last_click_at <= click_interval
+                        and (point - self._pet_last_click_position).manhattanLength()
+                        <= QApplication.startDragDistance()):
+                    self._pet_last_click_at = 0.0
+                    self._pet_last_click_position = None
+                    self._show_panel()
+                    return True
+                self._stop_jump(restore_start=False)
                 self._pet_drag_offset = point - self.frameGeometry().topLeft()
                 self._pet_drag_origin = point
                 self._pet_drag_started = time.monotonic()
@@ -748,6 +796,12 @@ class PetWindow(QMainWindow):
                     self._pet_drag_rewarded = True
         elif event_type == QEvent.Type.MouseButtonRelease:
             if event.button() == Qt.MouseButton.LeftButton:
+                if not self._pet_drag_moved:
+                    self._pet_last_click_at = time.monotonic()
+                    self._pet_last_click_position = event.globalPosition().toPoint()
+                else:
+                    self._pet_last_click_at = 0.0
+                    self._pet_last_click_position = None
                 self._settings.setValue("pet/x", self.x())
                 self._settings.setValue("pet/y", self.y())
                 self._pet_drag_offset = None
@@ -774,24 +828,125 @@ class PetWindow(QMainWindow):
         elif self.isVisible():
             self._panel_size = (max(700, self.width()), max(390, self.height()))
 
-    def _grow_pet(self) -> None:
-        if not self._is_floating:
+    def _consider_jump(self, state: VisualState, health: dict[str, object],
+                       now: float) -> None:
+        if (not self._is_floating or not self.isVisible()
+                or not bool(self.pet_motion_config.get("enabled", True))
+                or not self.engine.autonomy_enabled
+                or health["status"] != "running"
+                or int(health["pending_proposals"]) > 0
+                or int(health["proposal_queue"]) > 0
+                or self._teleport_animation is not None
+                or self._jump_animation is not None
+                or self._pet_drag_offset is not None
+                or self._pet_hovering):
             return
-        start = self.geometry()
-        grown_width, grown_height = round(start.width() * 1.08), round(start.height() * 1.08)
-        center = start.center()
-        grown = start.__class__(center.x() - grown_width // 2,
-                                center.y() - grown_height // 2,
-                                grown_width, grown_height)
-        animation = QPropertyAnimation(self, b"geometry", self)
-        animation.setDuration(700)
-        animation.setStartValue(start)
-        animation.setKeyValueAt(0.28, grown)
-        animation.setKeyValueAt(0.72, grown)
-        animation.setEndValue(start)
-        animation.setEasingCurve(QEasingCurve.Type.InOutCubic)
+        if now < self._next_jump_at:
+            return
+
+        minimum = max(2.0, float(self.pet_motion_config.get("interval_min_s", 6.0)))
+        maximum = max(minimum, float(self.pet_motion_config.get("interval_max_s", 12.0)))
+        self._next_jump_at = now + self._jump_rng.uniform(minimum, maximum)
+        if now - self.last_interaction < float(
+                self.teleport_config.get("quiet_after_interaction_s", 15.0)):
+            return
+
+        emotion = str(state.emotion).lower()
+        if emotion in {"dormindo", "sleeping"}:
+            return
+        if emotion in {"alegre", "amoroso", "happy"}:
+            style = "happy"
+        elif emotion in {"curioso", "curious"}:
+            style = "curious"
+        elif emotion in {"estressado", "stressed"}:
+            style = "stress"
+        elif emotion in {"triste", "sad"}:
+            style = "sad"
+        elif emotion in {"sonolento", "sleepy"}:
+            style = "sleepy"
+        else:
+            style = "idle"
+
+        amplitudes = self.pet_motion_config.get("amplitude_px", {})
+        default_amplitudes = {
+            "happy": 26, "curious": 18, "stress": 8,
+            "sad": 4, "sleepy": 2, "idle": 8,
+        }
+        amplitude_key = {
+            "happy": "alegre", "curious": "curioso", "stress": "estressado",
+            "sad": "triste", "sleepy": "sonolento", "idle": "neutro",
+        }[style]
+        amplitude = max(0, int(amplitudes.get(
+            amplitude_key, default_amplitudes[style])))
+        duration_ms = {
+            "happy": 640, "curious": 700, "stress": 420,
+            "sad": 900, "sleepy": 1500, "idle": 850,
+        }[style]
+        self._begin_jump(style, amplitude, duration_ms)
+
+    def _begin_jump(self, style: str, amplitude: int, duration_ms: int) -> None:
+        if self._jump_animation is not None or not self._is_floating:
+            return
+        start = QRect(self.geometry())
+        self._jump_start_geometry = start
+        animation = QVariantAnimation(self)
+        animation.setStartValue(0.0)
+        animation.setEndValue(1.0)
+        animation.setDuration(duration_ms)
+        animation.setEasingCurve(QEasingCurve.Type.Linear)
+        animation.valueChanged.connect(
+            lambda value, style=style, amplitude=amplitude:
+            self._jump_frame(float(value), style, amplitude))
+        animation.finished.connect(
+            lambda animation=animation: self._jump_finished(animation))
+        self._jump_animation = animation
         animation.start()
-        self._pet_animation = animation
+
+    def _jump_frame(self, progress: float, style: str, amplitude: int) -> None:
+        start = self._jump_start_geometry
+        if start is None or not self._is_floating:
+            return
+        t = max(0.0, min(1.0, progress))
+        arc = math.sin(math.pi * t)
+        if style == "happy":
+            lift = abs(math.sin(math.tau * t)) * amplitude * (1.0 - 0.25 * t)
+            x_offset = 0
+            y_offset = -round(lift)
+        elif style == "stress":
+            lift = arc * amplitude
+            x_offset = round(math.sin(t * math.pi * 10.0) * 2.0 * (1.0 - t))
+            y_offset = -round(lift)
+        elif style == "sad":
+            x_offset = 0
+            y_offset = round(arc * amplitude)
+        elif style == "sleepy":
+            x_offset = 0
+            y_offset = -round(arc * amplitude)
+        else:
+            x_offset = 0
+            y_offset = -round(arc * amplitude)
+        self.setGeometry(start.translated(x_offset, y_offset))
+
+    def _jump_finished(self, animation: QVariantAnimation) -> None:
+        if self._jump_animation is not animation:
+            return
+        start = self._jump_start_geometry
+        self._jump_animation = None
+        self._jump_start_geometry = None
+        if start is not None and self._is_floating:
+            self.setGeometry(start)
+        animation.deleteLater()
+
+    def _stop_jump(self, *, restore_start: bool) -> None:
+        animation = self._jump_animation
+        start = self._jump_start_geometry
+        self._jump_animation = None
+        self._jump_start_geometry = None
+        if animation is not None:
+            animation.stop()
+            animation.deleteLater()
+        if restore_start and start is not None and self._is_floating:
+            self.setGeometry(start)
 
     def _teleport_enabled(self) -> bool:
         return bool(self.teleport_config.get("enabled", True))
@@ -931,9 +1086,7 @@ class PetWindow(QMainWindow):
                         now: float | None = None) -> None:
         if not self._is_floating or self._teleport_animation is not None:
             return
-        if self._pet_animation is not None:
-            self._pet_animation.stop()
-            self._pet_animation = None
+        self._stop_jump(restore_start=False)
         start = QRect(self.geometry())
         end = QRect(destination_center.x() - (start.width() - 1) // 2,
                     destination_center.y() - (start.height() - 1) // 2,
@@ -1166,7 +1319,6 @@ class PetWindow(QMainWindow):
     def _give_affection(self) -> None:
         self.engine.submit_affection()
         self.last_interaction = time.monotonic()
-        self._grow_pet()
 
     def _register_visual_activity(self) -> None:
         self.last_interaction = time.monotonic()
@@ -1363,6 +1515,7 @@ class PetWindow(QMainWindow):
         self.canvas.set_state(render_state)
         health = self.engine.health_snapshot()
         self._consider_teleport(render_state, health, now)
+        self._consider_jump(render_state, health, now)
         self._consider_autonomy(render_state, health, now)
         stopped = health["status"] in {"stalled", "stopped"}
         paused = health["status"] == "paused"

@@ -1,5 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
+import math
 from typing import Any, Callable, Mapping
 
 ToolFn = Callable[[dict[str, Any]], dict[str, Any]]
@@ -87,6 +88,13 @@ class ToolManifest:
 
 
 def _matches_type(value: Any, expected: type | tuple[type, ...]) -> bool:
+    accepted = expected if isinstance(expected, tuple) else (expected,)
+    if isinstance(value, bool) and bool not in accepted:
+        return False
+    if isinstance(value, float) and any(candidate in (int, float)
+                                        for candidate in accepted):
+        if not math.isfinite(value):
+            return False
     if expected is int:
         return isinstance(value, int) and not isinstance(value, bool)
     return isinstance(value, expected)

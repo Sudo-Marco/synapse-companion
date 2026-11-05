@@ -8,6 +8,29 @@ pet:
   margin: 24
   panel_hotkey: "<ctrl>+<alt>+o"
   start_with_windows: false
+  density: normal
+  outline:
+    theme_auto: true
+    double: true
+    thickness_px: 1
+    min_cell_px: 8
+    font_size: 7
+    dark: [7, 13, 23]
+    light: [250, 252, 255]
+    plate_alpha: 0.42
+    plate_dark: [12, 20, 32]
+    plate_light: [235, 242, 246]
+pet_motion:
+  enabled: true
+  interval_min_s: 6.0
+  interval_max_s: 12.0
+  amplitude_px:
+    alegre: 26
+    curioso: 18
+    estressado: 8
+    triste: 4
+    sonolento: 2
+    neutro: 8
 teleport:
   enabled: true
   initiative_rate_hz: 1.25
@@ -58,6 +81,13 @@ learning:
   curiosity_base: 0.25
   curiosity_inactivity_gain: 0.40
   curiosity_energy_gain: 0.15
+personality:
+  enabled: true
+  initiative_threshold_base: 0.50
+  initiative_threshold_strength: 0.08
+  caution_threshold_strength: 0.04
+  reward_feedback_min_multiplier: 0.85
+  reward_feedback_max_multiplier: 1.15
 interaction:
   affection_drag_min_s: 1.0
   mouse_observation_interval_s: 0.5

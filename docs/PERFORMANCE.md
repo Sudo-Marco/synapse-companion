@@ -4,6 +4,15 @@ Measurements in this file are diagnostics from the recorded development environm
 
 ## SNN tick cost
 
+The latest short feature-branch sample (40 active ticks, seed `20261102`) compared the B4 code with the recorded B1 baseline. It is a local diagnostic; the small sample is useful for checking the regression budget, not for claiming a precise speedup.
+
+| Requested SNN size | B1 baseline CPU ms/tick | B4 sample CPU ms/tick | Difference |
+| ---: | ---: | ---: | ---: |
+| 600 neurons | 9.2188 | 9.3750 | +1.69% |
+| 1,000 neurons | 19.0625 | 19.1406 | +0.41% |
+
+The raw comparison and profile are [`snn_b4_personality_after.json`](../benchmarks/results/snn_b4_personality_after.json) and its adjacent Markdown report. The measured change is within the 3% tick-cost budget. The personality mapping runs on action/reward events and does not execute in the SNN tick loop.
+
 A short launch comparison ran 60 active ticks on the current code and compared them with a previously recorded 300-tick benchmark. The current file is [`benchmarks/results/snn_launch_comparison.json`](../benchmarks/results/snn_launch_comparison.json); the prior reference is [`snn_runtime_resilience_after.json`](../benchmarks/results/snn_runtime_resilience_after.json).
 
 | Requested SNN size | Prior active CPU ms/tick | Current sample | Difference |

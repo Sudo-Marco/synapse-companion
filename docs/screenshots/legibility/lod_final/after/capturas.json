@@ -1,0 +1,459 @@
+{
+  "phase": "after",
+  "heights_px": [
+    48,
+    64,
+    96,
+    128,
+    192,
+    256
+  ],
+  "aspect_ratio": 1.9,
+  "scale": "direct render to native output dimensions",
+  "backgrounds": [
+    "preto",
+    "branco",
+    "cinza_medio",
+    "azul_escuro",
+    "xadrez_ruido",
+    "foto_paisagem"
+  ],
+  "lod": {
+    "48": {
+      "width_px": 91,
+      "grid_columns": 11,
+      "grid_rows": 6,
+      "lod_level": "small"
+    },
+    "64": {
+      "width_px": 122,
+      "grid_columns": 15,
+      "grid_rows": 8,
+      "lod_level": "small"
+    },
+    "96": {
+      "width_px": 182,
+      "grid_columns": 22,
+      "grid_rows": 12,
+      "lod_level": "small"
+    },
+    "128": {
+      "width_px": 243,
+      "grid_columns": 26,
+      "grid_rows": 14,
+      "lod_level": "medium"
+    },
+    "192": {
+      "width_px": 365,
+      "grid_columns": 27,
+      "grid_rows": 14,
+      "lod_level": "medium"
+    },
+    "256": {
+      "width_px": 486,
+      "grid_columns": 36,
+      "grid_rows": 19,
+      "lod_level": "large"
+    }
+  },
+  "contrast": {
+    "48": [
+      {
+        "background": "preto",
+        "silhouette_vs_background_p05": 20.43,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 1.09,
+        "iris_vs_background_median": 3.56,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "branco",
+        "silhouette_vs_background_p05": 19.46,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 19.32,
+        "iris_vs_background_median": 5.89,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "cinza_medio",
+        "silhouette_vs_background_p05": 4.93,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 4.89,
+        "iris_vs_background_median": 1.49,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "azul_escuro",
+        "silhouette_vs_background_p05": 17.77,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 1.09,
+        "iris_vs_background_median": 3.1,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "xadrez_ruido",
+        "silhouette_vs_background_p05": 4.63,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 3.93,
+        "iris_vs_background_median": 1.92,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "foto_paisagem",
+        "silhouette_vs_background_p05": 6.08,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 3.53,
+        "iris_vs_background_median": 2.35,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      }
+    ],
+    "64": [
+      {
+        "background": "preto",
+        "silhouette_vs_background_p05": 20.43,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 1.08,
+        "iris_vs_background_median": 3.56,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "branco",
+        "silhouette_vs_background_p05": 19.46,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 19.44,
+        "iris_vs_background_median": 5.89,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "cinza_medio",
+        "silhouette_vs_background_p05": 4.93,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 4.92,
+        "iris_vs_background_median": 1.49,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "azul_escuro",
+        "silhouette_vs_background_p05": 17.77,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 1.08,
+        "iris_vs_background_median": 3.1,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "xadrez_ruido",
+        "silhouette_vs_background_p05": 4.61,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 4.38,
+        "iris_vs_background_median": 1.86,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "foto_paisagem",
+        "silhouette_vs_background_p05": 6.29,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 4.31,
+        "iris_vs_background_median": 2.23,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      }
+    ],
+    "96": [
+      {
+        "background": "preto",
+        "silhouette_vs_background_p05": 20.43,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 1.09,
+        "iris_vs_background_median": 3.56,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "branco",
+        "silhouette_vs_background_p05": 19.46,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 19.3,
+        "iris_vs_background_median": 5.89,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "cinza_medio",
+        "silhouette_vs_background_p05": 4.93,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 4.89,
+        "iris_vs_background_median": 1.49,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "azul_escuro",
+        "silhouette_vs_background_p05": 17.77,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 1.08,
+        "iris_vs_background_median": 3.1,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "xadrez_ruido",
+        "silhouette_vs_background_p05": 4.61,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 4.67,
+        "iris_vs_background_median": 1.91,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "foto_paisagem",
+        "silhouette_vs_background_p05": 7.8,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 3.81,
+        "iris_vs_background_median": 2.25,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      }
+    ],
+    "128": [
+      {
+        "background": "preto",
+        "silhouette_vs_background_p05": 20.43,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 3.76,
+        "iris_vs_background_median": 3.61,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "branco",
+        "silhouette_vs_background_p05": 19.46,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 1.52,
+        "iris_vs_background_median": 1.43,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "cinza_medio",
+        "silhouette_vs_background_p05": 4.93,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 2.04,
+        "iris_vs_background_median": 1.49,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "azul_escuro",
+        "silhouette_vs_background_p05": 17.77,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 3.63,
+        "iris_vs_background_median": 3.58,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "xadrez_ruido",
+        "silhouette_vs_background_p05": 4.59,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 2.13,
+        "iris_vs_background_median": 1.62,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "foto_paisagem",
+        "silhouette_vs_background_p05": 8.51,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 2.39,
+        "iris_vs_background_median": 2.39,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      }
+    ],
+    "192": [
+      {
+        "background": "preto",
+        "silhouette_vs_background_p05": 20.43,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 3.83,
+        "iris_vs_background_median": 3.59,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "branco",
+        "silhouette_vs_background_p05": 19.46,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 1.49,
+        "iris_vs_background_median": 1.43,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "cinza_medio",
+        "silhouette_vs_background_p05": 4.93,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 1.93,
+        "iris_vs_background_median": 1.49,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "azul_escuro",
+        "silhouette_vs_background_p05": 17.77,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 3.74,
+        "iris_vs_background_median": 3.57,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "xadrez_ruido",
+        "silhouette_vs_background_p05": 4.6,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 2.13,
+        "iris_vs_background_median": 1.58,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "foto_paisagem",
+        "silhouette_vs_background_p05": 8.58,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 2.57,
+        "iris_vs_background_median": 2.23,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      }
+    ],
+    "256": [
+      {
+        "background": "preto",
+        "silhouette_vs_background_p05": 20.43,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 3.73,
+        "iris_vs_background_median": 3.61,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "branco",
+        "silhouette_vs_background_p05": 19.46,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 1.5,
+        "iris_vs_background_median": 1.43,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "cinza_medio",
+        "silhouette_vs_background_p05": 4.93,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 1.95,
+        "iris_vs_background_median": 1.48,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "azul_escuro",
+        "silhouette_vs_background_p05": 17.77,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 3.68,
+        "iris_vs_background_median": 3.58,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "xadrez_ruido",
+        "silhouette_vs_background_p05": 4.59,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 1.96,
+        "iris_vs_background_median": 1.59,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      },
+      {
+        "background": "foto_paisagem",
+        "silhouette_vs_background_p05": 8.51,
+        "pupil_vs_iris": 3.32,
+        "iris_vs_sclera": 1.94,
+        "pupil_vs_background_median": 2.54,
+        "iris_vs_background_median": 2.12,
+        "reflection_vs_sclera": 3.03,
+        "pass": true
+      }
+    ]
+  },
+  "performance": {
+    "active_30_fps": {
+      "target_fps": 30,
+      "repetitions": 3,
+      "actual_fps": 30.0,
+      "cpu_percent_one_core": 7.96,
+      "cpu_ms_per_frame": 2.654,
+      "samples_cpu_ms_per_frame": [
+        2.595,
+        2.654,
+        2.659
+      ]
+    },
+    "idle_5_fps": {
+      "target_fps": 5,
+      "repetitions": 3,
+      "actual_fps": 5.0,
+      "cpu_percent_one_core": 1.32,
+      "cpu_ms_per_frame": 2.644,
+      "samples_cpu_ms_per_frame": [
+        2.65,
+        2.644,
+        2.572
+      ]
+    }
+  }
+}

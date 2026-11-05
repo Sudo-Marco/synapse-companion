@@ -1,6 +1,7 @@
 import sqlite3
 
 from synapse_pet.runtime.autonomy import AutonomyController, PostItStore
+from synapse_pet.runtime.engine import PetEngine
 from synapse_pet.runtime.visual_state import VisualState
 
 
@@ -40,4 +41,18 @@ def test_postit_store_persists_only_template_metadata_and_expires(tmp_path):
     assert "text" not in columns and "message" not in columns
 
     assert store.active(now=161.0) == []
+
+
+def test_postit_feedback_uses_learning_rpe_and_aggregates_habit(tmp_path):
+    engine = PetEngine(seed=17, data_dir=tmp_path)
+
+    rpes = [engine.reward("postit_interaction", 0.15,
+                          source="feedback_positive") for _ in range(4)]
+
+    assert all(rpe > 0.0 for rpe in rpes)
+    habit = next(row for row in engine.memory.habits()
+                 if row[0] == "postit" and row[1] == "feedback_positive")
+    assert habit[2] == 4
+    assert habit[3] > 0.015
+    assert engine.memory.top_rpe(1)[0][0] == "postit_interaction"
 
