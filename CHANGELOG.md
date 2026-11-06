@@ -4,6 +4,46 @@ Notable changes are recorded here. This project follows a simple Keep a Changelo
 
 ## [Unreleased]
 
+### Planned
+
+- Improve neural-only retention and evaluate the renderer on physical Windows
+  desktops with mixed-DPI displays.
+
+## [0.2.0] - 2026-11-06
+
+### Added
+
+- Approved Piu pixel-art atlases with front/back/turn, run, jump, approach and
+  depth views; JSON frame metadata and emotion/action-to-pose routes.
+- Pixel-art day/dusk/night scene, segmented panel styling, bundled Silkscreen
+  OFL font, preview screenshots, and a generated Piu animation.
+- Scene motion controller with easing, stride phase, jump height, depth,
+  hysteretic native LOD, and drag/proposal guards.
+- Transparent floating Piu view with the current sprite's alpha mask and
+  return-to-pet controls.
+- Bounded, optional sleep replay that can mix high-RPE and recent events; the
+  experiment and its remaining retention gap are documented in `docs/LEARNING.md`.
+- Optional tool-output current competition behind a disabled-by-default YAML
+  flag; the configured 10-step interval measured about +1.1% tick cost but did
+  not improve the scenario-c/Z SNN-only result, which remains below its target.
+- Pixel-art guide and updated bilingual project documentation for version 0.2.0.
+
+### Changed
+
+- The default visual is now the Piu pixel-art style. Spectral, ASCII, and vector
+  eye renderers remain selectable.
+- The pixel renderer paints through a half-resolution nearest-neighbor buffer,
+  caches HUD elements, and can resolve emotion poses from JSON routes.
+- Snapshot schema, LIF topology, tools, and default deterministic dynamics are
+  unchanged by the new optional experiments.
+
+### Validation limits
+
+- Automated Qt tests and screenshots are offscreen. Physical desktop,
+  multi-monitor, mixed-DPI, and real OpenGL behavior are not validated here.
+- The SNN-only replay target and the output-competition accuracy target were
+  not reached; the features remain off by default.
+
 ### Added
 
 - Adaptive, rounded ASCII eye LOD with a configurable minimum glyph size, stable features at small sizes, and a six-background/six-size contrast review with native and enlarged captures.

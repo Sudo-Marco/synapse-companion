@@ -1,50 +1,81 @@
 # Performance measurements
 
-Measurements in this file are diagnostics from the recorded development environment. They are not guarantees for other machines or a live desktop session.
+These are short measurements from the development environment. The Qt runs
+use an offscreen CPU renderer; they do not measure physical desktop
+composition, GPU drivers, or mixed-DPI behavior. Treat the values as regression
+checks, not hardware guarantees.
 
 ## SNN tick cost
 
-The latest short feature-branch sample (40 active ticks, seed `20261102`) compared the B4 code with the recorded B1 baseline. It is a local diagnostic; the small sample is useful for checking the regression budget, not for claiming a precise speedup.
+The baseline used 120 active ticks and the post-change sample used 160 active
+ticks, with the same seed/configuration and 600 or 1,000 requested neurons.
+The small sample is sensitive to timer quantization. Changes are below the 3%
+regression ceiling; negative values are not claimed as speedups.
 
-| Requested SNN size | B1 baseline CPU ms/tick | B4 sample CPU ms/tick | Difference |
+| Requested network size | Prior baseline active CPU | Current feature-off sample | Difference |
 | ---: | ---: | ---: | ---: |
-| 600 neurons | 9.2188 | 9.3750 | +1.69% |
-| 1,000 neurons | 19.0625 | 19.1406 | +0.41% |
+| 600 neurons | 9.2188 ms/tick | 9.0820 ms/tick | −1.48% |
+| 1,000 neurons | 19.2188 ms/tick | 19.0430 ms/tick | −0.91% |
 
-The raw comparison and profile are [`snn_b4_personality_after.json`](../benchmarks/results/snn_b4_personality_after.json) and its adjacent Markdown report. The measured change is within the 3% tick-cost budget. The personality mapping runs on action/reward events and does not execute in the SNN tick loop.
+The runtime appends tool-output neurons, so the live populations are larger than
+the requested base sizes. The current 600-neuron process used about 55.37 MiB
+RSS and the 1,000-neuron process about 55.99 MiB in the probe. The sampled idle
+engine CPU was 0.00% at this short duration; that reading is below the useful
+resolution of the probe and is not a claim of zero idle cost.
 
-A short launch comparison ran 60 active ticks on the current code and compared them with a previously recorded 300-tick benchmark. The current file is [`benchmarks/results/snn_launch_comparison.json`](../benchmarks/results/snn_launch_comparison.json); the prior reference is [`snn_runtime_resilience_after.json`](../benchmarks/results/snn_runtime_resilience_after.json).
+The optional lateral competition path was measured separately with an
+inhibition sample every 10 LIF steps (20 ms at `dt_ms: 2`). Against the same
+feature-off sample, measured active cost was +1.08% at 600 neurons and +1.03%
+at 1,000 neurons. It remains disabled by default because it did not improve
+scenario-c/Z accuracy. A one-step sampling interval was substantially more
+expensive and is not the configured experiment.
 
-| Requested SNN size | Prior active CPU ms/tick | Current sample | Difference |
-| ---: | ---: | ---: | ---: |
-| 600 neurons | 9.1146 | 9.1146 | 0.00% |
-| 1,000 neurons | 18.9063 | 18.7500 | −0.83% |
+Raw reports: [`snn_piu_after.json`](../benchmarks/results/snn_piu_after.json),
+[`snn_piu_wta.json`](../benchmarks/results/snn_piu_wta.json), and
+[`snn_baseline_phase2.json`](../benchmarks/results/snn_baseline_phase2.json).
 
-The requested sizes become 712 and 1,112 runtime neurons after built-in tool output groups are added. Current process RSS was 55.30 MiB and 55.87 MiB, respectively. The short idle engine CPU probe measured 0.78% of one logical core. Tick deltas compare a 60-sample run with a 300-sample baseline and are within the measurement noise; the negative delta at 1,000 neurons is not evidence of a speedup.
+## Pixel renderer CPU and FPS
 
-The older context-projection comparison used 300 ticks and reported 9.0104 ms/tick at 600 neurons and 18.9063 ms/tick at 1,000. Later samples recorded about 9.11 ms/tick and 18.91 ms/tick. Differences at 600 were at or near the timer's quantization step. See the JSON/Markdown reports in `benchmarks/results/` for methodology.
+The renderer benchmark used an 800×450 Qt widget, CPU/QPainter backend, and
+offscreen display. “Scene” is the pixel-art scene shown under Piu; “HUD” adds
+the cached telemetry card. The prior run lasted 5 seconds per phase and the
+current run 10 seconds per phase, so compare only as an approximate check.
 
-## Floating UI idle sample
+| View | Phase | FPS target / measured | CPU before | CPU after | Change |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Scene | active | 30 / 30.39 → 30 / 30.30 | 5.53% | 5.50% | −0.5% |
+| Scene | idle | 5 / 5.00 → 5 / 5.00 | 2.59% | 2.52% | −2.7% |
+| HUD | active | 30 / 29.99 → 30 / 30.30 | 7.14% | 6.30% | −11.8% |
+| HUD | idle | 5 / 5.00 → 5 / 5.00 | 2.60% | 1.10% | −57.7% |
 
-A 4-second offscreen Qt event-loop sample, after 4 seconds of warm-up, measured **0.39% of one logical core** with a 200 ms timer interval (5 FPS). This measures the offscreen renderer and does not include a physical Windows desktop compositor. It does not prove the target `<3%` on all hardware.
+The scene view is about 0.5 percentage points above the `<5%` active target in
+this sample; the HUD active view is 1.3 points above it. Both idle views stayed
+under 3%. The cached HUD and half-resolution nearest-neighbor buffer reduced
+work, and measured FPS stayed at target. These CPU values depend on Qt's
+offscreen event loop and should not be transferred to physical hardware.
 
-## Renderer sample (historical)
+The report files are [`piu_render_before_after.json`](../benchmarks/results/piu_render_before_after.json)
+and [`piu_render_after.json`](../benchmarks/results/piu_render_after.json). The
+first file contains the captured prior sample; the second is the current
+10-second sample. Both use the CPU renderer, so VRAM is not applicable.
 
-The tracked renderer reports were generated before the current small floating-pet default and measure a full panel at 800×450. They are not measurements of the new floating mode.
+## Sleep replay
 
-| Mode | GPU-enabled panel idle CPU | CPU-only panel idle CPU | Measured FPS target |
-| --- | ---: | ---: | ---: |
-| Shader | 4.03% | 9.77% | 5 |
-| ASCII | 22.47% | 17.13% | 5 |
-| HUD | 11.07% | 6.32% | 5 |
+Replay occurs once during sleep consolidation rather than on every ordinary
+simulation tick. It uses up to 120 high-absolute-RPE and recent events when
+explicitly enabled; its one-shot CPU cost appears in the `sleep` phase of the
+SNN report. Replay is off by default. See [LEARNING.md](LEARNING.md) for its
+scenario accuracy and remaining target gap.
 
-The brief active full-panel samples reported ASCII CPU above one logical core. The main panel's ASCII renderer is therefore substantially heavier than the compact floating eye; full-screen use can increase cost. VRAM readings are GPU/driver-specific and not directly comparable with process RSS.
-
-## Reproduction
+## Reproduce
 
 ```powershell
-.\.venv\Scripts\python.exe benchmarks\snn_baseline.py --ticks 60 --profile-steps 40 --idle-seconds 2
-.\.venv\Scripts\python.exe benchmarks\render_benchmark.py --seconds 3
+.\.venv\Scripts\python.exe benchmarks\snn_baseline.py --ticks 160 --profile-steps 40 --idle-seconds 2
+.\.venv\Scripts\python.exe benchmarks\snn_baseline.py --ticks 160 --profile-steps 40 --idle-seconds 2 --tool-output-inhibition
+.\.venv\Scripts\python.exe benchmarks\render_benchmark.py --renderer ascii --render-style pixel --size 800x450 --seconds 10
 ```
 
-Use at least a few hundred ticks for a more stable SNN comparison. Record Python, NumPy, hardware, renderer, resolution, and run duration when comparing results. Avoid interpreting a short CPU-timer sample as a precise regression or speedup.
+Use several hundred ticks for a more stable SNN comparison. Record Python,
+NumPy, hardware, renderer, resolution, and sample duration when comparing
+different systems. Do not infer desktop GPU behavior from an offscreen CPU
+renderer.

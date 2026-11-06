@@ -6,16 +6,17 @@ Autonomous visual behavior is separate from the SNN simulation loop. It receives
 
 | State or trigger | Current effect | Control |
 | --- | --- | --- |
-| SNN initiative plus an emotional state | Short ASCII particle teleport; style follows curiosity, happiness, stress, energy, or attention. | `teleport.enabled`, `initiative_rate_hz`, `cooldown_s`, `max_per_hour`, `targets`. |
+| SNN initiative plus an emotional state | Bounded window teleport with a state-colored trail; style follows curiosity, happiness, stress, energy, or attention. | `teleport.enabled`, `initiative_rate_hz`, `cooldown_s`, `max_per_hour`, `targets`. |
 | High stress | Local alert/pause post-it template. | `autonomy.behaviors.postits`, `postits.stress_threshold`, template `alerta`. |
 | Repeated output attention | Conversation invitation template. | `postits.attention_rate_hz`, template `conversa`. |
 | High boredom | Break reminder template. | `postits.boredom_threshold`, template `pausa`. |
 | High curiosity | Explore invitation template. | `postits.curiosity_threshold`, template `curiosidade`. |
 | Repeated positive habit | One-time informational post-it saying a pattern was recorded. | `habits.*`, `behaviors.habit_notice`. |
-| Low energy / sleep | Existing eye animation closes its eye and shows sleep cues. | `runtime.sleep_after_s`; `sleep.replay_enabled` affects optional replay only. |
+| Low energy / sleep | Piu uses a sleeping pose; floating mode can make a small, state-dependent hop and settles to its starting bounds. | `runtime.sleep_after_s`; `pet_motion.*`; `sleep.replay_enabled` affects optional replay only. |
+| Panel scene movement | `request_move(target, style)` moves across the scene with stride/jump frames, easing, depth view, native LOD selection, and drag/proposal locks. | `pet_motion.enabled`; controller targets/styles in `ui/pet_motion.py`. |
 | Hover, mouse, idle | Gaze, brief curiosity, glances, blink, and existing visual effects. | `interaction.*`, `curiosity_novelty.*`, `visual.*`. |
 
-All template strings are local YAML configuration. The app does not create files on the desktop. Post-it windows are frameless, topmost, non-activating, draggable, dismissible, and capped at four by default. They expire after ten minutes. SQLite stores template ID, emotion category, timestamps, and position, not the rendered text.
+All template strings are local YAML configuration. The app does not create files on the desktop. Post-it windows are frameless, topmost, non-activating, draggable, dismissible, and capped at four by default. They expire after ten minutes. SQLite stores template ID, emotion category, timestamps, and position, not the rendered text. The pixel-art renderer reads visual state and does not make SNN weight changes itself.
 
 ## Budgets and suppression
 
@@ -34,4 +35,4 @@ Clicking **Entendi** sends a small positive feedback event. Quickly closing a ne
 
 ## Planned behavior
 
-The broader behavior map includes more glance patterns, yawns, hiding, cursor chasing, time-of-day reactions, affection particles, repeated-punishment sulking, break invitations, and template dialogue. These are not all implemented. See [ROADMAP.md](../ROADMAP.md).
+The broader behavior map includes more glance patterns, yawns, hiding, cursor chasing, time-of-day reactions, repeated-punishment sulking, richer post-it dialogue, and fully sprite-authored secondary effects. These are not all implemented. The floating hop animates the window bounds and was only covered by offscreen tests; physical desktop monitor/DPI behavior is not validated. See [ROADMAP.md](../ROADMAP.md).

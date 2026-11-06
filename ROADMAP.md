@@ -1,33 +1,56 @@
 # Roadmap
 
-This roadmap records incomplete work and possible directions. An item is not a delivered feature until implemented, tested, and described as such in the release notes.
+This roadmap distinguishes delivered code from goals that remain experimental.
+Items listed as current were checked in this release's source/tests; offscreen
+tests do not establish behavior on a physical desktop.
 
-## Current release scope
+## Version 0.2.0 scope
 
-- Adaptive rounded ASCII LOD, contrast capture/reporting across six sizes and backgrounds, configurable density/outline/theme, and renderer performance review: implemented; physical desktop visibility remains unvalidated.
-- P0 tool parameter validation, safe defaults, failure cooldowns, and configuration-required response: implemented.
-- P1 transparent floating eye, on-demand panel/tray, move/affection behavior, and emotion-aware teleport: implemented; UI verification is headless/offscreen only.
-- P2 budgeted template post-its, local metadata persistence, feedback, and aggregate habits: initial slice implemented.
-- P3 opt-in sleep replay and an aggregate learning view: implemented; replay is disabled by default and its scenario performance has not been evaluated.
-- P4 bilingual documentation and repository release setup: files, issue templates, package metadata, and Windows/Linux CI workflow are present; rerun hosted CI for this feature branch after push.
+- Piu pixel-art view is the default. Approved sprite art, animation metadata,
+  JSON state routes, native 32/24/16 depth sprites, scene, pixel panel styling,
+  floating mode, and generated previews are included.
+- Scene motion supports easing, stride phase, jump height, depth, hysteretic LOD,
+  view changes, and drag/proposal suppression. The sprite alpha drives the
+  floating window mask.
+- LIF dynamics and deterministic reference behavior remain unchanged when the
+  experimental YAML flags are disabled.
+- Typed tool parameter validation, permissions, proposal timeout, snapshot
+  migration, local post-it templates, aggregate habits, and telemetry are
+  implemented and documented.
+- Sleep replay is opt-in and bounded. In the recorded scenario-e run it did not
+  reach the >80% SNN-only retention target; the selector still carried the
+  combined policy. Keep it disabled unless its behavior is deliberately tested.
+- The optional output-competition experiment is also disabled. At strength
+  `0.35` it reduced SNN-only accuracy in scenario c/X from 100% to 57.5%, so it
+  is not a recommended policy setting.
 
 ## Remaining engineering
 
-1. **Autonomy coverage:** implement remaining state-driven actions from the original plan: more glance paths, yawns, hiding, cursor chasing, time-of-day response, affection particles, repeated-punishment sulking, and break invitations. Add per-behavior deterministic tests and user-facing controls.
-2. **Durable action budgets:** current autonomy and teleport hourly caps/cooldowns reset when the process restarts. Persist and test these counters before treating them as anti-spam guarantees across sessions.
-3. **Post-it lifecycle:** headless coverage now checks no-focus ownership, the interaction callback, template-only persistence, and expiry. Still pending: drag/restart restoration tests and interactive Windows validation on mixed-DPI monitors; consider reconciliation when users change templates.
-4. **Sleep replay evaluation:** run the same synthetic scenarios with replay off/on, especially scenario e and a new-context retention check. Keep it disabled unless it improves a measured goal without regressions.
-5. **Snapshot migration:** implemented. Opt-in 600→800 neuron migration (`network.allow_neuron_growth_migration`, false by default) with pre-migration verifiable backup, atomic commit, semantic weight and neuronal state preservation, context readout preservation, dynamic tool group persistence, and rejection of silent shrinking.
-6. **Personality:** the first bounded mapping is implemented: initiative/caution affect the selector gate and reward sensitivity scales contextual preference updates. Still pending: user-facing trait controls and a synthetic evaluation of policy effects; the mapping does not alter LIF dynamics or topology.
-7. **Profiling:** investigate lazy traces and per-tick allocations only after a repeatable profile shows a measurable opportunity under the ≤3% regression budget.
-8. **Release validation:** run interactive tests on Windows with OpenGL and CPU fallback, multiple monitors/DPI scales, taskbar placements, and tray behavior. The current release's Qt checks are offscreen.
+1. Improve the neural-only contextual classifier without degrading the
+   combined selector, especially scenario c/Z and scenario e retention. Run
+   repeated seeds and confidence intervals before changing defaults.
+2. Rework or remove the experimental output-inhibition rule unless a future
+   version passes the b/c acceptance thresholds with no >3-point regressions.
+3. Evaluate alternate sleep replay sampling/consolidation until neural-only
+   retention exceeds 80% while preserving the new-context score and keeping
+   replay CPU bounded.
+4. Expand sprite-authored animation variety and replace QPainter scene effects
+   with editable pixel assets where practical. Keep the approved Piu design.
+5. Persist hourly autonomy and teleport budgets across restarts if they are to
+   be presented as cross-session anti-spam limits.
+6. Complete interactive Windows checks: OpenGL and CPU fallback, transparent
+   click-through, tray, taskbar placements, multiple monitors, mixed DPI,
+   screen edges, return-to-pet behavior, and sleep animation timing.
+7. Add confidence intervals and broader synthetic contexts to the learning
+   report; current learning scores use one fixed seed and artificial actions.
 
 ## Longer-term directions
 
-- A small skills layer for reusable local routines.
-- Optional local `NarratorProvider` integration for natural-language phrasing. It must be disabled by default, clearly isolated from SNN learning, and remain local unless configured otherwise.
-- Optional MCP integration with per-tool permission and data-flow review.
-- Browser workflows only with explicit user confirmation, bounded permissions, and privacy tests.
-- Broader synthetic scenarios, confidence intervals, repeated seeds, and ablation reports before making stronger claims about learning.
+- A small skills layer for reusable, explicitly permitted local routines.
+- Optional local-language narration, isolated from SNN learning and disabled
+  unless deliberately configured.
+- Optional MCP integrations with per-tool permissions and data-flow review.
+- More animation routes and scene reactions backed by reproducible tests.
 
-These are ideas, not current capabilities or delivery dates.
+These are possible future directions, not current capabilities or delivery
+dates.

@@ -1,239 +1,164 @@
 # Synapse Pet
 
-[English](README.md) · [Português (Brasil)](README.pt-BR.md)
+Português (Brasil) · [English](README.md)
 
 ![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
-![Licença MIT](https://img.shields.io/badge/Licen%C3%A7a-MIT-2E8B57.svg)
-![Plataforma Windows 10/11](https://img.shields.io/badge/Plataforma-Windows%2010%2F11-0078D6?logo=windows&logoColor=white)
-![Status experimental](https://img.shields.io/badge/status-experimental-orange)
+![Windows 10/11](https://img.shields.io/badge/Plataforma-Windows%2010%2F11-0078D6?logo=windows&logoColor=white)
+![MIT](https://img.shields.io/badge/Licença-MIT-2E8B57.svg)
+![Versão](https://img.shields.io/badge/vers%C3%A3o-0.2.0-blue)
 
-**Synapse Pet** é um companheiro de desktop experimental controlado por uma pequena rede neural de impulsos local (SNN). O estado simulado influencia um olho animado em ASCII, comportamentos autônomos limitados e um painel de telemetria. É uma simulação e um experimento de aprendizado, não um assistente conversacional.
+Synapse Pet é um companheiro de desktop local para Windows e um experimento com redes neurais de disparos pequenas. O companheiro é o **Piu**, um canarinho em pixel art cujas expressões e movimentos mostram o estado da simulação. A política de decisão combina uma SNN feita à mão em NumPy com um seletor pequeno de preferências por contexto.
 
-Por padrão, o pet é um olho transparente e flutuante. O painel de configuração abre sob demanda. O projeto cresce em etapas verificáveis, mantendo a simulação, os dados e as ferramentas no computador do usuário.
+**Ele não é um modelo de linguagem, chatbot ou assistente de programação.** Não entende texto aberto nem responde perguntas gerais. Reage a sinais numéricos e categorias simples, carinho e feedback explícitos e ferramentas locais permitidas.
 
-![Pet flutuante em ASCII, capturado pelo renderizador offscreen do Qt](docs/screenshots/floating_pet_offscreen.png)
+![Piu no cenário em pixel art](docs/screenshots/piu/piu-cenario-dia.png)
 
-*Captura do renderizador em uma sessão Qt headless. Ela demonstra o buffer transparente do pet; não é uma captura do aplicativo em uma área de trabalho real.*
+*Prévia offline renderizada pelo Qt; não é uma captura do programa em um desktop físico.*
 
-## Estado do projeto
+![Animação flutuante do Piu](docs/screenshots/piu/piu-animacao.gif)
 
-| Área | Implementação atual |
+*Prévia gerada da animação em pixel art. Na aplicação, a janela flutuante é transparente.*
+
+## Escopo do projeto
+
+| Área | O que foi implementado |
 | --- | --- |
-| Interface | PySide6; modo flutuante transparente e painel sob demanda, bandeja, máscara de cliques, posição persistida e atalho global quando `pynput` está instalado. |
-| Avatar | Olho espectral animado por padrão, com forma vetorial suave, aura ASCII, brilho, runas, fumaça, expressões e renderizador QPainter/CPU; o olho ASCII anterior continua disponível. |
-| Teleporte | Animação curta por emoção, com rastro, limites por monitor, cooldown, cota horária e bloqueios durante arrasto ou proposta pendente. |
-| SNN | Rede LIF esparsa; 600 neurônios solicitados por padrão (grupos de saída de ferramentas aumentam a população em execução). |
-| Aprendizado | R-STDP modulada por recompensa, traços de elegibilidade, homeostase, impulsos afetivos e preferências contextuais. Replay no sono é opcional e vem desligado. |
-| Autonomia | Post-its locais com orçamento, registro agregado de hábitos e reações visuais existentes de olhar, repouso, sono e carinho. |
-| Ferramentas | Validação de parâmetros antes da execução, permissões, confirmação de ações de maior risco e execução assíncrona. |
-| Avaliação | Cenários sintéticos reproduzíveis, com resultados CSV/JSON e curvas em `docs/learning/`. |
-| Assistência por modelo de linguagem | Não implementada. O pet não entende perguntas abertas nem gera respostas de programação. |
+| Interface | Painel PySide6, modo flutuante transparente opcional, bandeja do sistema, tela cheia, alternância cenário/HUD e atalhos. |
+| Personagem | Folhas de sprites aprovadas do Piu, poses emocionais, corrida, pulo, virada e profundidade, cenário e ampliação por vizinho mais próximo. |
+| SNN | População LIF esparsa em NumPy, STDP modulada por recompensa, traços de elegibilidade, homeostase e projeções de saída por contexto sobre topologia esparsa compartilhada. |
+| Política híbrida | Taxas de disparo da SNN combinadas com preferências aprendidas por contexto. Avaliações sintéticas mostram os componentes separadamente. |
+| Autonomia | Movimentos visuais limitados e post-its de templates locais, com bloqueios durante arrasto/proposta e opção para silenciar. A autonomia não executa ferramentas diretamente. |
+| Segurança e privacidade | Validação de parâmetros tipados, permissões, propostas e confirmações, dados locais, logs rotativos e sensores opcionais desligados por padrão. |
+| Aprendizado observável | Banco local de episódios e ações, hábitos agregados, replay opcional durante sono e aba de aprendizado sob demanda. |
 
-As mudanças de interface foram verificadas com testes automatizados e execuções Qt curtas em modo offscreen. Isso **não** comprova o funcionamento interativo em toda combinação de Windows, GPU, múltiplos monitores e escala de tela.
+O projeto ainda é experimental. Testes automatizados e renderizações offscreen não validam a interação em todos os desktops Windows, GPUs, configurações de monitor ou escalas de DPI.
 
-## O que faz e o que não faz
+## Instalação e execução no Windows
 
-**Implementado:** simula estados neurais e afetivos; anima o olho; reage a carinho deliberado e feedback; aprende associações delimitadas em cenários sintéticos; mostra notas com templates locais; e pode propor ferramentas locais configuradas e sujeitas a permissões.
-
-**Não implementado:** chatbot, copiloto de programação, busca na web, compreensão geral de linguagem ou controle autônomo genérico do computador. A SNN recebe números e categorias aproximadas; não lê o texto digitado. Os resultados combinados usam pontuação neural e preferências contextuais, então não devem ser apresentados como desempenho exclusivo da SNN.
-
-## Requisitos e instalação
-
-- Windows 10 ou 11 é o alvo principal para desktop.
-- Python 3.10 ou superior.
-- É necessário internet para instalar os pacotes. A simulação é local; `abrir_url` pode acessar a internet somente após uma ação explícita do usuário.
-
-No PowerShell, na raiz do repositório:
+No PowerShell, dentro da pasta do repositório:
 
 ```powershell
 .\scripts\install.ps1
 .\scripts\run.ps1
 ```
 
-O instalador cria `.venv` e instala o projeto, as ferramentas de desenvolvimento e os sensores opcionais de Windows. Para iniciar diretamente:
-
-```powershell
-.\.venv\Scripts\python.exe -m synapse_pet.main
-```
-
-Para executar uma simulação headless curta:
-
-```powershell
-.\.venv\Scripts\python.exe -m synapse_pet.main --headless --ticks 100
-```
-
-Configuração manual do ambiente:
+Ou execute diretamente após instalar as dependências:
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e ".[dev,windows]"
+.\.venv\Scripts\python.exe -m synapse_pet.main
 ```
 
-O workflow configurado no GitHub Actions executa os testes em Windows e Linux com a plataforma offscreen do Qt. Isso verifica portabilidade do código, não representa suporte completo a desktop Linux.
+Simulação sem interface e testes:
 
-## Pet flutuante e controles
+```powershell
+.\.venv\Scripts\python.exe -m synapse_pet.main --headless --ticks 100
+.\.venv\Scripts\python.exe -m pytest
+```
 
-`pet.mode: floating` é o padrão. Ele mostra somente o olho em uma janela sem borda, transparente e sempre no topo. A máscara do olho deixa cliques passarem fora da área visível; arrastar move o pet. Clique duplo abre o painel e clique direito abre o menu compacto. Ao retornar, o olho recupera sua posição anterior; o botão **◉ OLHO** e o botão de fechar do cabeçalho retornam ao avatar. A bandeja permite abrir o painel, pausar/retomar a simulação, silenciar autonomia, configurar a inicialização do Windows ou sair. O atalho global padrão é `Ctrl+Alt+O` e depende do pacote opcional `pynput`.
+As ações do GitHub executam os testes no Windows e Linux com o Qt offscreen. Windows é o alvo de desktop; o CI no Linux é apenas uma verificação de portabilidade dos testes.
 
-Altere `pet.mode: window` em `configs/default.yaml` para iniciar com o painel aberto. Fechar o painel retorna ao modo flutuante.
+## Modos e controles
 
-| Controle do painel | Função |
+`pet.mode: floating` mostra somente o Piu numa janela transparente, sem borda e sempre no topo. Uma máscara extraída do sprite exibido deixa os cliques passarem fora do personagem. Clique duas vezes no Piu para abrir o painel; clique direito abre o menu do mascote. O botão **OLHO** ou o botão de fechar do painel retorna o Piu à posição salva. A bandeja pode abrir o painel, pausar a simulação, silenciar a autonomia, configurar inicialização ou sair.
+
+| Controle | Ação |
 | --- | --- |
-| **CARINHO** | Envia afeto deliberado e feedback de aprendizado positivo. Arrastar sobre o olho pelo tempo definido em `interaction.affection_drag_min_s` (1 segundo por padrão) também vale. Hover sozinho não recompensa o pet. |
+| **CARINHO** | Envia afeto positivo deliberado e feedback de aprendizado. Só passar o mouse não gera recompensa. Arrastar sobre o Piu conta após `interaction.affection_drag_min_s`. |
 | **FEEDBACK** | Envia feedback negativo à simulação. |
-| **DEBUG** | Abre telemetria neural: tick, regime, filas e estado da thread de simulação. |
-| **SENSORES** | Abre o menu de sensores opcionais. Todos começam desligados. |
-| **EXPRESSÕES · ASCII** | Alterna o painel entre a arte ASCII e o HUD. |
-| **APRENDIZADO** | Mostra contagens agregadas de hábitos e estatísticas de recompensa. O timer de atualização funciona somente enquanto a janela está aberta. |
-| **DESFAZER** | Solicita desfazer a última ferramenta que implemente essa operação. Não desfaz mudanças da simulação. |
-| **SALVAR** | Enfileira um snapshot; a gravação em disco ocorre fora do caminho crítico dos ticks. |
-| **ACEITAR / RECUSAR / DEPOIS** | Responde a uma proposta de ferramenta. Ações de maior risco exigem confirmação explícita. |
+| **DEBUG** | Exibe telemetria da SNN, tick, regime, filas e estado da thread. |
+| **SENSORES** | Abre os controles de sensores opcionais, desligados por padrão. |
+| **APRENDIZADO** | Mostra estatísticas agregadas de hábitos e recompensas enquanto o painel está visível. |
+| **CENÁRIO / HUD** | Alterna entre cenário pixel art e HUD de telemetria. |
+| **DESFAZER** | Desfaz a última ação somente se a ferramenta oferecer essa função. |
+| **SALVAR** | Enfileira um snapshot local assíncrono. |
+| **ACEITAR / RECUSAR / DEPOIS** | Responde a uma proposta pendente. Ferramentas de maior risco seguem as confirmações exigidas. |
 
-No painel: `M` alterna ASCII/HUD, `H` escolhe HUD, `F11` alterna tela cheia, `T` ajusta a opacidade e `Esc` sai da tela cheia. Esses atalhos ficam desativados no modo flutuante para não capturar teclas de outros aplicativos.
+Atalhos do painel: `M` alterna cenário/HUD, `H` seleciona HUD, `F11` alterna tela cheia, `T` muda a opacidade e `Esc` sai da tela cheia. `Ctrl+Alt+O` abre o painel se o pacote opcional `pynput` estiver instalado. O programa não captura atalhos enquanto o Piu flutuante está ativo.
 
 ## Configuração
 
 Edite [`configs/default.yaml`](configs/default.yaml) e reinicie o aplicativo.
 
-| Opção | Efeito |
+| Opção | Função |
 | --- | --- |
-| `pet.mode`, `pet.width`, `pet.height`, `pet.anchor`, `pet.margin` | Escolhe painel ou modo flutuante e configura tamanho e posição inicial. |
-| `pet.render_style` | `spectral` (padrão), `ascii` (olho ASCII anterior) ou `vector` (olho vetorial sem aura). Reinicie o app após alterar. |
-| `pet.spectral.glow_strength` | Intensidade do brilho espectral entre `0` e `1`; o contorno base é armazenado em cache por tamanho. |
-| `pet.spectral.rune_count` | Quantidade máxima de runas orbitais, de `0` a `12`; tamanhos pequenos reduzem a quantidade automaticamente. |
-| `pet.spectral.smoke_density` | Densidade da fumaça ASCII entre `0` e `1`; a densidade visível também acompanha energia e estresse. |
-| `pet_motion.enabled`, `pet_motion.interval_min_s`, `pet_motion.interval_max_s`, `pet_motion.amplitude_px` | Ativa saltos autônomos espaçados e ajusta a altura conforme o estado emocional. |
-| `pet.panel_hotkey` | Atalho global para abrir o painel (opcional `pynput`). |
-| `renderer` | Escolhe o backend de desenho, separado do estilo visual: `ascii` é o padrão, `cpu` força QPainter e `auto` tenta OpenGL antes do fallback. |
-| `visual.ascii_columns`, `visual.ascii_rows` | Densidade inicial da grade ASCII. `ascii_max_*` limita a resolução quando o painel cresce. |
-| `visual.scene_time` | `auto`, `dia`, `entardecer` ou `noite`. |
-| `teleport.enabled`, `teleport.cooldown_s`, `teleport.max_per_hour`, `teleport.targets` | Controla teleporte autônomo, limites e destinos permitidos. |
-| `autonomy.enabled`, `autonomy.max_actions_per_hour`, `autonomy.postits.*` | Silencia a autonomia ou configura limites, expiração, limiares e templates dos post-its. |
-| `sleep.replay_enabled` | Ativa replay limitado de episódios com recompensa alta durante o sono. Padrão: `false`. |
-| `personality.*` | Traits ajustam, dentro de limites, o limiar de iniciativa do seletor e a taxa de atualização das preferências por recompensa. Pode ser desligado; não altera a dinâmica nem a topologia LIF. |
-| `network.allow_neuron_growth_migration` | Autoriza migração explícita de snapshot quando a contagem configurada de neurônios é maior que a salva (ex.: 600→800). Cria backup verificável antes de migrar, preserva pesos, estados neuronais, projeções contextuais e grupos dinâmicos de ferramentas. Nunca reduz uma rede salva maior. Padrão: `false`. |
-| `habits.enabled`, `habits.minimum_observations`, `habits.minimum_mean_rpe` | Ativa contagens agregadas de hábitos. A tabela salva categoria e ação fixa, contagens, médias de recompensa e data. |
-| `privacy.sensors.*` | Configura os sensores opcionais; todos vêm como `false`. |
+| `pet.render_style` | `pixel` (padrão), `spectral`, `ascii` ou `vector`. Os renderizadores antigos do olho continuam disponíveis. |
+| `pet.mode`, `pet.width`, `pet.height`, `pet.anchor`, `pet.margin` | Escolhe painel ou janela flutuante e sua posição inicial. |
+| `visual.scene_time` | `auto`, `dia`, `entardecer` ou `noite`; `auto` usa o horário local. |
+| `pet.depth_in_pet_mode` | Habilita escala por profundidade no modo flutuante; padrão `false`. |
+| `pet_motion.*` | Habilita e ajusta pequenos saltos por estado emocional. |
+| `renderer` | Backend de desenho: `ascii`/`cpu` ou `auto` (tenta OpenGL e usa fallback CPU). É separado de `pet.render_style`. |
+| `network.tool_output_inhibition` | Competição experimental entre saídas. Mantenha desligada: no intervalo configurado de 10 passos, c/Z ficou em 77,5% SNN-only, abaixo da meta de >80%. |
+| `sleep.replay_enabled`, `sleep.max_replay_episodes`, `sleep.replay_recent_fraction` | Replay limitado e opcional durante o sono; altera pesos somente se habilitado. |
+| `network.allow_neuron_growth_migration` | Autoriza migração explícita ao aumentar a rede; padrão `false`; redução nunca é automática. |
+| `autonomy.*`, `teleport.*` | Habilita e limita post-its e movimentos locais. |
+| `privacy.sensors.*` | Configura sensores opcionais, todos inicialmente desligados. |
 
-O estilo `spectral` consulta somente a preferência de tema de aplicativos do Windows para escolher o tom dos detalhes. Ele não captura pixels nem analisa o conteúdo da tela. Em sistemas sem essa preferência, usa a paleta escura. Para trocar o estilo, edite `pet.render_style` em `configs/default.yaml` e reinicie o programa. A forma flutuante transparente, o clique duplo para abrir o painel e o modo ASCII legado continuam disponíveis.
+Alterações no YAML ou estilo de renderização exigem reiniciar o aplicativo. Os sprites do Piu usam ampliação inteira por vizinho mais próximo. Consulte [ART.md](docs/ART.md) para editar as folhas PNG e os metadados JSON.
 
-O benchmark de CPU e FPS entre o olho ASCII legado e o estilo espectral está em [`docs/spectral_eye_performance.md`](docs/spectral_eye_performance.md).
+## Como funcionam a SNN e o aprendizado
 
-### Teleporte e notas autônomas
-
-O estilo de teleporte acompanha o estado: curiosidade e alegria usam um arco luminoso; estresse produz um movimento curto e tremido; baixa energia deixa o movimento lento; atenção pode aproximar o olho do cursor ou do retângulo da janela ativa. Para posicionar, são consultadas somente coordenadas e geometria da janela; títulos e conteúdo não são lidos. O destino respeita a área útil de cada monitor e evita a barra de tarefas.
-
-Saltos curtos dão um movimento mais vivo ao avatar: alegria usa um pulo duplo, curiosidade um salto leve, estresse um pulinho inquieto, tristeza um pequeno abaixamento e sonolência uma flutuação lenta. Durante o sono ele mantém os olhos fechados e não pula. Um aro translúcido de alto contraste ajuda a distinguir o ASCII em fundos claros e escuros sem transformar o fundo em uma janela opaca.
-
-O teleporte requer iniciativa suficiente da SNN, respeita cooldown e limite por hora, e é suspenso durante arrasto, interação recente, proposta pendente ou simulação pausada/parada. Post-its são janelas próprias e sem borda, limitadas a quatro por padrão e com expiração em dez minutos. Fechar rapidamente envia um sinal negativo pequeno; clicar em **Entendi** envia um sinal positivo pequeno. O SQLite guarda somente identificador do template, categoria do estado, geometria e expiração — não o texto renderizado. No Windows, a supressão durante tela cheia usa os limites da janela sem ler o título.
-
-## Arquitetura
+1. O codificador transforma sinais numéricos permitidos e categorias simples em disparos sensoriais; texto digitado nunca entra na SNN.
+2. Neurônios leaky integrate-and-fire se comunicam por projeções esparsas sensoriais, recorrentes e de saída.
+3. O decodificador converte grupos de disparos em taxas. Cada contexto pode receber pesos de saída alocados sob demanda sobre a topologia esparsa compartilhada.
+4. Traços de elegibilidade registram a temporização dos disparos. `learning_rpe` é o sinal que altera pesos via STDP modulada por recompensa. `affect_impulse` altera o afeto simulado e permanece separado do aprendizado dos pesos.
+5. O seletor combina taxas da SNN normalizadas e preferências por contexto. As preferências podem dominar uma decisão combinada; por isso a ablação SNN-only é mostrada separadamente.
 
 ```mermaid
 flowchart LR
-    S[Sensores opcionais e eventos da interface] --> Q[Fila de eventos]
-    C[Relógio local] --> Q
-    Q --> N[SNN LIF esparsa]
-    N --> E[Emoções, drives e neuromoduladores]
-    E --> P[Personalidade e seletor de ações]
-    N --> P
-    P --> T[Ferramentas com permissões]
-    E --> A[Autonomia: teleporte e post-its]
-    N --> V[Fila de snapshots visuais]
-    E --> V
-    V --> U[Interface PySide6 e olho ASCII]
-    N --> D[Persistência assíncrona]
-    E --> D
+    S[Sensores opcionais e ações explícitas] --> Q[Fila de entrada thread-safe]
+    C[Relógio local e categorias] --> Q
+    Q --> N[SNN LIF esparsa em NumPy]
+    N --> R[Taxas de saída e traços de elegibilidade]
+    R --> E[Emoções e necessidades]
+    R --> L[STDP atualizada por learning RPE]
+    N --> A[Pontuação neural]
+    E --> P[Personalidade e preferências contextuais]
+    A --> P
+    P --> T[Ferramentas com permissão]
+    E --> U[Autonomia e movimentos do Piu]
+    N --> V[Snapshot visual somente leitura]
+    U --> V
+    V --> UI[Interface pixel art PySide6]
 ```
 
-A simulação roda em uma thread de trabalho. A interface envia eventos por fila e recebe snapshots visuais imutáveis numa fila de tamanho um. Ferramentas e gravações de snapshot usam executores. A interface não executa ticks da SNN. Exceções são registradas com traceback; um watchdog detecta ticks atrasados em vez de exibir valores congelados como se estivessem vivos.
+## Avaliação sintética de aprendizado
 
-Detalhes: [Arquitetura](docs/ARCHITECTURE.md), [Autonomia](docs/AUTONOMY.md), [Privacidade](docs/PRIVACY.md) e [Desempenho](docs/PERFORMANCE.md).
+As medições usam seed `20261102`, 600 neurônios solicitados, contextos e ações artificiais e nenhuma ferramenta real. Os resultados vêm do simulador offline e **não demonstram utilidade no aplicativo desktop em execução**. A precisão combinada usa taxas neurais e preferências contextuais. As colunas SNN-only e preferência-only são ablações de avaliação após a mesma história de treinamento.
 
-## Como o aprendizado funciona
+| Cenário | Combinada | SNN-only | Só preferências | Média da magnitude do score vencedor: SNN / seletor |
+| --- | ---: | ---: | ---: | ---: |
+| a — associação | 100% | 100% | 100% | 41% / 59% |
+| b — reversão | 100%; readaptação em 44 episódios | 100% | 100% | 17% / 83% |
+| c — contextos X/Y/Z | 100% / 100% / 100% | 100% / 97,5% / 77,5% | 100% / 100% / 100% | 28% / 72% (média) |
+| d — 10% de ruído no feedback | 100% | 100% | 100% | 26% / 74% |
+| e — interferência de 1.000 episódios | 100% | 67% | 100% | 22% / 78% |
 
-1. **Dinâmica LIF:** sinais numéricos dos sensores estimulam neurônios leaky integrate-and-fire; projeções esparsas conectam populações sensoriais, recorrentes e de saída.
-2. **Decodificação por taxa:** grupos de saída produzem taxas numéricas de disparo para emoções e ferramentas candidatas.
-3. **R-STDP:** traços de elegibilidade baseados no tempo dos disparos recebem um erro de previsão de recompensa (RPE). Quando possível, o crédito da ação é aplicado ao grupo de saída selecionado.
-4. **Afeto separado do aprendizado:** carinho e feedback deliberados podem mudar imediatamente o estado afetivo simulado. Somente o RPE de aprendizado altera pesos sinápticos. Hover não produz recompensa nem afeto positivo.
-5. **Preferências contextuais:** um seletor guarda preferências de ação por contexto aproximado e combina esses valores com a pontuação neural. Alta taxa combinada não é resultado somente da SNN.
-6. **Homeostase e sono:** a homeostase limita a atividade da população. A opção de replay reapresenta um conjunto pequeno de episódios com maior recompensa absoluta usando uma entrada sintética simplificada, derivada de um contexto aproximado com hash. Vem desligada; o vetor sensorial original não é retido nem reproduzido.
-7. **Hábitos:** RPE positivo repetido vira contagem e média por identificadores fixos de contexto/ação. Isso é uma métrica agregada, não uma habilidade de linguagem nem uma mudança de topologia.
+A fração da tabela descreve a magnitude média dos dois termos para o candidato escolhido; não é uma atribuição causal. O replay opcional também foi testado no cenário e; [LEARNING.md](docs/LEARNING.md) registra o resultado e a meta ainda não atingida. No intervalo de 10 passos, a competição de saída igualou a linha de base em b e c e não alcançou a meta SNN-only >80% em c/Z; o custo medido por tick ficou cerca de 1,1% maior. A flag YAML permanece desligada até haver ganho útil de acerto. CSVs e curvas por episódio estão em [`docs/learning/piu-snn-baseline/`](docs/learning/piu-snn-baseline/) e [`docs/learning/piu-snn-enabled/`](docs/learning/piu-snn-enabled/).
 
-Protocolo, resultados, ablações e curvas estão em [Resultados de aprendizado](docs/LEARNING.md) e em [`docs/learning/`](docs/learning/).
+## Desempenho e limitações
 
-## Resultados sintéticos de aprendizado
+As medições atuais, linhas de comparação, número de amostras e CPU/FPS do renderizador estão em [PERFORMANCE.md](docs/PERFORMANCE.md). São amostras curtas no ambiente de desenvolvimento; CPU, VRAM, DPI e composição do desktop variam conforme a máquina. O renderizador pixel art alcançou 30 FPS ativo e 5 FPS em repouso no benchmark offscreen. Interface interativa, OpenGL em hardware físico, múltiplos monitores e comportamento com barra de tarefas/DPI **não foram validados** aqui.
 
-A avaliação registrada das projeções contextuais usa seed `20261102`, 600 neurônios solicitados, ações artificiais e nenhuma ferramenta real. A tabela mostra a política combinada e, onde indicado, a ablação neural-only.
+Limitações conhecidas: a SNN não é um modelo de linguagem; a política é híbrida; replay usa uma entrada substituta derivada do hash de uma categoria, não sequências sensoriais armazenadas; a experiência de replay não atingiu a meta de >80% de retenção SNN-only; e a competição opcional piorou um contexto medido. Essas pendências estão em [`ROADMAP.md`](ROADMAP.md).
 
-| Cenário | Política combinada | Ablação neural-only | Fração da pontuação vencedora: SNN / seletor contextual |
-| --- | ---: | ---: | ---: |
-| a — associação | 100% | 100% | 43% / 57% |
-| b — reversão | 100%; readaptação em 44 episódios | 100% (treino estrito SNN-only: 100%, 49 episódios) | 21% / 79% |
-| c — X | 100% | 100% | 24% / 76% |
-| c — Y | 100% | 97,5% | 40% / 60% |
-| c — Z | 100% | 77,5% | 32% / 68% |
-| d — ruído de feedback de 10% | 100% | 100% | 31% / 69% |
-| e — retenção após interferência | 100% | 67% | 29% / 71% |
+## Criar uma ferramenta local
 
-As frações descrevem a decomposição dos termos da pontuação vencedora combinada; não são atribuição causal. No cenário **e**, o seletor de preferências contribui de forma relevante. São resultados sintéticos e não demonstram utilidade no aplicativo real. CSVs por episódio e curvas estão ligados em [docs/learning/README.md](docs/learning/README.md).
-
-## Observações de desempenho
-
-Um benchmark curto da CPU após as mudanças da SNN comparou 60 ticks ativos com uma amostra anterior de 300 ticks. O tamanho pequeno da amostra e a resolução do contador limitam a precisão; consulte o [relatório JSON](benchmarks/results/snn_launch_comparison.json).
-
-| Tamanho de rede solicitado | Antes | Amostra atual | Variação |
-| ---: | ---: | ---: | ---: |
-| 600 neurônios | 9,1146 ms/tick | 9,1146 ms/tick | 0,00% |
-| 1.000 neurônios | 18,9063 ms/tick | 18,7500 ms/tick | −0,83% |
-
-O RSS do processo na amostra atual foi 55,30 MiB com 600 neurônios solicitados e 55,87 MiB com 1.000. O probe de repouso do engine mediu 0,78% de um núcleo lógico. Uma medição separada de 4 segundos da interface flutuante offscreen registrou 0,39% com intervalo de 200 ms (5 FPS). São amostras locais curtas, não garantias de desktop Windows físico. A variação de tick com 1.000 neurônios está dentro do ruído do contador e não deve ser tratada como melhoria. VRAM e custo do renderizador dependem da GPU e do compositor. Consulte [PERFORMANCE.md](docs/PERFORMANCE.md) para o escopo e medições anteriores.
-
-## Privacidade e dados locais
-
-- Simulação, snapshots, memória episódica, hábitos agregados, metadados dos post-its e logs ficam localmente em `%APPDATA%\synapse_pet` no Windows.
-- Sensores opcionais começam desligados. Atividade de entrada conta eventos, sem identidade das teclas ou texto digitado. O sensor de janela ativa emite uma categoria configurada a partir do nome do executável e não lê títulos. O sensor de contador do clipboard fornece somente comprimento/contagem e não persiste o texto.
-- A ferramenta separada `historico_clipboard`, de risco médio, pode capturar até 4.000 caracteres somente quando é invocada explicitamente com `capture: true` e aceita. O conteúdo fica em SQLite local; use somente se isso for desejado.
-- O monitor de arquivos relata contagens; a ferramenta explícita de resumo pode retornar nomes alterados numa pasta permitida. Resultados permanecem na aplicação, salvo outra ação explícita.
-- O texto dos post-its vem de templates YAML locais. O SQLite dos post-its não armazena texto. Hábitos guardam categorias/ações fixas e estatísticas agregadas.
-- Plugins Python executam com as permissões do usuário do sistema operacional; o gerenciador de permissões da aplicação não é um sandbox do Windows.
-
-Consulte o inventário em [PRIVACY.md](docs/PRIVACY.md).
-
-## Como adicionar uma ferramenta
-
-Uma ferramenta combina manifesto, nível de risco, schema explícito de parâmetros e uma função que retorna um resultado. Exemplo (o código real também registra permissões e testes):
+Uma ferramenta declara risco, tags, tipos de parâmetros e uma função. O engine valida os campos obrigatórios antes da execução:
 
 ```python
 from synapse_pet.tools.manifest import ToolManifest, ToolParameter
 
-def run(params):
-    return {"status": "ok", "count": len(params["items"])}
+def count_items(params):
+    return {"count": len(params["items"])}
 
-manifest = ToolManifest(
-    name="count_items", description="Count supplied items", risk="low",
-    tags=("example",), run=run,
+tool = ToolManifest(
+    name="count_items", description="Contar itens fornecidos", risk="low",
+    tags=("example",), run=count_items,
     parameters={"items": ToolParameter(list, required=True, max_length=100)},
 )
+engine.register_tool(tool)
 ```
 
-O engine valida campos obrigatórios e tipos antes de propor ou executar a ferramenta. Veja `src/synapse_pet/tools/builtin/basic.py` para exemplos e a camada de permissões.
-
-## Testes e desenvolvimento
-
-```powershell
-.\.venv\Scripts\python.exe -m pytest
-.\.venv\Scripts\python.exe benchmarks\snn_baseline.py --ticks 60 --profile-steps 40 --idle-seconds 2
-```
-
-A suíte cobre determinismo, snapshots/migrações, separação de recompensa, privacidade dos sensores, schema de ferramentas, replay opt-in, orçamento da autonomia, foco e feedback de post-its, geometria do teleporte, efeitos da personalidade e recuperação do runtime. GitHub Actions executa a suíte headless em Windows e Linux; esta branch ainda precisa de sua própria execução hospedada após o push. Benchmarks são diagnósticos locais, não garantias de hardware. Consulte [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## Limitações honestas e roadmap
-
-A SNN opera em números e categorias; não é um modelo de linguagem. A avaliação usa cenários sintéticos. A política combinada depende da SNN e das preferências contextuais. O replay de sono usa entradas reconstruídas e simplificadas e ainda não foi avaliado contra a meta do cenário e. Teleporte e post-its foram verificados offscreen, não validados como experiência de desktop em combinações reais de Windows/GPU/múltiplos monitores.
-
-O [ROADMAP.md](ROADMAP.md) registra o trabalho pendente: ampliar a variedade de comportamentos dos post-its, avaliar replay durante o sono, adicionar controles de personalidade para o usuário e fazer profiling direcionado. Ideias futuras incluem camada de habilidades, narrador opcional com LLM local, integração MCP e ações no navegador; nada disso está implementado hoje.
-
-## Licença
-
-[MIT](LICENSE). Consulte [CHANGELOG.md](CHANGELOG.md) para o histórico.
+Consulte [Arquitetura](docs/ARCHITECTURE.md), [Aprendizado](docs/LEARNING.md), [Autonomia](docs/AUTONOMY.md), [Privacidade](docs/PRIVACY.md) e [Desempenho](docs/PERFORMANCE.md) para limites e metodologia detalhados.

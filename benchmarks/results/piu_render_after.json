@@ -1,0 +1,59 @@
+{
+  "renderer_requested": "ascii",
+  "render_style": "pixel",
+  "renderer_used": "Piu pixel art \u00b7 QPainter nearest-neighbour",
+  "window_size": [
+    800,
+    450
+  ],
+  "opengl_driver": null,
+  "opengl_vendor": null,
+  "internal_resolution": [
+    800,
+    450
+  ],
+  "seconds_per_phase": 10.0,
+  "modes": {
+    "ascii": {
+      "active": {
+        "fps_target": 30,
+        "fps_measured": 30.3,
+        "timer_callbacks_per_second": 30.3,
+        "cpu_percent_average": 5.5,
+        "vram_mib_before": 0,
+        "vram_mib_after": 0,
+        "vram_scope": "cpu_renderer_no_opengl"
+      },
+      "idle": {
+        "fps_target": 5,
+        "fps_measured": 5.0,
+        "timer_callbacks_per_second": 4.9,
+        "cpu_percent_average": 2.52,
+        "vram_mib_before": 0,
+        "vram_mib_after": 0,
+        "vram_scope": "cpu_renderer_no_opengl"
+      }
+    },
+    "hud": {
+      "active": {
+        "fps_target": 30,
+        "fps_measured": 30.3,
+        "timer_callbacks_per_second": 30.3,
+        "cpu_percent_average": 6.3,
+        "vram_mib_before": 0,
+        "vram_mib_after": 0,
+        "vram_scope": "cpu_renderer_no_opengl"
+      },
+      "idle": {
+        "fps_target": 5,
+        "fps_measured": 5.0,
+        "timer_callbacks_per_second": 5.0,
+        "cpu_percent_average": 1.1,
+        "vram_mib_before": 0,
+        "vram_mib_after": 0,
+        "vram_scope": "cpu_renderer_no_opengl"
+      }
+    }
+  },
+  "gpu_vram_note": "process_dedicated_mib comes from WDDM; process_mib is NVIDIA per-process; system_gpu_mib is a whole-adapter total. cpu_renderer_no_opengl excludes Windows composition."
+}
