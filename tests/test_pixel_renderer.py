@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 import yaml
 from PySide6.QtCore import QSettings, Qt
+from PySide6.QtGui import QImage
 
 from synapse_pet.runtime.visual_state import VisualState
 from synapse_pet.ui.gl_renderer import EyeCanvas
@@ -39,7 +40,7 @@ def test_pixel_pet_mode_is_transparent_and_uses_sprite_alpha_mask():
     frame = widget.render_frame(4.0, datetime(2026, 11, 5, 12))
     pixels = np.frombuffer(frame.constBits().tobytes(), dtype=np.uint8).reshape(
         frame.height(), frame.width(), 4)
-    assert frame.format().name == "Format_RGBA8888"
+    assert frame.format() == QImage.Format.Format_ARGB32_Premultiplied
     assert pixels[0, 0, 3] == 0
     assert pixels[:, :, 3].max() == 255
     mask = widget.sprite_mask()
@@ -83,10 +84,37 @@ def test_pixel_canvas_switches_without_losing_state_or_mode():
         assert canvas._ascii_eye is None
         assert canvas.mode == "pet"
         assert canvas.current_renderer.startswith("Piu pixel art")
-        assert not canvas.sprite_mask().isEmpty()
+        canvas._pixel.render_frame(1.0, datetime(2026, 11, 5, 12))
+        before = canvas.sprite_mask()
+        assert not before.isEmpty()
+        assert canvas.request_move("right", "run")
+        canvas._pixel.render_frame(1.2, datetime(2026, 11, 5, 12))
+        after = canvas.sprite_mask()
+        assert not after.isEmpty()
+        assert after != before
         assert canvas.request_move("right", "run")
     finally:
         canvas.close()
+
+
+def test_new_emotion_pose_can_be_added_through_manifest_data():
+    ensure_application()
+    widget = PixelPetWidget()
+    try:
+        widget._manifest["routes"]["emotions"]["novo_estado"] = {
+            "animation": "frente", "frame": "feliz"}
+        group, index, use_lod = widget._select_pose(
+            VisualState(expression_override="novo_estado"),
+            widget.motion.frame, 1.0)
+        assert (group, index, use_lod) == ("frente", 2, False)
+        widget._manifest["routes"]["emotions"]["novo_loop"] = {
+            "animation": "corrida_lateral", "mode": "time_loop"}
+        group, index, use_lod = widget._select_pose(
+            VisualState(expression_override="novo_loop"),
+            widget.motion.frame, 1.2)
+        assert group == "corrida_lateral" and 0 <= index < 8 and not use_lod
+    finally:
+        widget.close()
 
 
 def test_floating_panel_can_use_pixel_sprite_mask_and_return_to_pixel_pet(tmp_path, monkeypatch):

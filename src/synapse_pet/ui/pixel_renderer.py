@@ -31,6 +31,7 @@ class PixelPetWidget(QWidget):
     activityDetected = Signal()
     animationStarted = Signal()
     rendererChanged = Signal(str)
+    spriteMaskChanged = Signal()
 
     def __init__(self, *, scene_time: str = "auto", compact: bool = False,
                  affection_drag_min_s: float = 1.0, seed: int = 41,
@@ -69,8 +70,14 @@ class PixelPetWidget(QWidget):
         self._motion_blocked = False
         self._current_source: tuple[str, QRect] | None = None
         self._current_destination = QRect()
+        self._current_frame_size = QSize()
+        self._current_mirror = False
+        self._mask_geometry_key: tuple[object, ...] | None = None
         self._scene_cache: QImage | None = None
         self._scene_cache_key: tuple[object, ...] | None = None
+        self._frame_buffer: QImage | None = None
+        self._hud_cache: QImage | None = None
+        self._hud_cache_key: tuple[object, ...] | None = None
         self.setMouseTracking(True)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, compact)
         self.setMinimumSize(80, 52) if compact else self.setMinimumSize(700, 390)
@@ -102,6 +109,11 @@ class PixelPetWidget(QWidget):
         self.mode = str(mode)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground,
                           self.mode == "pet")
+        # Panel and floating pet have different widget dimensions. Discard the
+        # previous rectangle so the first floating mask matches its new frame.
+        self._current_source = None
+        self._current_frame_size = QSize()
+        self._mask_geometry_key = None
         self.update()
 
     def set_motion_blocked(self, *, dragging: bool = False,
@@ -146,27 +158,49 @@ class PixelPetWidget(QWidget):
                      local_time: datetime | None = None) -> QImage:
         now = time.monotonic() if now is None else float(now)
         local_time = local_time or datetime.now().astimezone()
-        image = QImage(max(1, self.width()), max(1, self.height()),
-                       QImage.Format.Format_RGBA8888)
-        image.fill(Qt.GlobalColor.transparent if self.mode == "pet"
-                   else QColor("#7faebd"))
-        painter = QPainter(image)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
-        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, False)
-        self._draw_frame(painter, image.rect(), now, local_time)
-        painter.end()
-        return image
+        width, height = max(1, self.width()), max(1, self.height())
+        image = self._render_half_resolution(width, height, now, local_time)
+        return image.scaled(width, height, Qt.AspectRatioMode.IgnoreAspectRatio,
+                            Qt.TransformationMode.FastTransformation)
 
     def paintEvent(self, _event) -> None:
+        now = time.monotonic()
+        image = self._render_half_resolution(
+            max(1, self.width()), max(1, self.height()), now,
+            datetime.now().astimezone())
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
         painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, False)
-        self._draw_frame(painter, self.rect(), time.monotonic(),
-                         datetime.now().astimezone())
+        painter.drawImage(self.rect(), image)
         painter.end()
+
+    def _render_half_resolution(self, width: int, height: int, now: float,
+                                local_time: datetime) -> QImage:
+        """Paint at half resolution, then nearest-neighbour upscale in paintEvent.
+
+        Pixel cells and sprite scale stay even, so the displayed art is still an
+        integer multiple of the approved source pixels while reducing fill cost.
+        """
+        internal_width, internal_height = max(1, (width + 1) // 2), max(1, (height + 1) // 2)
+        if (self._frame_buffer is None
+                or self._frame_buffer.size().width() != internal_width
+                or self._frame_buffer.size().height() != internal_height):
+            self._frame_buffer = QImage(
+                internal_width, internal_height,
+                QImage.Format.Format_ARGB32_Premultiplied)
+        self._frame_buffer.fill(Qt.GlobalColor.transparent if self.mode == "pet"
+                                else QColor("#7faebd"))
+        painter = QPainter(self._frame_buffer)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
+        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, False)
+        painter.scale(0.5, 0.5)
+        self._draw_frame(painter, QRect(0, 0, width, height), now, local_time)
+        painter.end()
+        return self._frame_buffer
 
     def _draw_frame(self, painter: QPainter, bounds: QRect, now: float,
                     local_time: datetime) -> None:
+        self._current_frame_size = bounds.size()
         dt = (0.0 if self._last_render_time is None else
               max(0.0, min(0.25, now - self._last_render_time)))
         self._last_render_time = now
@@ -201,7 +235,7 @@ class PixelPetWidget(QWidget):
         art_scale = scale
         dest_width, dest_height = 32 * art_scale, 44 * art_scale
         x = round(bounds.left() + motion.x * max(0, bounds.width() - dest_width))
-        ground_y = (bounds.bottom() - 3 if self.mode == "pet"
+        ground_y = (bounds.bottom() - 3 - 4 * art_scale if self.mode == "pet"
                     else round(bounds.top() + bounds.height() * 0.83))
         bob = round(math.sin(now * 1.7) * (0 if motion.action != "idle" else 1))
         depth_lift = (motion.depth * 26.0 if self.mode != "pet"
@@ -214,8 +248,15 @@ class PixelPetWidget(QWidget):
         y = round(ground_y - 40 * art_scale - motion.height * 44 * art_scale
                   - depth_lift + bob)
         destination = QRect(x, y, dest_width, dest_height)
+        previous_mask_key = self._mask_geometry_key
         self._current_source = (source_sheet, source_rect)
         self._current_destination = destination
+        self._current_mirror = motion.facing < 0 and group == "corrida_lateral"
+        self._mask_geometry_key = (
+            source_sheet, source_rect.x(), source_rect.y(),
+            source_rect.width(), source_rect.height(),
+            destination.x(), destination.y(), destination.width(),
+            destination.height(), self._current_mirror)
 
         if self.mode != "pet":
             self._draw_shadow(painter, destination, motion)
@@ -241,13 +282,18 @@ class PixelPetWidget(QWidget):
             self._draw_pixel_heart(painter, destination, now)
         if self.mode == "hud":
             self._draw_hud(painter, bounds, state, local_time)
+        if self.mode == "pet" and self._mask_geometry_key != previous_mask_key:
+            self.spriteMaskChanged.emit()
         self.rendered_frames += 1
 
     def _draw_scale(self, bounds: QRect) -> int:
         if self.mode == "pet":
             return max(2, min(4, bounds.height() // 44))
         fit = max(2, min(bounds.width() // 64, bounds.height() // 56))
-        return min(12, max(2, fit))
+        fit = min(12, max(2, fit))
+        # The half-resolution buffer doubles each raster cell on screen. Keep
+        # source pixels aligned to integer displayed scales.
+        return max(2, fit - (fit % 2))
 
     def _draw_scene(self, painter: QPainter, bounds: QRect, now: float,
                     local_time: datetime) -> None:
@@ -346,45 +392,72 @@ class PixelPetWidget(QWidget):
                      now: float) -> tuple[str, int, bool]:
         if motion.action == "idle" and motion.lod_size < 32:
             return "lod", 0, True
-        if motion.action in {"away", "return"}:
-            group = "corrida_para_fundo" if motion.action == "away" else "volta_para_camera"
-            frames = self._manifest["animations"][group]["frames"]
-            index = PetMotionController.frame_index(motion, len(frames))
-            if frames[index]["native_size"] != motion.lod_size:
-                index = min(range(len(frames)), key=lambda i: abs(
-                    frames[i]["native_size"] - motion.lod_size))
-            return group, index, False
-        if motion.action in {"run", "walk"}:
-            return "corrida_lateral", PetMotionController.frame_index(motion, 8), False
-        if motion.action in {"jump", "fly"}:
-            frames = self._manifest["animations"]["pulo"]["frames"]
-            index = min(len(frames) - 1,
-                        int(motion.progress * (len(frames) - 1)))
-            return "pulo", index, False
+        routes = self._manifest.get("routes", {})
+        action_route = routes.get("actions", {}).get(motion.action)
+        if action_route is not None:
+            return self._route_frame(action_route, motion, now)
 
         emotion = state.expression_override or state.emotion
-        if emotion in {"dormindo", "sleeping", "sonolento", "sleepy"}:
-            return "frente", 5, False
-        if now < self._blink_until or emotion in {"piscar", "blink"}:
-            return "frente", 1, False
-        if emotion in {"alegre", "happy"}:
-            return "frente", 3 if state.dopamine > 0.1 else 2, False
-        if emotion in {"estressado", "stressed"}:
-            return "frente", 4, False
-        if emotion in {"curioso", "curious"}:
+        if now < self._blink_until:
+            emotion = "piscar"
+        aliases = {"sleeping": "dormindo", "sleepy": "sonolento",
+                   "blink": "piscar", "happy": "alegre",
+                   "stressed": "estressado", "curious": "curioso",
+                   "startled": "assustado", "sad": "triste"}
+        emotion = aliases.get(str(emotion).lower(), str(emotion).lower())
+        if emotion == "alegre" and state.dopamine > 0.1:
+            emotion = "cantando"
+        if emotion == "curioso":
             gaze_x, _gaze_y = self._gaze_target
             if self._pointer_over and gaze_x < 0.38:
-                return "virada_vistas", 1, False
-            if self._pointer_over and gaze_x > 0.62:
-                return "virada_vistas", 2, False
-            return "frente", 7, False
-        if emotion in {"assustado", "startled"}:
-            return "frente", 4, False
-        if motion.view == "back":
-            return "costas", 0, False
-        if motion.view == "front":
-            return "frente", 0, False
-        return "virada_vistas", 0, False
+                emotion = "curioso_esquerda"
+            elif self._pointer_over and gaze_x > 0.62:
+                emotion = "curioso_direita"
+        emotion_route = routes.get("emotions", {}).get(emotion)
+        if emotion_route is not None:
+            return self._route_frame(emotion_route, motion, now)
+        view_route = routes.get("views", {}).get(motion.view)
+        if view_route is not None:
+            return self._route_frame(view_route, motion, now)
+        return self._route_frame(routes.get("default", {
+            "animation": "virada_vistas", "frame": "perfil"}), motion, now)
+
+    def _route_frame(self, route: dict[str, object], motion: MotionFrame,
+                     now: float) -> tuple[str, int, bool]:
+        """Resolve an animation mapping from the editable JSON manifest."""
+        group = str(route.get("animation", ""))
+        animation = self._manifest.get("animations", {}).get(group)
+        if not animation or not animation.get("frames"):
+            fallback = self._manifest.get("routes", {}).get("default", {})
+            fallback_group = str(fallback.get("animation", "virada_vistas"))
+            animation = self._manifest["animations"][fallback_group]
+            group = fallback_group
+            route = fallback
+        frames = animation["frames"]
+        mode = str(route.get("mode", "frame"))
+        if "frame" in route:
+            frame_name = str(route["frame"]).lower()
+            index = next((position for position, frame in enumerate(frames)
+                          if frame.get("label_key", "") == frame_name), 0)
+        elif mode == "progress":
+            index = min(len(frames) - 1,
+                        int(motion.progress * (len(frames) - 1)))
+        elif mode == "time_loop":
+            durations = [max(1, int(frame.get("duration_ms", 100)))
+                         for frame in frames]
+            elapsed = int(max(0.0, now) * 1000.0) % sum(durations)
+            index = 0
+            for index, duration in enumerate(durations):
+                if elapsed < duration:
+                    break
+                elapsed -= duration
+        else:
+            index = PetMotionController.frame_index(motion, len(frames))
+        match_lod = bool(route.get("match_lod", False))
+        if match_lod and frames[index].get("native_size") != motion.lod_size:
+            index = min(range(len(frames)), key=lambda value: abs(
+                int(frames[value].get("native_size", 32)) - motion.lod_size))
+        return group, index, False
 
     def _source_rect(self, group: str, index: int, use_lod: bool,
                      motion: MotionFrame) -> tuple[str, QRect | None]:
@@ -455,32 +528,54 @@ class PixelPetWidget(QWidget):
 
     def _draw_hud(self, painter: QPainter, bounds: QRect,
                   state: VisualState, local_time: datetime) -> None:
-        painter.fillRect(12, 12, 240, 45, QColor(20, 33, 56, 210))
-        painter.setPen(QPen(QColor("#e8d48d"), 1))
-        painter.drawRect(12, 12, 240, 45)
-        font = QFont(self._font_family, 9)
-        painter.setFont(font)
-        painter.setPen(QColor("#f5edcf"))
-        painter.drawText(22, 31, f"PIU  /  {state.emotion.upper()[:15]}")
-        painter.drawText(22, 48, f"HUMOR {round(state.happiness * 100):02d}%  {local_time:%H:%M}")
+        key = (bounds.size(), state.emotion, round(state.happiness * 100),
+               local_time.hour, local_time.minute)
+        if self._hud_cache is None or self._hud_cache_key != key:
+            self._hud_cache = QImage(
+                bounds.size(), QImage.Format.Format_ARGB32_Premultiplied)
+            self._hud_cache.fill(Qt.GlobalColor.transparent)
+            cache_painter = QPainter(self._hud_cache)
+            cache_painter.fillRect(12, 12, 240, 45, QColor(20, 33, 56, 210))
+            cache_painter.setPen(QPen(QColor("#e8d48d"), 1))
+            cache_painter.drawRect(12, 12, 240, 45)
+            font = QFont(self._font_family, 9)
+            cache_painter.setFont(font)
+            cache_painter.setPen(QColor("#f5edcf"))
+            cache_painter.drawText(22, 31, f"PIU  /  {state.emotion.upper()[:15]}")
+            cache_painter.drawText(
+                22, 48, f"HUMOR {round(state.happiness * 100):02d}%  "
+                f"{local_time:%H:%M}")
+            cache_painter.end()
+            self._hud_cache_key = key
+        painter.drawImage(bounds.topLeft(), self._hud_cache)
 
     def sprite_mask(self, size: QSize | None = None) -> QRegion:
-        """Return a mask from the approved idle sprite alpha for floating click-through."""
+        """Return a click-through mask from the currently displayed sprite alpha."""
         bounds = QRect(QPoint(0, 0), size) if size is not None else self.rect()
         if bounds.isEmpty():
+            return QRegion()
+        # PetWindow asks for its native mask while entering floating mode,
+        # before Qt has resized the stacked child to the floating window. Render
+        # once at the requested mask size so the alpha region and first frame
+        # share the same coordinates.
+        if (self._current_source is None
+                or self._current_frame_size != bounds.size()
+                or self._mask_geometry_key is None):
+            self._render_half_resolution(
+                bounds.width(), bounds.height(), time.monotonic(),
+                datetime.now().astimezone())
+        if self._current_source is None:
             return QRegion()
         image = QImage(bounds.size(), QImage.Format.Format_ARGB32_Premultiplied)
         image.fill(Qt.GlobalColor.transparent)
         painter = QPainter(image)
         painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, False)
-        motion = self.motion.frame
-        scale = self._draw_scale(bounds)
-        destination = QRect((bounds.width() - 32 * scale) // 2,
-                           bounds.height() - 3 - 40 * scale,
-                           32 * scale, 44 * scale)
-        lod_entry = self._manifest["lod"]["entries"]["profile_idle"][0]
-        sheet = self._sheets[self._manifest["lod"]["sheet"]]
-        painter.drawImage(destination, sheet, QRect(*lod_entry["rect"]))
+        sheet_name, source_rect = self._current_source
+        destination = self._current_destination
+        if self._current_mirror:
+            painter.translate(destination.left() * 2 + destination.width(), 0)
+            painter.scale(-1.0, 1.0)
+        painter.drawImage(destination, self._sheets[sheet_name], source_rect)
         painter.end()
         alpha_mask = image.createAlphaMask()
         bitmap = QBitmap.fromImage(alpha_mask)

@@ -292,6 +292,7 @@ class EyeCanvas(QWidget):
     rendererChanged = Signal(str)
     activityDetected = Signal()
     animationStarted = Signal()
+    spriteMaskChanged = Signal()
 
     def __init__(self, renderer: str, width: int, height: int,
                  ascii_columns: int, ascii_rows: int, palette: str,
@@ -333,6 +334,7 @@ class EyeCanvas(QWidget):
             self._pixel.panelRequested.connect(self.panelRequested.emit)
             self._pixel.activityDetected.connect(self.activityDetected.emit)
             self._pixel.animationStarted.connect(self.animationStarted.emit)
+            self._pixel.spriteMaskChanged.connect(self.spriteMaskChanged.emit)
             self._stack.addWidget(self._pixel)
             self._stack.setCurrentWidget(self._pixel)
             self.renderer_name = "Piu pixel art · QPainter nearest-neighbour"

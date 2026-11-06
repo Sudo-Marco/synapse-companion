@@ -1,17 +1,26 @@
 # Piu pixel-art assets
 
-These transparent sprite sheets are packed from the approved contact sheets in
-`docs/mockups/piu/vistas_etapa1/`. `animations.json` is the editable sidecar:
-each frame stores its rectangle, native drawing size, duration, loop flag, pivot,
-hitbox and label. The walk cycle includes a tunable distance-per-cycle contract.
+The transparent sprite sheets are built from the approved contact sheets in
+`docs/mockups/piu/vistas_etapa1/`. The source `inventario_frames.json` describes
+each animation and its routes from movement/emotion keys to an animation or
+frame. The generated `animations.json` adds packed rectangles for every PNG.
 
-To rebuild the sheets after editing the source mockups, run
-`python tools/build_piu_assets.py` from the repository root. The tool removes
-the documented navy sheet background and contact-cell top border; it does not
-redraw or rescale the character. `lod.png` contains sprites drawn natively at
-32, 24 and 16 pixels. Keep the common pivot `(16, 40)` when adding frames.
+Each frame records duration, loop metadata, native size, pivot, hitbox, and a
+label. The renderer uses route data for emotion poses, movement cycles, and
+time-based loops; a new pose can be added by adding its sprite frames and a
+route in the source JSON. The renderer does not need a new emotion branch for
+that mapping. Movement *semantics* (for example adding a new controller action)
+still belong in the motion controller.
 
-The PNG files are ordinary RGBA sheets and can be edited in a pixel-art editor.
-Update the sidecar rectangles and metadata whenever frame ordering or sheet
-packing changes. The renderer reads the sidecar at runtime, so a data-only
-animation addition does not require a new animation branch in the renderer.
+To rebuild the atlases and metadata after editing the source sheets/manifest:
+
+```powershell
+.\.venv\Scripts\python.exe tools\build_piu_assets.py
+```
+
+The builder removes the documented navy contact-sheet background; it does not
+redraw the character. `lod.png` contains the approved native drawings at 32,
+24, and 16 pixels. Keep the shared foot pivot `(16, 40)` to avoid visual jumps.
+PNG sheets are ordinary RGBA images and can be edited in a pixel-art editor.
+When reordering frames, update rectangles and labels by rebuilding the atlas;
+review the generated preview images and run the asset/UI tests.

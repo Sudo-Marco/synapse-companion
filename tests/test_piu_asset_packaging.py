@@ -23,6 +23,12 @@ def test_approved_piu_frames_are_packed_with_native_lod_metadata():
     assert manifest["lod"]["sizes"] == [32, 24, 16]
     assert all(entry["native_draw"]
                for rows in manifest["lod"]["entries"].values() for entry in rows)
+    for family in ("actions", "emotions", "views"):
+        for route in manifest["routes"][family].values():
+            animation = manifest["animations"][route["animation"]]
+            if "frame" in route:
+                assert route["frame"] in {frame["label_key"]
+                                           for frame in animation["frames"]}
 
 
 def test_contact_sheet_border_is_not_baked_into_character_pixels():
@@ -32,3 +38,10 @@ def test_contact_sheet_border_is_not_baked_into_character_pixels():
         for frame in animation["frames"]:
             x, y, width, _height = frame["rect"]
             assert not sheet[y, x:x + width, 3].any()
+
+
+def test_pixel_ui_frame_asset_is_a_small_transparent_nine_slice():
+    frame = Image.open(ASSETS / "ui_frame.png").convert("RGBA")
+    assert frame.size == (9, 9)
+    assert frame.getpixel((4, 4))[3] == 0
+    assert frame.getpixel((0, 0))[3] > 0

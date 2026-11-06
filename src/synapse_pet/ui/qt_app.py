@@ -44,6 +44,8 @@ SENSOR_LABELS = {
     "clipboard": "Detectar mudança no clipboard",
     "system_stats": "Ler CPU e memória",
 }
+PIXEL_FRAME_PATH = (Path(__file__).resolve().parents[1] / "assets" / "pixel"
+                    / "ui_frame.png").as_posix()
 
 
 STYLESHEET = f"""
@@ -65,25 +67,29 @@ QMenu {{ background: #111a22; color: {TEXT}; border: 1px solid {LINE}; }}
 QMenu::item:selected {{ background: #1e3e48; color: {CYAN}; }}
 """
 
-PIXEL_STYLESHEET = """
-QMainWindow, QWidget#Root { background: #182542; color: #fff3a0; }
-QFrame#Header, QFrame#Card, QFrame#Proposal {
-  background: #293b60; border: 2px solid #fff3a0; }
-QLabel { color: #f7f1d9; font-family: 'Silkscreen'; }
-QLabel#Muted { color: #c3d6cb; }
-QPushButton { background: #354a78; color: #fff3a0; border: 2px solid #fff3a0;
-  border-radius: 0; padding: 8px 10px; font: 700 9pt 'Silkscreen'; }
-QPushButton:hover { background: #485b82; border-color: #ffffff; }
-QPushButton#Love { background: #405a69; color: #f7f1d9; }
-QPushButton#Love:hover { background: #527a75; }
-QPushButton#Negative { background: #59465a; color: #ffe0c6; }
-QPushButton#Negative:hover { background: #735b83; }
-QPushButton#Gold { color: #ffd93b; }
-QProgressBar { background: #192b54; border: 2px solid #fff3a0;
-  height: 11px; text-align: center; }
-QProgressBar::chunk { background: #ffd93b; }
-QMenu { background: #293b60; color: #fff3a0; border: 2px solid #fff3a0; }
-QMenu::item:selected { background: #485b82; color: #ffffff; }
+PIXEL_STYLESHEET = f"""
+QMainWindow, QWidget#Root {{ background: #182542; color: #fff3a0; }}
+QFrame#Header, QFrame#Card, QFrame#Proposal {{
+  background: #293b60;
+  border-image: url({PIXEL_FRAME_PATH}) 3 3 3 3 stretch stretch;
+  border-width: 3px; }}
+QLabel {{ color: #f7f1d9; font-family: 'Silkscreen'; }}
+QLabel#Muted {{ color: #c3d6cb; }}
+QPushButton {{ background: #354a78; color: #fff3a0; border: 2px solid #fff3a0;
+  border-radius: 0; padding: 8px 10px; font: 700 9pt 'Silkscreen'; }}
+QPushButton:hover {{ background: #485b82; border-color: #ffffff; }}
+QPushButton:pressed {{ background: #192b54; border-color: #ffd93b; }}
+QPushButton:disabled {{ color: #8790a2; border-color: #485b82; }}
+QPushButton#Love {{ background: #405a69; color: #f7f1d9; }}
+QPushButton#Love:hover {{ background: #527a75; }}
+QPushButton#Negative {{ background: #59465a; color: #ffe0c6; }}
+QPushButton#Negative:hover {{ background: #735b83; }}
+QPushButton#Gold {{ color: #ffd93b; }}
+QProgressBar {{ background: #192b54; border: 2px solid #fff3a0;
+  height: 11px; text-align: center; }}
+QProgressBar::chunk {{ background: #ffd93b; }}
+QMenu {{ background: #293b60; color: #fff3a0; border: 2px solid #fff3a0; }}
+QMenu::item:selected {{ background: #485b82; color: #ffffff; }}
 """
 
 
@@ -162,22 +168,55 @@ class DragHeader(QFrame):
         super().mouseReleaseEvent(event)
 
 
-class MetricCard(QFrame):
-    def __init__(self, title: str, accent: str) -> None:
+class SegmentedProgressBar(QProgressBar):
+    """Pixel-style progress bar composed of discrete filled cells."""
+
+    def __init__(self, accent: str, *, pixel_mode: bool = False) -> None:
         super().__init__()
+        self.pixel_mode = bool(pixel_mode)
+        self.accent = QColor(accent)
+
+    def paintEvent(self, event) -> None:
+        if not self.pixel_mode:
+            super().paintEvent(event)
+            return
+        painter = QPainter(self)
+        painter.fillRect(self.rect(), QColor("#192b54"))
+        painter.setPen(QPen(QColor("#fff3a0"), 1))
+        painter.drawRect(self.rect().adjusted(0, 0, -1, -1))
+        inner = self.rect().adjusted(3, 3, -3, -3)
+        if inner.width() <= 0 or inner.height() <= 0:
+            painter.end()
+            return
+        count = max(1, inner.width() // 13)
+        gap = 2
+        cell_width = max(1, (inner.width() - gap * (count - 1)) // count)
+        filled = round(self.value() * count / max(1, self.maximum()))
+        for index in range(filled):
+            left = inner.left() + index * (cell_width + gap)
+            painter.fillRect(left, inner.top(), cell_width, inner.height(),
+                             self.accent)
+        painter.end()
+
+
+class MetricCard(QFrame):
+    def __init__(self, title: str, accent: str, *, pixel_mode: bool = False) -> None:
+        super().__init__()
+        self.pixel_mode = bool(pixel_mode)
         self.setObjectName("Card")
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 8, 12, 9)
         row = QHBoxLayout()
         label = QLabel(title.upper())
-        label.setStyleSheet(f"color: {MUTED}; font: bold 8pt Consolas;")
+        font_family = "Silkscreen" if self.pixel_mode else "Consolas"
+        label.setStyleSheet(f"color: {MUTED}; font: bold 8pt '{font_family}';")
         row.addWidget(label)
         row.addStretch(1)
         self.value = QLabel("50%")
-        self.value.setStyleSheet("font: bold 9pt Consolas;")
+        self.value.setStyleSheet(f"font: bold 9pt '{font_family}';")
         row.addWidget(self.value)
         layout.addLayout(row)
-        self.bar = QProgressBar()
+        self.bar = SegmentedProgressBar(accent, pixel_mode=self.pixel_mode)
         self.bar.setRange(0, 100)
         self.bar.setTextVisible(False)
         self.bar.setValue(50)
@@ -429,6 +468,7 @@ class PetWindow(QMainWindow):
         self.canvas.activityDetected.connect(self._register_visual_activity)
         self.canvas.animationStarted.connect(self._accelerate_animation)
         self.canvas.rendererChanged.connect(self._renderer_changed)
+        self.canvas.spriteMaskChanged.connect(self._refresh_pet_mask)
         self._mouse_sample_position: tuple[int, int] | None = None
         self._mouse_last_move = time.monotonic()
         self._mouse_last_category: str | None = None
@@ -458,9 +498,12 @@ class PetWindow(QMainWindow):
         layout.addLayout(identity)
 
         metrics = QHBoxLayout()
-        self.happiness_card = MetricCard("Humor", GOLD)
-        self.energy_card = MetricCard("Energia", CYAN)
-        self.stress_card = MetricCard("Alerta", "#e58665")
+        self.happiness_card = MetricCard("Humor", GOLD,
+                                         pixel_mode=self._pixel_theme)
+        self.energy_card = MetricCard("Energia", CYAN,
+                                      pixel_mode=self._pixel_theme)
+        self.stress_card = MetricCard("Alerta", "#e58665",
+                                      pixel_mode=self._pixel_theme)
         metrics.addWidget(self.happiness_card)
         metrics.addWidget(self.energy_card)
         metrics.addWidget(self.stress_card)
@@ -752,6 +795,10 @@ class PetWindow(QMainWindow):
                      height * 0.92, width * 0.025, height * 0.50)
         path.closeSubpath()
         return QRegion(path.toFillPolygon().toPolygon())
+
+    def _refresh_pet_mask(self) -> None:
+        if self._is_floating and self.isVisible():
+            self.setMask(self._pet_mask())
 
     def _restore_pet_position(self, preferred_position: QPoint | None = None) -> None:
         saved_x = self._settings.value("pet/x", None)
@@ -1301,6 +1348,7 @@ class PetWindow(QMainWindow):
         window = PostItWindow(
             note, self._postit_text(note.template),
             quick_dismiss_s=float(postit_cfg.get("quick_dismiss_s", 10.0)),
+            pixel_theme=self._pixel_theme,
             on_interact=self._postit_interacted,
             on_close=self._postit_closed,
             parent=self, origin=origin, animate=animate)

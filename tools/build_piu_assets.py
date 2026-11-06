@@ -19,6 +19,37 @@ LOD_ROWS = (
     ("back", "idle"), ("back", "run"),
 )
 LOD_SIZES = (32, 24, 16)
+ANIMATION_ROUTES = {
+    "actions": {
+        "away": {"animation": "corrida_para_fundo", "mode": "stride",
+                 "match_lod": True},
+        "return": {"animation": "volta_para_camera", "mode": "stride",
+                   "match_lod": True},
+        "walk": {"animation": "corrida_lateral", "mode": "stride"},
+        "run": {"animation": "corrida_lateral", "mode": "stride"},
+        "jump": {"animation": "pulo", "mode": "progress"},
+        "fly": {"animation": "pulo", "mode": "progress"},
+    },
+    "emotions": {
+        "alegre": {"animation": "frente", "frame": "feliz"},
+        "assustado": {"animation": "frente", "frame": "susto"},
+        "cantando": {"animation": "frente", "frame": "cantar"},
+        "curioso": {"animation": "frente", "frame": "p/cima"},
+        "curioso_esquerda": {"animation": "virada_vistas", "frame": "p_3/4_a"},
+        "curioso_direita": {"animation": "virada_vistas", "frame": "p_3/4_b"},
+        "dormindo": {"animation": "frente", "frame": "dormir"},
+        "piscar": {"animation": "frente", "frame": "piscar"},
+        "sonolento": {"animation": "frente", "frame": "dormir"},
+        "estressado": {"animation": "frente", "frame": "susto"},
+        "triste": {"animation": "frente", "frame": "idle"},
+    },
+    "views": {
+        "back": {"animation": "costas", "frame": "idle"},
+        "front": {"animation": "frente", "frame": "idle"},
+        "profile": {"animation": "virada_vistas", "frame": "perfil"},
+    },
+    "default": {"animation": "virada_vistas", "frame": "perfil"},
+}
 
 
 def transparent_crop(sheet: Image.Image, box: tuple[int, int, int, int]) -> Image.Image:
@@ -82,6 +113,29 @@ def package_lod() -> dict:
             "entries": entries}
 
 
+def package_pixel_ui_frame() -> None:
+    """Create a small nine-slice pixel border for cards and dialog frames."""
+    frame = Image.new("RGBA", (9, 9), (0, 0, 0, 0))
+    pixels = frame.load()
+    dark = (75, 59, 60, 255)
+    brown = (114, 83, 62, 255)
+    gold = (255, 217, 59, 255)
+    for start_x, start_y in ((0, 0), (6, 0), (0, 6), (6, 6)):
+        for y in range(start_y, start_y + 3):
+            for x in range(start_x, start_x + 3):
+                pixels[x, y] = brown
+        pixels[start_x, start_y] = gold
+        pixels[start_x + 1, start_y] = gold
+        pixels[start_x, start_y + 1] = gold
+        pixels[start_x + 1, start_y + 1] = dark
+    for value in range(3, 6):
+        pixels[value, 0] = gold
+        pixels[value, 8] = dark
+        pixels[0, value] = gold
+        pixels[8, value] = dark
+    frame.save(DESTINATION / "ui_frame.png", optimize=True)
+
+
 def main() -> None:
     DESTINATION.mkdir(parents=True, exist_ok=True)
     source_manifest = json.loads(
@@ -98,8 +152,10 @@ def main() -> None:
         "pivot_canvas": source_manifest["pivot_canvas"],
         "transparent_key_removed": "#24365E",
         "animations": animations,
+        "routes": source_manifest.get("routes", ANIMATION_ROUTES),
         "lod": package_lod(),
     }
+    package_pixel_ui_frame()
     (DESTINATION / "animations.json").write_text(
         json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8")

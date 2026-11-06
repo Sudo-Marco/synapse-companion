@@ -1222,6 +1222,100 @@
       ]
     }
   },
+  "routes": {
+    "actions": {
+      "away": {
+        "animation": "corrida_para_fundo",
+        "mode": "stride",
+        "match_lod": true
+      },
+      "return": {
+        "animation": "volta_para_camera",
+        "mode": "stride",
+        "match_lod": true
+      },
+      "walk": {
+        "animation": "corrida_lateral",
+        "mode": "stride"
+      },
+      "run": {
+        "animation": "corrida_lateral",
+        "mode": "stride"
+      },
+      "jump": {
+        "animation": "pulo",
+        "mode": "progress"
+      },
+      "fly": {
+        "animation": "pulo",
+        "mode": "progress"
+      }
+    },
+    "emotions": {
+      "alegre": {
+        "animation": "frente",
+        "frame": "feliz"
+      },
+      "assustado": {
+        "animation": "frente",
+        "frame": "susto"
+      },
+      "cantando": {
+        "animation": "frente",
+        "frame": "cantar"
+      },
+      "curioso": {
+        "animation": "frente",
+        "frame": "p/cima"
+      },
+      "curioso_esquerda": {
+        "animation": "virada_vistas",
+        "frame": "p_3/4_a"
+      },
+      "curioso_direita": {
+        "animation": "virada_vistas",
+        "frame": "p_3/4_b"
+      },
+      "dormindo": {
+        "animation": "frente",
+        "frame": "dormir"
+      },
+      "piscar": {
+        "animation": "frente",
+        "frame": "piscar"
+      },
+      "sonolento": {
+        "animation": "frente",
+        "frame": "dormir"
+      },
+      "estressado": {
+        "animation": "frente",
+        "frame": "susto"
+      },
+      "triste": {
+        "animation": "frente",
+        "frame": "idle"
+      }
+    },
+    "views": {
+      "back": {
+        "animation": "costas",
+        "frame": "idle"
+      },
+      "front": {
+        "animation": "frente",
+        "frame": "idle"
+      },
+      "profile": {
+        "animation": "virada_vistas",
+        "frame": "perfil"
+      }
+    },
+    "default": {
+      "animation": "virada_vistas",
+      "frame": "perfil"
+    }
+  },
   "lod": {
     "sheet": "lod.png",
     "sizes": [
