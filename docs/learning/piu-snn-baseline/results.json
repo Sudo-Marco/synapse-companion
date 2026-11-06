@@ -1,0 +1,202 @@
+{
+  "seed": 20261102,
+  "neurons_requested": 600,
+  "synaptic_gain": 1.7,
+  "action_preference_rate": 0.3,
+  "neural_score_scale_hz": 15.0,
+  "action_credit_rate": 0.1,
+  "prediction_rate": 0.05,
+  "context_projections": {
+    "max_contexts": 8,
+    "similarity_threshold": 0.85,
+    "weight_topology": "shared sparse CSR; context-specific lazy weight vectors"
+  },
+  "experimental_features": {
+    "tool_output_inhibition": false,
+    "tool_output_inhibition_strength": 0.35,
+    "sleep_replay": false,
+    "sleep_replay_episodes": null
+  },
+  "exploration_rate": 0.2,
+  "softmax_temperature": 0.08,
+  "thresholds": {
+    "a": ">85%",
+    "b": "readapt <=60 episodes and >85% final",
+    "c": ">80% in each context",
+    "d": ">70% at 10% feedback noise",
+    "e": ">70% retained after 1000 episodes in another context"
+  },
+  "scenarios": {
+    "a": {
+      "accuracy": 1.0,
+      "neural_only_accuracy": 1.0,
+      "preference_only_accuracy": 1.0,
+      "target_probability": 0.9999999996704922,
+      "weight_delta_ratio": 0.05400687658915928,
+      "mean_hidden_firing_hz": 10.869583333333328,
+      "action_gate_eligible_eval_fraction": 1.0,
+      "production_action_available_eval_fraction": 1.0,
+      "probabilities": {
+        "X": {
+          "eval_a": 0.9999999999654241,
+          "eval_b": 2.2443850779391231e-13,
+          "eval_c": 3.435141561344377e-11
+        }
+      },
+      "passed": true,
+      "score_magnitude_contribution": {
+        "snn_score_magnitude_fraction": 0.41040679352710724,
+        "preference_score_magnitude_fraction": 0.5895932064728927
+      }
+    },
+    "b": {
+      "post_reversal_accuracy": 1.0,
+      "neural_only_accuracy": 1.0,
+      "preference_only_accuracy": 1.0,
+      "post_reversal_target_probability": 0.9999999999834666,
+      "readaptation_episodes": 44,
+      "readaptation_limit": 60,
+      "weight_delta_ratio": 0.05616565863356081,
+      "mean_hidden_firing_hz": 6.856004901960781,
+      "action_gate_eligible_eval_fraction": 0.98,
+      "production_action_available_eval_fraction": 0.39,
+      "probabilities": {
+        "X": {
+          "eval_a": 2.084742241941262e-11,
+          "eval_b": 0.9999999999791147,
+          "eval_c": 3.7865872092198256e-14
+        }
+      },
+      "passed": true,
+      "score_magnitude_contribution": {
+        "snn_score_magnitude_fraction": 0.1654583767486269,
+        "preference_score_magnitude_fraction": 0.8345416232513732
+      }
+    },
+    "c": {
+      "accuracy_by_context": {
+        "X": 1.0,
+        "Y": 1.0,
+        "Z": 1.0
+      },
+      "neural_only_accuracy_by_context": {
+        "X": 1.0,
+        "Y": 0.975,
+        "Z": 0.775
+      },
+      "preference_only_accuracy_by_context": {
+        "X": 1.0,
+        "Y": 1.0,
+        "Z": 1.0
+      },
+      "target_probability_by_context": {
+        "X": 0.9999999973376198,
+        "Y": 0.9999999735450231,
+        "Z": 0.9999999779660801
+      },
+      "weight_delta_ratio": 0.05101517096757668,
+      "mean_hidden_firing_hz": 10.316592261904757,
+      "action_gate_eligible_eval_fraction": {
+        "X": 0.85,
+        "Y": 1.0,
+        "Z": 0.925
+      },
+      "production_action_available_eval_fraction": {
+        "X": 0.65,
+        "Y": 1.0,
+        "Z": 0.825
+      },
+      "probabilities": {
+        "X": {
+          "eval_a": 0.9999999998437625,
+          "eval_b": 7.72906910999365e-11,
+          "eval_c": 7.894679137047989e-11
+        },
+        "Y": {
+          "eval_a": 9.986773121962586e-09,
+          "eval_b": 0.9999999690751454,
+          "eval_c": 2.0938081447698485e-08
+        },
+        "Z": {
+          "eval_a": 2.0945102116130804e-08,
+          "eval_b": 9.986761886779135e-09,
+          "eval_c": 0.9999999690681359
+        }
+      },
+      "passed": true,
+      "score_magnitude_contribution": {
+        "snn_score_magnitude_fraction": 0.27569893147845465,
+        "preference_score_magnitude_fraction": 0.7243010685215452
+      },
+      "score_magnitude_contribution_by_context": {
+        "X": {
+          "snn_score_magnitude_fraction": 0.18638545138408352,
+          "preference_score_magnitude_fraction": 0.8136145486159165
+        },
+        "Y": {
+          "snn_score_magnitude_fraction": 0.37225226486188845,
+          "preference_score_magnitude_fraction": 0.6277477351381116
+        },
+        "Z": {
+          "snn_score_magnitude_fraction": 0.26845907818939213,
+          "preference_score_magnitude_fraction": 0.7315409218106078
+        }
+      }
+    },
+    "d": {
+      "accuracy": 1.0,
+      "neural_only_accuracy": 1.0,
+      "preference_only_accuracy": 1.0,
+      "target_probability": 0.9999999999909188,
+      "feedback_noise": 0.1,
+      "weight_delta_ratio": 0.10097689103855867,
+      "mean_hidden_firing_hz": 11.230381944444439,
+      "action_gate_eligible_eval_fraction": 0.95,
+      "production_action_available_eval_fraction": 0.76,
+      "probabilities": {
+        "X": {
+          "eval_a": 8.168024480046313e-12,
+          "eval_b": 9.261954578206411e-12,
+          "eval_c": 0.9999999999825699
+        }
+      },
+      "passed": true,
+      "score_magnitude_contribution": {
+        "snn_score_magnitude_fraction": 0.25781130028744476,
+        "preference_score_magnitude_fraction": 0.7421886997125553
+      }
+    },
+    "e": {
+      "retained_context_accuracy": 1.0,
+      "neural_only_accuracy": 0.67,
+      "preference_only_accuracy": 1.0,
+      "retained_context_target_probability": 0.999999979219368,
+      "interference_episodes": 1000,
+      "sleep_replay_enabled": false,
+      "sleep_replayed_episodes": 0,
+      "weight_delta_ratio": 0.0711258976063613,
+      "mean_hidden_firing_hz": 8.709485997267755,
+      "action_gate_eligible_eval_fraction": 0.92,
+      "production_action_available_eval_fraction": 0.87,
+      "probabilities": {
+        "X": {
+          "eval_a": 0.9999999984724601,
+          "eval_b": 4.971816855192121e-10,
+          "eval_c": 1.03035834553755e-09
+        },
+        "Y": {
+          "eval_a": 9.902689248933238e-14,
+          "eval_b": 0.9999999999998521,
+          "eval_c": 4.895414151275642e-14
+        }
+      },
+      "passed": true,
+      "score_magnitude_contribution": {
+        "snn_score_magnitude_fraction": 0.2182683114872021,
+        "preference_score_magnitude_fraction": 0.7817316885127981
+      }
+    }
+  },
+  "all_passed": true,
+  "readme_notes": "Reported scenario accuracy is greedy combined-policy accuracy on held-out episodes. The combined score is the normalized decoded tool firing rate plus the learned context/tool preference. Neural-only and preference-only ablations are reported separately; score_magnitude_contribution is the mean absolute neural/preference score share for the combined policy's selected candidate, not causal attribution; exploration is only in this offline simulator. action_gate_eligible checks the tool-rate threshold; production_action_available additionally requires the actual initiative threshold. No tools are executed by this evaluation."
+}

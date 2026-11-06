@@ -107,6 +107,12 @@ class PetEngine:
                 synaptic_gain=float(network_config.get("synaptic_gain", 1.0)))
         # Apply active settings even when loading a snapshot created by an older config.
         self.network.synaptic_gain = max(0.0, float(network_config.get("synaptic_gain", 1.0)))
+        self.network.tool_output_inhibition_enabled = bool(
+            network_config.get("tool_output_inhibition", False))
+        self.network.tool_output_inhibition_strength = max(0.0, float(
+            network_config.get("tool_output_inhibition_strength", 0.35)))
+        self.network.tool_output_inhibition_interval_steps = max(1, int(
+            network_config.get("tool_output_inhibition_interval_steps", 5)))
         self.network.configure_context_output_projections(
             max_contexts=int(self.context_projection_config.get("max_contexts", 8)),
             similarity_threshold=float(self.context_projection_config.get(
@@ -149,6 +155,8 @@ class PetEngine:
             replay_enabled=bool(self.sleep_config.get("replay_enabled", False)),
             max_replay_episodes=max(0, int(self.sleep_config.get(
                 "max_replay_episodes", 12))),
+            replay_recent_fraction=max(0.0, min(1.0, float(
+                self.sleep_config.get("replay_recent_fraction", 0.05)))),
             replay_noise=max(0.0, float(self.sleep_config.get("replay_noise", 0.005))),
             replay_steps=max(1, int(self.sleep_config.get("replay_steps", 2))))
         self.homeostasis = Homeostasis()
@@ -282,6 +290,12 @@ class PetEngine:
         network_config = self.config.get("network", {})
         self.network.synaptic_gain = max(
             0.0, float(network_config.get("synaptic_gain", 1.0)))
+        self.network.tool_output_inhibition_enabled = bool(
+            network_config.get("tool_output_inhibition", False))
+        self.network.tool_output_inhibition_strength = max(0.0, float(
+            network_config.get("tool_output_inhibition_strength", 0.35)))
+        self.network.tool_output_inhibition_interval_steps = max(1, int(
+            network_config.get("tool_output_inhibition_interval_steps", 5)))
         self.network.configure_context_output_projections(
             max_contexts=int(self.context_projection_config.get("max_contexts", 8)),
             similarity_threshold=float(self.context_projection_config.get(

@@ -61,6 +61,10 @@ def _measure_ticks(engine: PetEngine, regime: str, count: int) -> dict[str, obje
     # Consolidation is measured separately because it occurs once on sleep entry.
     if regime == "sleep":
         engine.sleep.sleeping = True
+        if engine.sleep.replay_enabled and not engine.memory.top_rpe(1):
+            for index in range(engine.sleep.max_replay_episodes):
+                engine.memory.add(f"benchmark_context_{index % 3}", "benchmark_action",
+                                  .5, rpe=(.8 if index % 2 else -.8))
         started = time.thread_time_ns()
         engine.sleep.consolidate(engine.network, engine.memory,
                                  engine.learners, engine.neuromodulators)
@@ -158,9 +162,11 @@ def _memory_probe(neurons: int) -> None:
     print(json.dumps(result))
 
 
-def _run_idle_cpu_probe(seconds: float) -> dict[str, float]:
+def _run_idle_cpu_probe(seconds: float,
+                        tool_output_inhibition: bool = False) -> dict[str, float]:
     with tempfile.TemporaryDirectory(prefix="synapse_snn_idle_") as folder:
         engine = PetEngine(data_dir=Path(folder))
+        engine.network.tool_output_inhibition_enabled = tool_output_inhibition
         process = psutil.Process()
         engine.start()
         cpu_before = process.cpu_times()
@@ -201,6 +207,10 @@ def main() -> None:
     parser.add_argument("--ticks", type=int, default=160)
     parser.add_argument("--profile-steps", type=int, default=120)
     parser.add_argument("--idle-seconds", type=float, default=4.0)
+    parser.add_argument("--tool-output-inhibition", action="store_true",
+                        help="measure the optional tool-output competition path")
+    parser.add_argument("--sleep-replay", action="store_true",
+                        help="measure bounded replay at sleep entry")
     parser.add_argument("--memory-probe", type=int, help=argparse.SUPPRESS)
     args = parser.parse_args()
     if args.memory_probe:
@@ -214,12 +224,21 @@ def main() -> None:
         "numpy": np.__version__,
         "seed": 20261102,
         "tick_samples": args.ticks,
+        "experimental_features": {
+            "tool_output_inhibition": bool(args.tool_output_inhibition),
+            "sleep_replay": bool(args.sleep_replay),
+        },
         "determinism": reference_snapshot(),
         "memory": {"600": _child_memory(600), "1000": _child_memory(1000)},
     }
 
     with tempfile.TemporaryDirectory(prefix="synapse_snn_bench_") as folder:
         engine = PetEngine(seed=20261102, neurons=600, data_dir=Path(folder))
+        engine.network.tool_output_inhibition_enabled = args.tool_output_inhibition
+        engine.network.tool_output_inhibition_strength = max(0.0, float(
+            engine.config.get("network", {}).get(
+                "tool_output_inhibition_strength", 0.35)))
+        engine.sleep.replay_enabled = args.sleep_replay
         tick_cost: dict[str, object] = {}
         rates: dict[str, object] = {}
         for regime in ("active", "rest", "sleep"):
@@ -229,6 +248,11 @@ def main() -> None:
         with tempfile.TemporaryDirectory(prefix="synapse_snn_1000_") as folder_1000:
             engine_1000 = PetEngine(seed=20261102, neurons=1000,
                                     data_dir=Path(folder_1000))
+            engine_1000.network.tool_output_inhibition_enabled = args.tool_output_inhibition
+            engine_1000.network.tool_output_inhibition_strength = max(0.0, float(
+                engine_1000.config.get("network", {}).get(
+                    "tool_output_inhibition_strength", 0.35)))
+            engine_1000.sleep.replay_enabled = args.sleep_replay
             # Engine currently hard-codes 24 inputs per group (96 total). Scale
             # the probe encoder to the network sensor population while keeping
             # the production runtime unchanged during phase-0 baseline capture.
@@ -256,7 +280,8 @@ def main() -> None:
         del engine
         gc.collect()
 
-    results["idle_process_cpu"] = _run_idle_cpu_probe(args.idle_seconds)
+    results["idle_process_cpu"] = _run_idle_cpu_probe(
+        args.idle_seconds, tool_output_inhibition=args.tool_output_inhibition)
     results["allocation_metric_note"] = (
         "Python tracemalloc reports net live traced blocks/bytes per tick and peak traced bytes; "
         "it does not count short-lived allocations that are freed inside each tick.")

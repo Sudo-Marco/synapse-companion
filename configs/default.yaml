@@ -62,6 +62,8 @@ network:
   # the established dynamics and deterministic reference by default.
   tool_output_inhibition: false
   tool_output_inhibition_strength: 0.35
+  # Sample competition every 20 ms instead of every 2 ms LIF substep.
+  tool_output_inhibition_interval_steps: 10
   allow_neuron_growth_migration: false
 plasticity:
   learning_rate: 0.0005
@@ -187,7 +189,10 @@ autonomy:
       habit: "Reconheci um padrão novo no meu aprendizado. Você pode vê-lo na aba Aprendizado."
 sleep:
   replay_enabled: false
-  max_replay_episodes: 12
+  # Bounded replay is opt-in; 120 retained high-RPE events improved the
+  # one-shot neural retention score in scenario e; 5% slots stay recent.
+  max_replay_episodes: 120
+  replay_recent_fraction: 0.05
   replay_noise: 0.005
   replay_steps: 2
 habits:

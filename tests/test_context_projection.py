@@ -44,6 +44,26 @@ def test_dynamic_tool_group_extends_base_and_context_weights():
     assert network.hidden_to_output.n_post == len(network.population.voltage) - network.output_start
 
 
+def test_tool_output_inhibition_is_opt_in_and_suppresses_only_losing_groups():
+    network = SpikingNetwork(600, seed=15)
+    alpha = network.add_tool_group("alpha") - network.output_start
+    beta = network.add_tool_group("beta") - network.output_start
+    gamma = network.add_tool_group("gamma") - network.output_start
+    assert network.tool_output_inhibition_enabled is False
+
+    currents = np.zeros(network.hidden_to_output.n_post, dtype=np.float32)
+    currents[alpha] = 1.0
+    currents[beta] = 0.8
+    currents[gamma] = 0.6
+    network.tool_output_inhibition_strength = 0.5
+    network._apply_tool_output_inhibition(currents)
+
+    assert np.all(currents[alpha] == 1.0)
+    assert np.all(currents[beta] < 0.8)
+    assert np.all(currents[gamma] < currents[beta])
+    assert network.tool_output_inhibition_enabled is False
+
+
 def test_context_projections_round_trip_with_shared_topology(tmp_path):
     network = SpikingNetwork(600, seed=13)
     network.add_tool_group("notes")

@@ -50,7 +50,11 @@ def softmax_probabilities(logits: dict[str, float], temperature: float = TEMPERA
 class LearningSimulation:
     """Offline user simulator around the production engine's reward and selector."""
 
-    def __init__(self, seed: int, neurons: int) -> None:
+    def __init__(self, seed: int, neurons: int, *,
+                 tool_output_inhibition: bool = False,
+                 tool_output_inhibition_strength: float = 0.35,
+                 sleep_replay: bool = False,
+                 sleep_replay_episodes: int | None = None) -> None:
         self.seed = int(seed)
         self.rng = np.random.default_rng(seed)
         self._temporary = tempfile.TemporaryDirectory(prefix="synapse_learning_eval_")
@@ -63,6 +67,12 @@ class LearningSimulation:
             ))
 
         self.network = self.engine.network
+        self.network.tool_output_inhibition_enabled = bool(tool_output_inhibition)
+        self.network.tool_output_inhibition_strength = max(
+            0.0, float(tool_output_inhibition_strength))
+        self.engine.sleep.replay_enabled = bool(sleep_replay)
+        if sleep_replay_episodes is not None:
+            self.engine.sleep.max_replay_episodes = max(0, int(sleep_replay_episodes))
         self._original_step = self.network.step
         self._spike_counts = np.zeros(3, dtype=np.int64)
         self.network.step = self._counted_step
@@ -86,23 +96,50 @@ class LearningSimulation:
         return spikes
 
     def _weights_copy(self) -> tuple[np.ndarray, ...]:
-        return tuple(projection.weights.copy() for projection in (
-            self.network.sensor_to_hidden, self.network.recurrent,
-            self.network.hidden_to_output))
+        return tuple(
+            (projection.pre.copy(), projection.post.copy(),
+             projection.weights.copy(), projection.n_pre)
+            for projection in (self.network.sensor_to_hidden,
+                               self.network.recurrent,
+                               self.network.hidden_to_output))
 
     @staticmethod
     def _weights_norm(weights: tuple[np.ndarray, ...]) -> float:
-        return math.sqrt(sum(float(np.dot(item.astype(np.float64),
-                                         item.astype(np.float64)))
+        return math.sqrt(sum(float(np.dot(item[2].astype(np.float64),
+                                         item[2].astype(np.float64)))
                              for item in weights))
 
     def _weight_delta_ratio(self) -> float:
-        current = (self.network.sensor_to_hidden.weights,
-                   self.network.recurrent.weights,
-                   self.network.hidden_to_output.weights)
-        delta_squared = sum(float(np.square(now.astype(np.float64)
-                                            - before.astype(np.float64)).sum())
-                            for now, before in zip(current, self.start_weights))
+        projections = (self.network.sensor_to_hidden, self.network.recurrent,
+                      self.network.hidden_to_output)
+        delta_squared = 0.0
+        for projection, (old_pre, old_post, old_weights, old_n_pre) in zip(
+                projections, self.start_weights):
+            now_weights = projection.weights
+            if (now_weights.shape == old_weights.shape
+                    and np.array_equal(projection.pre, old_pre)
+                    and np.array_equal(projection.post, old_post)):
+                delta_squared += float(np.square(
+                    now_weights.astype(np.float64)
+                    - old_weights.astype(np.float64)).sum())
+                continue
+            old_keys = old_post.astype(np.int64) * int(old_n_pre) + old_pre
+            now_keys = (projection.post.astype(np.int64) * int(projection.n_pre)
+                        + projection.pre)
+            positions = np.searchsorted(old_keys, now_keys)
+            valid = positions < len(old_keys)
+            matched = np.zeros(len(now_keys), dtype=np.bool_)
+            matched[valid] = old_keys[positions[valid]] == now_keys[valid]
+            if np.any(matched):
+                delta = (now_weights[matched].astype(np.float64)
+                         - old_weights[positions[matched]].astype(np.float64))
+                delta_squared += float(np.square(delta).sum())
+            delta_squared += float(np.square(
+                now_weights[~matched].astype(np.float64)).sum())
+            old_matched = np.zeros(len(old_weights), dtype=np.bool_)
+            old_matched[positions[matched]] = True
+            delta_squared += float(np.square(
+                old_weights[~old_matched].astype(np.float64)).sum())
         return math.sqrt(delta_squared) / max(self.start_weight_norm, 1e-12)
 
     def _rates(self) -> dict[str, float]:
@@ -199,6 +236,12 @@ class LearningSimulation:
         gc.collect()
         self._temporary.cleanup()
 
+    def consolidate_for_evaluation(self) -> int:
+        """Trigger the same bounded consolidation used on sleep entry."""
+        return self.engine.sleep.consolidate(
+            self.network, self.engine.memory, self.engine.learners,
+            self.engine.neuromodulators)
+
 
 def _evaluate(sim: LearningSimulation, scenario: str, context: str, target: str,
               repetitions: int, phase: str = "eval") -> list[dict[str, Any]]:
@@ -219,6 +262,31 @@ def _target_probability(rows: list[dict[str, Any]]) -> float:
     return float(np.mean([row[f"prob_{row['target_tool']}"] for row in rows]))
 
 
+def _score_contributions(rows: list[dict[str, Any]],
+                        neural_scale_hz: float,
+                        context: str | None = None) -> dict[str, float]:
+    """Report selected-action score magnitudes, not causal attribution."""
+    evaluation = [row for row in rows if not row["learned"]
+                  and (context is None or row["context"] == context)]
+    neural_parts: list[float] = []
+    preference_parts: list[float] = []
+    for row in evaluation:
+        action = str(row["greedy_tool"])
+        neural = min(1.0, max(0.0, float(
+            row[f"neural_rate_{action}"]) / max(1e-6, neural_scale_hz)))
+        preference = float(row[f"preference_{action}"])
+        denominator = abs(neural) + abs(preference)
+        neural_parts.append(abs(neural) / denominator if denominator else 0.0)
+        preference_parts.append(abs(preference) / denominator if denominator else 0.0)
+    if not evaluation:
+        return {"snn_score_magnitude_fraction": 0.0,
+                "preference_score_magnitude_fraction": 0.0}
+    return {
+        "snn_score_magnitude_fraction": float(np.mean(neural_parts)),
+        "preference_score_magnitude_fraction": float(np.mean(preference_parts)),
+    }
+
+
 def _final_probabilities(sim: LearningSimulation, contexts: tuple[str, ...]
                          ) -> dict[str, dict[str, float]]:
     result = {}
@@ -231,8 +299,15 @@ def _final_probabilities(sim: LearningSimulation, contexts: tuple[str, ...]
     return result
 
 
-def _scenario_a(seed: int, neurons: int) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    sim = LearningSimulation(seed, neurons)
+def _scenario_a(seed: int, neurons: int, tool_output_inhibition: bool = False,
+                 tool_output_inhibition_strength: float = 0.35,
+                 sleep_replay: bool = False,
+                 sleep_replay_episodes: int | None = None
+                 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    sim = LearningSimulation(seed, neurons, tool_output_inhibition=tool_output_inhibition,
+                             tool_output_inhibition_strength=tool_output_inhibition_strength,
+                             sleep_replay=sleep_replay,
+                             sleep_replay_episodes=sleep_replay_episodes)
     try:
         rows = [sim.episode("a", "X", "eval_a", learn=True,
                             exploration=EXPLORATION) for _ in range(150)]
@@ -257,8 +332,15 @@ def _scenario_a(seed: int, neurons: int) -> tuple[dict[str, Any], list[dict[str,
         sim.close()
 
 
-def _scenario_b(seed: int, neurons: int) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    sim = LearningSimulation(seed, neurons)
+def _scenario_b(seed: int, neurons: int, tool_output_inhibition: bool = False,
+                 tool_output_inhibition_strength: float = 0.35,
+                 sleep_replay: bool = False,
+                 sleep_replay_episodes: int | None = None
+                 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    sim = LearningSimulation(seed, neurons, tool_output_inhibition=tool_output_inhibition,
+                             tool_output_inhibition_strength=tool_output_inhibition_strength,
+                             sleep_replay=sleep_replay,
+                             sleep_replay_episodes=sleep_replay_episodes)
     try:
         rows: list[dict[str, Any]] = []
         rows.extend(sim.episode("b", "X", "eval_a", learn=True,
@@ -299,8 +381,15 @@ def _scenario_b(seed: int, neurons: int) -> tuple[dict[str, Any], list[dict[str,
         sim.close()
 
 
-def _scenario_c(seed: int, neurons: int) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    sim = LearningSimulation(seed, neurons)
+def _scenario_c(seed: int, neurons: int, tool_output_inhibition: bool = False,
+                 tool_output_inhibition_strength: float = 0.35,
+                 sleep_replay: bool = False,
+                 sleep_replay_episodes: int | None = None
+                 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    sim = LearningSimulation(seed, neurons, tool_output_inhibition=tool_output_inhibition,
+                             tool_output_inhibition_strength=tool_output_inhibition_strength,
+                             sleep_replay=sleep_replay,
+                             sleep_replay_episodes=sleep_replay_episodes)
     try:
         rng = random.Random(seed + 3)
         training = [(context, TARGETS[context])
@@ -341,8 +430,15 @@ def _scenario_c(seed: int, neurons: int) -> tuple[dict[str, Any], list[dict[str,
         sim.close()
 
 
-def _scenario_d(seed: int, neurons: int) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    sim = LearningSimulation(seed, neurons)
+def _scenario_d(seed: int, neurons: int, tool_output_inhibition: bool = False,
+                 tool_output_inhibition_strength: float = 0.35,
+                 sleep_replay: bool = False,
+                 sleep_replay_episodes: int | None = None
+                 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    sim = LearningSimulation(seed, neurons, tool_output_inhibition=tool_output_inhibition,
+                             tool_output_inhibition_strength=tool_output_inhibition_strength,
+                             sleep_replay=sleep_replay,
+                             sleep_replay_episodes=sleep_replay_episodes)
     try:
         rows = [sim.episode("d", "X", "eval_c", learn=True,
                             exploration=EXPLORATION, feedback_noise=0.10)
@@ -369,8 +465,15 @@ def _scenario_d(seed: int, neurons: int) -> tuple[dict[str, Any], list[dict[str,
         sim.close()
 
 
-def _scenario_e(seed: int, neurons: int) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    sim = LearningSimulation(seed, neurons)
+def _scenario_e(seed: int, neurons: int, tool_output_inhibition: bool = False,
+                 tool_output_inhibition_strength: float = 0.35,
+                 sleep_replay: bool = False,
+                 sleep_replay_episodes: int | None = None
+                 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    sim = LearningSimulation(seed, neurons, tool_output_inhibition=tool_output_inhibition,
+                             tool_output_inhibition_strength=tool_output_inhibition_strength,
+                             sleep_replay=sleep_replay,
+                             sleep_replay_episodes=sleep_replay_episodes)
     try:
         rows = [sim.episode("e", "X", "eval_a", learn=True,
                             exploration=EXPLORATION, phase="learn_old_context")
@@ -378,6 +481,8 @@ def _scenario_e(seed: int, neurons: int) -> tuple[dict[str, Any], list[dict[str,
         rows.extend(sim.episode("e", "Y", "eval_b", learn=True,
                                 exploration=EXPLORATION, phase="interference_context")
                     for _ in range(1000))
+        replayed_episodes = (sim.consolidate_for_evaluation()
+                             if sleep_replay else 0)
         evaluation = _evaluate(sim, "e", "X", "eval_a", 100,
                                phase="eval_retained_context")
         rows.extend(evaluation)
@@ -387,6 +492,8 @@ def _scenario_e(seed: int, neurons: int) -> tuple[dict[str, Any], list[dict[str,
                   "preference_only_accuracy": _accuracy(evaluation, "preference_greedy_tool"),
                   "retained_context_target_probability": _target_probability(evaluation),
                   "interference_episodes": 1000,
+                  "sleep_replay_enabled": bool(sleep_replay),
+                  "sleep_replayed_episodes": replayed_episodes,
                   "weight_delta_ratio": sim._weight_delta_ratio(),
                   "mean_hidden_firing_hz": float(np.mean(
                       [row["firing_hz_hidden"] for row in rows])),
@@ -507,7 +614,11 @@ def _write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
 
 
 def run_evaluation(output: Path, seed: int = 20261102,
-                   neurons: int = 600) -> dict[str, Any]:
+                   neurons: int = 600, *,
+                   tool_output_inhibition: bool = False,
+                   tool_output_inhibition_strength: float = 0.35,
+                   sleep_replay: bool = False,
+                   sleep_replay_episodes: int | None = None) -> dict[str, Any]:
     output.mkdir(parents=True, exist_ok=True)
     config = load_config()
     network_config = config.get("network", {})
@@ -528,8 +639,12 @@ def run_evaluation(output: Path, seed: int = 20261102,
                 "similarity_threshold", 0.85)),
             "weight_topology": "shared sparse CSR; context-specific lazy weight vectors",
         },
-        "synaptic_gain": 1.7,
-        "action_preference_rate": 0.30,
+        "experimental_features": {
+            "tool_output_inhibition": bool(tool_output_inhibition),
+            "tool_output_inhibition_strength": float(tool_output_inhibition_strength),
+            "sleep_replay": bool(sleep_replay),
+            "sleep_replay_episodes": sleep_replay_episodes,
+        },
         "exploration_rate": EXPLORATION,
         "softmax_temperature": TEMPERATURE,
         "thresholds": {"a": ">85%", "b": "readapt <=60 episodes and >85% final",
@@ -538,7 +653,19 @@ def run_evaluation(output: Path, seed: int = 20261102,
         "scenarios": {},
     }
     for letter, runner in SCENARIOS.items():
-        result, rows = runner(seed + ord(letter), neurons)
+        result, rows = runner(seed + ord(letter), neurons,
+                              tool_output_inhibition,
+                              tool_output_inhibition_strength,
+                              sleep_replay, sleep_replay_episodes)
+        result["score_magnitude_contribution"] = _score_contributions(
+            rows, float(learning_config.get("neural_score_scale_hz", 15.0)))
+        if letter == "c":
+            result["score_magnitude_contribution_by_context"] = {
+                context: _score_contributions(
+                    rows, float(learning_config.get("neural_score_scale_hz", 15.0)),
+                    context)
+                for context in CONTEXTS
+            }
         results["scenarios"][letter] = result
         _write_csv(output / f"scenario_{letter}.csv", rows)
         _draw_curve(output / f"scenario_{letter}.png", letter, rows)
@@ -550,6 +677,8 @@ def run_evaluation(output: Path, seed: int = 20261102,
         "Reported scenario accuracy is greedy combined-policy accuracy on held-out episodes. "
         "The combined score is the normalized decoded tool firing rate plus the learned context/tool "
         "preference. Neural-only and preference-only ablations are reported separately; "
+        "score_magnitude_contribution is the mean absolute neural/preference score share "
+        "for the combined policy's selected candidate, not causal attribution; "
         "exploration is only in this offline simulator. action_gate_eligible checks the "
         "tool-rate threshold; production_action_available additionally requires the actual "
         "initiative threshold. No tools are executed by this evaluation.")
@@ -565,8 +694,21 @@ def main() -> None:
                         / "docs" / "learning")
     parser.add_argument("--seed", type=int, default=20261102)
     parser.add_argument("--neurons", type=int, default=600)
+    parser.add_argument("--tool-output-inhibition", action="store_true",
+                        help="evaluate optional lateral inhibition among tool outputs")
+    parser.add_argument("--tool-output-inhibition-strength", type=float, default=0.35,
+                        help="lateral inhibition multiplier (used only with the flag)")
+    parser.add_argument("--sleep-replay", action="store_true",
+                        help="consolidate bounded high-RPE episodes before scenario e evaluation")
+    parser.add_argument("--sleep-replay-episodes", type=int, default=None,
+                        help="override the maximum number of sleep memories replayed")
     args = parser.parse_args()
-    results = run_evaluation(args.output, seed=args.seed, neurons=args.neurons)
+    results = run_evaluation(
+        args.output, seed=args.seed, neurons=args.neurons,
+        tool_output_inhibition=args.tool_output_inhibition,
+        tool_output_inhibition_strength=args.tool_output_inhibition_strength,
+        sleep_replay=args.sleep_replay,
+        sleep_replay_episodes=args.sleep_replay_episodes)
     print(f"Results: {args.output / 'results.json'}")
     print(f"All scenarios passed: {results['all_passed']}")
 
