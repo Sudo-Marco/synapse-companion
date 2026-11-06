@@ -2,6 +2,8 @@
 
 Synapse Pet is local-first. The engine, SNN, UI, episode memory, snapshots, and logs run on the user's computer. No remote inference or telemetry service is part of the current runtime. Installing dependencies requires network access; explicitly opening a URL or using a user-installed plugin can also access external resources.
 
+The pixel-art pet renderer draws from packaged sprite assets and UI state. It does not sample or capture desktop/background pixels. The floating mode uses window geometry for placement and the current sprite alpha for its click-through mask; it does not inspect other windows' titles or contents.
+
 ## Sensors
 
 All optional sensors are disabled by default in `configs/default.yaml`.

@@ -1,9 +1,0 @@
-Photo used only as a local rendering-test background:
-
-Title: Lake Mountain Landscape.jpg
-Photographer: Bonnie Moreland
-Source: https://commons.wikimedia.org/wiki/File:Lake_Mountain_Landscape.jpg
-License: CC0 1.0 Universal Public Domain Dedication
-
-The photo is cropped locally to 320 x 180 pixels by scripts/legibility_review.py.
-No desktop pixels or personal screen content are captured.

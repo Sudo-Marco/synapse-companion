@@ -1,0 +1,43 @@
+paleta:
+  outline: '#4A3216'
+  outline_light: '#FFF3A0'
+  yellow: '#FFD93B'
+  cream: '#FFF3A0'
+  shadow: '#F2A91E'
+  wing: '#D9820F'
+  beak: '#FF8A1F'
+  cheek: '#FF9DB5'
+  eye: '#2A1D18'
+  white: '#FFFFFF'
+  glint: '#BFEFFF'
+  sky_day: '#85D9F5'
+  sky_horizon: '#C8F0F4'
+  sky_dusk: '#E88980'
+  sky_dusk_horizon: '#FFD28B'
+  sky_night: '#24365E'
+  sky_night_horizon: '#485B82'
+  sun_moon: '#FFF2B0'
+  cloud: '#F6FAF0'
+  hill_far: '#7CBF77'
+  hill_near: '#4F945C'
+  grass: '#6AB95C'
+  leaf: '#54A65E'
+  branch: '#8D5A32'
+  wood_light: '#BB7B3F'
+  cool_mood: '#B7D2D9'
+temas:
+  dia:
+    ceu: sky_day
+    horizonte: sky_horizon
+  entardecer:
+    ceu: sky_dusk
+    horizonte: sky_dusk_horizon
+  noite:
+    ceu: sky_night
+    horizonte: sky_night_horizon
+estados:
+  triste:
+    corpo: cool_mood
+  alerta:
+    detalhe: beak
+    outline: outline

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import ctypes
-from collections import OrderedDict
 from datetime import datetime
 import math
 import os
@@ -18,6 +17,7 @@ from PySide6.QtWidgets import QWidget
 
 from ..runtime.visual_state import StateAnimator, VisualState
 from .interaction import AffectionDragTracker
+from .spectral_eye import SpectralEyeRenderer
 
 
 Color = tuple[int, int, int]
@@ -84,7 +84,7 @@ class AnimatedAsciiEyeWidget(QWidget):
     animationStarted = Signal()
     CELL_WIDTH = 8
     CELL_HEIGHT = 8
-    GLYPHS = "".join(chr(codepoint) for codepoint in range(32, 127)) + "♥█▓▒░▀▄"
+    GLYPHS = "".join(chr(codepoint) for codepoint in range(32, 127)) + "♥"
 
     def __init__(self, columns: int = 100, rows: int = 56,
                  scene_time: str = "auto", design: str = "A",
@@ -92,51 +92,30 @@ class AnimatedAsciiEyeWidget(QWidget):
                  parent: QWidget | None = None,
                  max_columns: int = 170, max_rows: int = 96,
                  affection_drag_min_s: float = 1.0,
-                 compact: bool = False,
-                 outline: dict[str, object] | None = None,
-                 density: str = "normal") -> None:
+                 compact: bool = False, render_style: str = "ascii",
+                 spectral_config: dict | None = None) -> None:
         super().__init__(parent)
         self.compact = bool(compact)
-        self.outline_config = dict(outline or {})
-        self.density = (str(density).lower() if str(density).lower() in
-                        {"bold", "normal", "fine"} else "normal")
-        self.density_profile = {
-            "bold": {"sclera_period": 3, "iris_period": 3,
-                     "pupil_period": 3, "fill": 0.82},
-            "normal": {"sclera_period": 5, "iris_period": 5,
-                       "pupil_period": 5, "fill": 0.66},
-            "fine": {"sclera_period": 7, "iris_period": 7,
-                     "pupil_period": 7, "fill": 0.48},
-        }[self.density]
-        self.min_cell_px = max(8, min(32, int(
-            self.outline_config.get("min_cell_px", 8))))
-        self.outline_thickness = max(1, min(2, int(
-            self.outline_config.get("thickness_px", 1))))
-        self.double_outline = bool(self.outline_config.get("double", True))
-        self.outline_dark = self._color_option("dark", (7, 13, 23))
-        self.outline_light = self._color_option("light", (250, 252, 255))
-        self.theme_is_light = self._windows_light_theme()
-        self.outline_outer, self.outline_inner = self._resolve_outline_order()
-        self.plate_alpha = max(0.0, min(0.75, float(
-            self.outline_config.get("plate_alpha", 0.42))))
-        self.plate_dark = self._color_option("plate_dark", (12, 20, 32))
-        self.plate_light = self._color_option("plate_light", (235, 242, 246))
-        # Oppose the Windows app theme so the translucent silhouette remains
-        # distinct on the corresponding light or dark desktop.
-        self.plate_color = self.plate_dark if self.theme_is_light else self.plate_light
-        self._eye_geometry: tuple[float, float, float, float, float] | None = None
-        min_columns = 6 if self.compact else 72
-        min_rows = 6 if self.compact else 42
+        min_columns = 28 if self.compact else 72
+        min_rows = 16 if self.compact else 42
         self.base_columns = max(min_columns, min(240, int(columns)))
         self.base_rows = max(min_rows, min(135, int(rows)))
         self.max_columns = max(self.base_columns, min(300, int(max_columns)))
         self.max_rows = max(self.base_rows, min(180, int(max_rows)))
         self.columns = self.base_columns
         self.rows = self.base_rows
-        self.lod_level = "large"
-        self.lod_detail_weight = 1.0
         self.scene_time = str(scene_time).strip().lower()
         self.design = "B" if str(design).strip().upper() == "B" else "A"
+        self.render_style = (render_style if render_style in {"spectral", "ascii", "vector"}
+                             else "spectral")
+        spectral_config = spectral_config or {}
+        self._spectral_eye = SpectralEyeRenderer(
+            glow_strength=spectral_config.get("glow_strength", 0.82),
+            rune_count=spectral_config.get("rune_count", 10),
+            smoke_density=spectral_config.get("smoke_density", 0.62))
+        self._spectral_opening = 0.84
+        self._spectral_last_time = 0.0
+        self._spectral_gaze = (0.0, 0.0)
         self.max_particles = max(0, min(48, int(max_particles)))
         self.setMinimumSize(80, 52) if self.compact else self.setMinimumSize(700, 390)
         self.setMouseTracking(True)
@@ -171,12 +150,7 @@ class AnimatedAsciiEyeWidget(QWidget):
         self._blink_started: float | None = None
         self._blink_duration = 0.19
         self._last_frame = QImage()
-        self._iris_geometry: tuple[float, float, float] | None = None
-        self._pupil_geometry: tuple[float, float, float] | None = None
-        self._render_palette: dict[str, Color] | None = None
-        self._iris_bitmap_cache: OrderedDict[tuple[int, Color], QImage] = OrderedDict()
-        (self._glyph_ids, self._glyph_atlas, self._glyph_dark_rings,
-         self._glyph_light_rings) = self._build_glyph_atlas()
+        self._glyph_ids, self._glyph_atlas = self._build_glyph_atlas()
         self._glyph_lut = np.zeros(0x10000, dtype=np.uint8)
         for glyph, index in self._glyph_ids.items():
             self._glyph_lut[ord(glyph)] = index
@@ -188,109 +162,26 @@ class AnimatedAsciiEyeWidget(QWidget):
             for _ in range(max(32, self.columns // 2)))
         self._resize_resolution()
 
-    def _color_option(self, name: str, default: Color) -> Color:
-        value = self.outline_config.get(name, default)
-        if not isinstance(value, (tuple, list)) or len(value) != 3:
-            return default
-        return tuple(max(0, min(255, int(channel))) for channel in value)  # type: ignore[return-value]
-
-    @staticmethod
-    def _windows_light_theme() -> bool:
-        """Read only the Windows app-theme preference; never inspect the desktop."""
-        if sys.platform != "win32":
-            return False
-        try:
-            import winreg
-
-            key_path = r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
-            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path) as key:
-                value, _ = winreg.QueryValueEx(key, "AppsUseLightTheme")
-            return bool(value)
-        except (OSError, ImportError):
-            return False
-
-    def _resolve_outline_order(self) -> tuple[Color, Color]:
-        if not bool(self.outline_config.get("theme_auto", True)):
-            return self.outline_light, self.outline_dark
-        return ((self.outline_dark, self.outline_light) if self.theme_is_light
-                else (self.outline_light, self.outline_dark))
-
-    def _build_glyph_atlas(self) -> tuple[dict[str, int], np.ndarray,
-                                           np.ndarray, np.ndarray]:
+    def _build_glyph_atlas(self) -> tuple[dict[str, int], np.ndarray]:
         font_root = Path(os.environ.get("WINDIR", r"C:\Windows")) / "Fonts"
         font = None
-        font_size = max(6, min(18, int(self.outline_config.get("font_size", 7))))
-        for name in ("consola.ttf", "cour.ttf", "lucon.ttf",
-                     "consolab.ttf", "courbd.ttf"):
+        for name in ("consola.ttf", "cour.ttf", "lucon.ttf"):
             path = font_root / name
             if path.exists():
-                font = ImageFont.truetype(str(path), font_size)
+                font = ImageFont.truetype(str(path), self.CELL_HEIGHT)
                 break
         if font is None:
             try:
-                font = ImageFont.truetype("DejaVuSansMono.ttf", font_size)
+                font = ImageFont.truetype("DejaVuSansMono.ttf", self.CELL_HEIGHT)
             except OSError:
                 font = ImageFont.load_default()
         masks = []
-        yy, xx = np.indices((self.CELL_HEIGHT, self.CELL_WIDTH))
         for glyph in self.GLYPHS:
-            if glyph == "█":
-                masks.append(np.ones((self.CELL_HEIGHT, self.CELL_WIDTH), dtype=bool))
-                continue
-            if glyph == "▓":
-                masks.append(((xx + yy) % 4 != 0))
-                continue
-            if glyph == "▒":
-                masks.append(((xx + yy) % 2 == 0))
-                continue
-            if glyph == "░":
-                masks.append(((xx + yy) % 4 == 0))
-                continue
-            if glyph == "▀":
-                masks.append(yy < (self.CELL_HEIGHT + 1) // 2)
-                continue
-            if glyph == "▄":
-                masks.append(yy >= self.CELL_HEIGHT // 2)
-                continue
             tile = Image.new("L", (self.CELL_WIDTH, self.CELL_HEIGHT), 0)
-            draw = ImageDraw.Draw(tile)
-            bounds = draw.textbbox((0, 0), glyph, font=font)
-            width, height = bounds[2] - bounds[0], bounds[3] - bounds[1]
-            position = ((self.CELL_WIDTH - width) // 2 - bounds[0],
-                        (self.CELL_HEIGHT - height) // 2 - bounds[1])
-            draw.text(position, glyph, fill=255, font=font)
+            ImageDraw.Draw(tile).text((1, -1), glyph, fill=255, font=font)
             masks.append(np.asarray(tile, dtype=np.uint8) > 32)
-        atlas = np.stack(masks)
-        dark_rings, light_rings = [], []
-        def rounded_dilation(mask: np.ndarray, radius: int) -> np.ndarray:
-            expanded = np.zeros_like(mask, dtype=bool)
-            height, width = mask.shape
-            for dy in range(-radius, radius + 1):
-                for dx in range(-radius, radius + 1):
-                    if dx * dx + dy * dy > radius * radius:
-                        continue
-                    sy0, sy1 = max(0, -dy), min(height, height - dy)
-                    sx0, sx1 = max(0, -dx), min(width, width - dx)
-                    dy0, dy1 = sy0 + dy, sy1 + dy
-                    dx0, dx1 = sx0 + dx, sx1 + dx
-                    expanded[dy0:dy1, dx0:dx1] |= mask[sy0:sy1, sx0:sx1]
-            return expanded
-
-        for mask in atlas:
-            inner = rounded_dilation(mask, self.outline_thickness)
-            outer = rounded_dilation(mask, self.outline_thickness + 1)
-            dark_rings.append(inner & ~mask)
-            light_rings.append(outer & ~inner)
-        for index, glyph in enumerate(self.GLYPHS):
-            if glyph in {"█", "▓", "▒", "░", "▀", "▄"}:
-                dark_rings[index].fill(False)
-                light_rings[index].fill(False)
-            elif glyph in ".,:;'":
-                # Fine punctuation gets only the dark 1px keyline. A second
-                # halo turns a dot into a square at compact pet dimensions.
-                light_rings[index].fill(False)
         return ({glyph: index for index, glyph in enumerate(self.GLYPHS)},
-                atlas, np.stack(dark_rings), np.stack(light_rings))
+                np.stack(masks))
 
     def _resize_resolution(self) -> None:
         if not hasattr(self, "_stars") or self.width() <= 1 or self.height() <= 1:
@@ -298,32 +189,14 @@ class AnimatedAsciiEyeWidget(QWidget):
         dpr = max(1.0, float(self.devicePixelRatioF()))
         physical_width = max(1, round(self.width() * dpr))
         physical_height = max(1, round(self.height() * dpr))
-        self.lod_detail_weight = _smoothstep(96.0, 128.0, physical_height)
-        if self.compact:
-            # Keep the standard 320x180 pet near its existing 24x14 grid while
-            # scaling down to >=8px cells at tiny sizes and adding cells on
-            # larger displays. This caps CPU without undersampling the eye.
-            target_cell = max(
-                float(self.min_cell_px),
-                min(13.3, physical_height / 14.0, physical_width / 24.0),
-            )
-            self.effective_cell_px = target_cell
-            columns = max(6, min(self.max_columns,
-                                 int(physical_width / target_cell)))
-            rows = max(6, min(self.max_rows,
-                              int(physical_height / target_cell)))
-            self.lod_level = ("small" if physical_height < 112 else
-                              "medium" if physical_height < 224 else "large")
-        else:
-            columns = max(72, min(
-                self.max_columns,
-                round(physical_width / self.CELL_WIDTH * self.base_columns / 100.0),
-            ))
-            rows = max(42, min(
-                self.max_rows,
-                round(physical_height / self.CELL_HEIGHT * self.base_rows / 56.0),
-            ))
-            self.lod_level = "large"
+        columns = max(28 if self.compact else 72, min(
+            self.max_columns,
+            round(physical_width / self.CELL_WIDTH * self.base_columns / 100.0),
+        ))
+        rows = max(16 if self.compact else 42, min(
+            self.max_rows,
+            round(physical_height / self.CELL_HEIGHT * self.base_rows / 56.0),
+        ))
         if (columns, rows) == (self.columns, self.rows):
             return
         self.columns, self.rows = columns, rows
@@ -435,6 +308,43 @@ class AnimatedAsciiEyeWidget(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent, self.mode != "pet")
         self.update()
 
+    def _spectral_pose(self, now: float) -> tuple[float, tuple[float, float]]:
+        emotion = self.state.emotion
+        target_open = 0.46 + 0.49 * max(0.0, min(1.0, self.state.energy))
+        if emotion == "alegre":
+            target_open = 0.79 + 0.035 * math.sin(now * 1.2)
+        elif emotion == "triste":
+            target_open = 0.64
+        elif emotion == "estressado":
+            target_open = 0.70 + 0.025 * math.sin(now * 24.0)
+        elif emotion == "curioso":
+            target_open = 0.95
+        elif emotion == "sonolento":
+            target_open = 0.42
+        elif emotion == "dormindo":
+            target_open = 0.0
+        elif emotion in {"aberto", "arregalado"}:
+            target_open = 0.98 if emotion == "aberto" else 1.0
+        elif emotion == "semicerrado":
+            target_open = 0.54
+        dt = (1.0 / 30.0 if self._spectral_last_time == 0.0 else
+              max(0.0, min(0.5, now - self._spectral_last_time)))
+        self._spectral_last_time = now
+        smooth = 1.0 - math.exp(-dt / 0.18)
+        self._spectral_opening += (target_open - self._spectral_opening) * smooth
+        blink = self._blink(now, emotion)
+        if emotion == "piscar":
+            blink = max(blink, 0.96)
+        opening = self._spectral_opening * (1.0 - blink * 0.99)
+        gaze_blend = 1.0 - math.exp(-dt / 0.22)
+        self._spectral_gaze = (
+            self._spectral_gaze[0]
+            + (self.gaze_target[0] - self._spectral_gaze[0]) * gaze_blend,
+            self._spectral_gaze[1]
+            + (self.gaze_target[1] - self._spectral_gaze[1]) * gaze_blend,
+        )
+        return max(0.0, min(1.0, opening)), self._spectral_gaze
+
     def mouseDoubleClickEvent(self, event) -> None:
         if (self.mode == "pet"
                 and event.button() == Qt.MouseButton.LeftButton):
@@ -515,16 +425,14 @@ class AnimatedAsciiEyeWidget(QWidget):
             "far_hill": _mix(_mix(night_hill, dusk_hill, twilight), day_hill, daylight),
             "near_hill": _mix((12, 29, 43), (24, 53, 61), daylight),
             "water": _mix((20, 59, 77), (45, 97, 102), daylight),
-            # Cool light-gray keeps white catchlights legible on the sclera
-            # while the dark eye keyline protects contrast against any desktop.
-            "sclera": (137, 150, 158),
-            "iris": (58, 106, 130),
-            "iris_dark": (28, 63, 86),
-            "amber": (255, 187, 79),
-            "rose": (236, 123, 159),
-            "white": (255, 255, 250),
-            "pupil": (5, 12, 24),
-            "ink": (15, 31, 48),
+            "sclera": _mix((82, 144, 157), (109, 165, 176), daylight * 0.55),
+            "iris": (59, 189, 199),
+            "iris_dark": (29, 112, 133),
+            "amber": (243, 190, 106),
+            "rose": (234, 143, 177),
+            "white": (252, 250, 238),
+            "pupil": (9, 29, 40),
+            "ink": (38, 83, 101),
             "accent": _mix((49, 183, 194), (66, 154, 157), daylight * 0.32),
         }
         return palette, daylight, twilight, label
@@ -659,9 +567,6 @@ class AnimatedAsciiEyeWidget(QWidget):
 
     def _draw_eye(self, chars: list[list[str]], colors: list[list[Color]],
                   palette: dict[str, Color], now: float) -> None:
-        self._iris_geometry = None
-        self._pupil_geometry = None
-        self._render_palette = palette
         emotion = self.state.emotion
         target_open = 0.76 + 0.17 * max(0.0, min(1.0, self.state.energy))
         if emotion == "alegre":
@@ -700,23 +605,8 @@ class AnimatedAsciiEyeWidget(QWidget):
         tremble = stress * (0.18 if emotion == "estressado" else 0.035)
         cx = self.columns * 0.5 + gx * 2.9 + math.sin(now * 19.0) * tremble
         cy = self.rows * 0.50 + gy * 1.45 + math.sin(now * 0.58) * 0.22
-        if self.compact:
-            size_blend = _smoothstep(80.0, 144.0, self.height()
-                                     * max(1.0, float(self.devicePixelRatioF())))
-            horizontal_scale = 0.47 + (0.34 - 0.47) * size_blend
-            rx = self.columns * horizontal_scale * breath
-            vertical_scale = 0.38 - 0.095 * size_blend
-            vertical_floor = 3.35 - 0.50 * size_blend
-            ry = max(vertical_floor, self.rows * vertical_scale) * breath
-        else:
-            rx = self.columns * (0.34 if self.design == "A" else 0.35) * breath
-            ry = self.rows * (0.285 if self.design == "A" else 0.265) * breath
-        self._eye_geometry = (cx, cy, rx, ry, max(opening, 0.055))
-
-        if self.compact and self.lod_level == "small":
-            self._draw_small_eye(chars, colors, palette, now, cx, cy, rx, ry,
-                                 opening, gx, gy, stress)
-            return
+        rx = self.columns * (0.34 if self.design == "A" else 0.35) * breath
+        ry = self.rows * (0.285 if self.design == "A" else 0.265) * breath
 
         if opening < 0.105:
             for x in range(round(cx - rx), round(cx + rx) + 1):
@@ -735,7 +625,7 @@ class AnimatedAsciiEyeWidget(QWidget):
 
         for x in range(max(0, math.floor(cx - rx)), min(self.columns, math.ceil(cx + rx))):
             u = (x - cx) / max(1.0, rx)
-            envelope = max(0.0, 1.0 - u * u) ** 0.5
+            envelope = max(0.0, 1.0 - u * u) ** 0.66
             half = ry * envelope * opening
             if half < 0.55:
                 continue
@@ -745,7 +635,7 @@ class AnimatedAsciiEyeWidget(QWidget):
                 ratio = abs((y - cy) / max(0.1, half))
                 if ratio > 0.89:
                     if abs(u) > 0.88:
-                        glyph = "."
+                        glyph = "<" if u < 0 else ">"
                     elif abs(slope) < 0.33:
                         glyph = "_"
                     elif (y < cy) == (slope < 0):
@@ -754,29 +644,14 @@ class AnimatedAsciiEyeWidget(QWidget):
                         glyph = "/"
                     self._put(chars, colors, x, y, glyph, palette["ink"])
                 else:
-                    edge_tone = ratio > 0.78
-                    # Dense blocks establish the sclera mass; punctuation stays
-                    # visible as the fine ASCII grain layered over it.
-                    texture = ((x * 17 + y * 31)
-                               % self.density_profile["sclera_period"])
-                    fill_cut = round(self.density_profile["fill"]
-                                     * self.density_profile["sclera_period"]
-                                     * self.lod_detail_weight)
-                    if texture < fill_cut:
-                        glyph = ("▒" if texture == 0 else
-                                 "░" if texture % 3 == 0 else
-                                 ":" if edge_tone else ".")
-                        tone = _mix(palette["sclera"], palette["sky"],
-                                    0.12 if edge_tone else 0.16)
-                        self._put(chars, colors, x, y, glyph, tone)
+                    self._put(chars, colors, x, y,
+                              ":" if ratio > 0.68 else ".", palette["sclera"])
 
-        iris_radius = max(2.45, self.rows * (0.225 if self.design == "A" else 0.207))
+        iris_radius = self.rows * (0.225 if self.design == "A" else 0.207)
         ix = cx + gx * 2.1
         iy = cy + gy * 1.0
-        pupil_radius = max(1.55, min(4.0, iris_radius *
-                                   (0.28 - 0.08 * stress + 0.02 * self.state.curiosity)))
-        self._iris_geometry = (ix, iy, iris_radius)
-        self._pupil_geometry = (ix, iy, pupil_radius)
+        pupil_radius = max(3.2, min(5.3, iris_radius *
+                                   (0.39 - 0.14 * stress + 0.045 * self.state.curiosity)))
         for x in range(round(ix - iris_radius), round(ix + iris_radius) + 1):
             for y in range(round(iy - iris_radius), round(iy + iris_radius) + 1):
                 if not (0 <= x < self.columns and 0 <= y < self.rows):
@@ -786,7 +661,7 @@ class AnimatedAsciiEyeWidget(QWidget):
                 radius = math.hypot(u, v)
                 if radius > 1.0:
                     continue
-                half = ry * max(0.0, 1.0 - ((x - cx) / rx) ** 2) ** 0.5 * opening
+                half = ry * max(0.0, 1.0 - ((x - cx) / rx) ** 2) ** 0.66 * opening
                 if abs(y - cy) > half * 0.91:
                     continue
                 dx, dy = x - ix, y - iy
@@ -798,40 +673,20 @@ class AnimatedAsciiEyeWidget(QWidget):
                 elif abs(dx - 4) <= 1 and dy == -2:
                     self._put(chars, colors, x, y, ".", palette["white"])
                 elif radius <= pupil_radius / iris_radius:
-                    pupil_pattern = ((x * 11 + y * 7)
-                                     % self.density_profile["pupil_period"])
-                    if pupil_pattern == 0:
-                        self._put(chars, colors, x, y, "░", palette["pupil"])
-                    else:
-                        self._put(chars, colors, x, y,
-                                  "." if pupil_pattern == 1 else ":",
-                                  palette["pupil"])
+                    self._put(chars, colors, x, y,
+                              "@" if radius < pupil_radius * 0.55 / iris_radius else "o",
+                              palette["pupil"])
                 elif abs(radius - 0.91) < 0.045:
-                    self._put(chars, colors, x, y, ".", palette["iris_dark"])
+                    self._put(chars, colors, x, y, "o", palette["iris_dark"])
                 elif abs(radius - 0.70) < 0.055:
-                    if (x + y) % 3:
-                        self._put(chars, colors, x, y, ".", palette["amber"])
+                    self._put(chars, colors, x, y, ":", palette["amber"])
+                elif abs(radius - 0.48) < 0.05:
+                    self._put(chars, colors, x, y, "+", palette["iris"])
                 else:
-                    fiber_phase = math.sin(math.atan2(v, u) * 32.0 + radius * 47.0)
-                    fiber = fiber_phase > 0.82 and radius > 0.43
-                    if fiber:
-                        angle = math.atan2(v, u)
-                        glyph = "|" if abs(math.sin(angle)) < 0.30 else (
-                            "/" if math.cos(angle) * math.sin(angle) < 0 else "\\")
-                        fiber_color = (palette["amber"] if (x + y) % 7 == 0
-                                       else palette["iris_dark"])
-                        self._put(chars, colors, x, y, glyph, fiber_color)
-                    else:
-                        tone = ((x * 3 + y * 5)
-                                % self.density_profile["iris_period"])
-                        if tone == 0:
-                            self._put(chars, colors, x, y, "░",
-                                      _mix(palette["iris"], palette["sky"], 0.24))
-                        else:
-                            glyph = "." if tone in {1, 2} else ":"
-                            iris_color = (palette["iris"] if radius < 0.78
-                                          else palette["iris_dark"])
-                            self._put(chars, colors, x, y, glyph, iris_color)
+                    tone = (x + y) % 5
+                    glyph = (".", ":", ",", ";", ":")[tone]
+                    self._put(chars, colors, x, y, glyph,
+                              palette["iris"] if radius < 0.68 else palette["iris_dark"])
 
         if self.state.affection > 0.82 or emotion == "amoroso":
             heart = (" @ @ ", "@@@@@", " @@@ ", "  @  ")
@@ -841,21 +696,12 @@ class AnimatedAsciiEyeWidget(QWidget):
                         self._put(chars, colors, round(ix) - 2 + column_index,
                                   round(iy) - 2 + row_index, glyph, palette["rose"])
 
-        # Enlarged, rounded ASCII catchlights: one large and one medium.
-        large_x = round(-pupil_radius * 0.5)
-        large_y = round(-pupil_radius * 0.5)
-        for dx, dy, glyph in ((0, 0, "@"), (1, 0, "@"),
-                              (0, 1, "@"), (1, 1, "o"),
-                              (2, 1, ".")):
-            self._put(chars, colors, round(ix) + large_x + dx,
-                      round(iy) + large_y + dy,
-                      glyph, palette["white"])
-        medium_x = round(pupil_radius * 0.45)
-        medium_y = round(pupil_radius * 0.20)
-        for dx, dy, glyph in ((0, 0, "o"), (1, 0, "."), (0, 1, ".")):
-            self._put(chars, colors, round(ix) + medium_x + dx,
-                      round(iy) + medium_y + dy,
-                      glyph, palette["white"])
+        # Keep two readable catchlights even at the compact character scale.
+        for dx, dy in ((-3, -4), (-2, -4), (-3, -3), (-2, -3)):
+            self._put(chars, colors, round(ix) + dx, round(iy) + dy,
+                      "@", palette["white"])
+        self._put(chars, colors, round(ix) + 2, round(iy) + 1, "o", palette["white"])
+        self._put(chars, colors, round(ix) + 4, round(iy) - 2, ".", palette["white"])
 
         if now < self._sparkle_until:
             sparkle_phase = (self._sparkle_until - now) / 0.9
@@ -872,8 +718,7 @@ class AnimatedAsciiEyeWidget(QWidget):
             x = round(cx + u * rx)
             y = round(cy - ry * max(0.0, 1.0 - u * u) ** 0.66 * opening)
             glyph = "/" if u < -0.18 else "\\" if u > 0.18 else "'"
-            self._put(chars, colors, x, y - (1 if u < -0.18 or u > 0.18 else 0),
-                      glyph, palette["ink"])
+            self._put(chars, colors, x, y - 1, glyph, palette["ink"])
 
         if emotion == "curioso":
             brow_y = round(cy - ry - 3)
@@ -896,9 +741,9 @@ class AnimatedAsciiEyeWidget(QWidget):
         if blush_strength > 0.17:
             cheek_color = _mix(palette["sky"], palette["rose"], blush_strength)
             for sign in (-1, 1):
-                x = round(cx + sign * rx * 0.73)
-                y = round(cy + ry * 0.46)
-                self._put(chars, colors, x, y, ":", cheek_color)
+                x = round(cx + sign * (rx + 2.0))
+                y = round(cy + 3.0)
+                self._put(chars, colors, x, y, ".", cheek_color)
                 self._put(chars, colors, x + sign, y, ".", cheek_color)
 
         for index, neuron_id in enumerate(self.state.spike_ids[:self.max_particles]):
@@ -915,165 +760,40 @@ class AnimatedAsciiEyeWidget(QWidget):
                 self._put(chars, colors, round(cx + sign * rx * 0.86),
                           round(cy - ry - 3 - rise), "♥", palette["rose"])
 
-        self._small_lod_metrics = {
-            "pupil_cell_count": max(9, round(math.pi * pupil_radius ** 2)),
-            "pupil_width_cells": max(3, math.floor(2 * pupil_radius) + 1),
-            "pupil_height_cells": max(3, math.floor(2 * pupil_radius) + 1),
-            "iris_ring_cells": max(1, round(2 * math.pi
-                                              * (iris_radius - pupil_radius))),
-            "main_reflection_cells": 5,
-            "secondary_reflection_cells": 3,
-            "outline_is_closed": bool(rx > 1.0 and ry * opening > 1.0),
-        }
-
-    def _draw_small_eye(self, chars: list[list[str]], colors: list[list[Color]],
-                        palette: dict[str, Color], now: float, cx: float, cy: float,
-                        rx: float, ry: float, opening: float, gx: float, gy: float,
-                        stress: float) -> None:
-        """Dedicated coarse ASCII eye with readable pupil and catchlights."""
-        if opening < 0.105:
-            for x in range(max(0, math.floor(cx - rx)),
-                           min(self.columns, math.ceil(cx + rx) + 1)):
-                u = (x - cx) / max(1.0, rx)
-                y = round(cy - 0.9 * (1.0 - u * u))
-                self._put(chars, colors, x, y,
-                          "/" if u < -0.18 else "\\" if u > 0.18 else "_",
-                          palette["ink"])
-            self._put(chars, colors, round(cx + rx * 0.34),
-                      max(0, round(cy - ry + 0.6)), "z", palette["sky"])
-            return
-
-        sample_offsets = (0.125, 0.375, 0.625, 0.875)
-        coverage = np.zeros((self.rows, self.columns), dtype=np.uint8)
-        half_height = max(1.0, ry * opening)
-        for y in range(self.rows):
-            for x in range(self.columns):
-                count = 0
-                for oy in sample_offsets:
-                    for ox in sample_offsets:
-                        u = (x + ox - cx) / max(1.0, rx)
-                        if abs(u) > 1.0:
-                            continue
-                        half = half_height * math.sqrt(max(0.0, 1.0 - u * u))
-                        if abs(y + oy - cy) <= half:
-                            count += 1
-                coverage[y, x] = count
-
-        ix = float(round(cx + max(-rx * 0.12, min(rx * 0.12, gx * 0.35)) + 0.5)
-                    - 0.5)
-        iy = float(round(cy + gy * 0.18 + 0.5) - 0.5)
-        iris_radius = max(2.15, min(rx * 0.48, self.rows * 0.45,
-                                    ry * opening * 0.88))
-        pupil_radius = max(1.38, min(1.48, iris_radius * 0.58))
-
-        # The vector base stays rounded; a close-value fill reads as ASCII
-        # grain. Keep it outside the iris so the pupil and catchlights stay clean.
-        for y in range(self.rows):
-            for x in range(self.columns):
-                amount = int(coverage[y, x])
-                outside_iris = math.hypot(x + 0.5 - ix, y + 0.5 - iy) > iris_radius + 0.3
-                if (amount >= 10 and outside_iris
-                        and (x * 7 + y * 5) % 4 == 0):
-                    tone = _mix(palette["sclera"], palette["white"], 0.04)
-                    self._put(chars, colors, x, y, "░", tone)
-        self._iris_geometry = (ix, iy, iris_radius)
-        self._pupil_geometry = (ix, iy, pupil_radius)
-        iris_cells: list[tuple[int, int]] = []
-        pupil_cells: list[tuple[int, int]] = []
-        radial_samples = (0.125, 0.375, 0.625, 0.875)
-        for y in range(max(0, math.floor(iy - iris_radius - 0.5)),
-                       min(self.rows, math.ceil(iy + iris_radius + 0.5))):
-            for x in range(max(0, math.floor(ix - iris_radius - 0.5)),
-                           min(self.columns, math.ceil(ix + iris_radius + 0.5))):
-                if coverage[y, x] == 0:
-                    continue
-                iris_coverage = pupil_coverage = 0
-                for oy in radial_samples:
-                    for ox in radial_samples:
-                        radius = math.hypot(x + ox - ix, y + oy - iy)
-                        iris_coverage += radius <= iris_radius
-                        pupil_coverage += radius <= pupil_radius
-                if iris_coverage == 0:
-                    continue
-                radius = math.hypot(x + 0.5 - ix, y + 0.5 - iy)
-                iris_cells.append((x, y))
-                if pupil_coverage:
-                    pupil_cells.append((x, y))
-                    # Keep the small pupil clean so both catchlights remain open.
-                else:
-                    tone = (palette["iris"] if (x + y) % 3 else
-                            palette["iris_dark"])
-                    if (x * 5 + y * 3) % 5 == 0:
-                        self._put(chars, colors, x, y,
-                                  ":" if (x + y) % 2 else ".", tone)
-
-        # Vector catchlights below provide the 2x2 and 1x1 physical highlights.
-        center_x, center_y = round(ix - 0.5), round(iy - 0.5)
-        main_reflection = (((center_x - 1, center_y - 1), "@"),
-                           ((center_x, center_y - 1), "@"),
-                           ((center_x - 1, center_y), "@"),
-                           ((center_x, center_y), "@"))
-        secondary_reflection = (center_x + 1, center_y + 1)
-
-        pupil_x = [x for x, _ in pupil_cells]
-        pupil_y = [y for _, y in pupil_cells]
-        self._small_lod_metrics = {
-            "pupil_cell_count": len(pupil_cells),
-            "pupil_width_cells": max(pupil_x, default=0) - min(pupil_x, default=0) + 1,
-            "pupil_height_cells": max(pupil_y, default=0) - min(pupil_y, default=0) + 1,
-            "iris_ring_cells": len(iris_cells) - len(pupil_cells),
-            "main_reflection_cells": len(main_reflection),
-            "secondary_reflection_cells": 1,
-            "outline_is_closed": bool(rx > 1.0 and ry * opening > 1.0
-                                       and rx < self.columns * 0.5
-                                       and ry * opening < self.rows * 0.5),
-        }
-        if self.lod_detail_weight > 0.0:
-            protected = set(iris_cells)
-            protected.update((x, y) for (x, y), _ in main_reflection)
-            protected.add(secondary_reflection)
-            texture_budget = round(self.lod_detail_weight * 2.0)
-            if texture_budget:
-                for y in range(self.rows):
-                    for x in range(self.columns):
-                        if (coverage[y, x] and (x, y) not in protected
-                                and (x * 11 + y * 7) % 12 < texture_budget):
-                            self._put(chars, colors, x, y, ".",
-                                      _mix(palette["sclera"], palette["sky"], 0.24))
-
     def _render_cells(self, chars: list[list[str]], colors: list[list[Color]],
                       background: Color, *, transparent: bool = False) -> QImage:
-        char_grid = np.asarray(chars, dtype="<U1")
-        glyph_ids = self._glyph_lut[char_grid.view(np.uint32)]
-        glyph_tiles = self._glyph_atlas[glyph_ids]
-        glyph_mask = glyph_tiles.transpose(0, 2, 1, 3).reshape(
+        cell_colors = np.asarray(colors, dtype=np.uint8)
+        codepoints = np.asarray(chars, dtype="<U1").view(np.uint32)
+        glyph_ids = self._glyph_lut[codepoints]
+        tiles = self._glyph_atlas[glyph_ids]
+        mask = tiles.transpose(0, 2, 1, 3).reshape(
             self.rows * self.CELL_HEIGHT, self.columns * self.CELL_WIDTH)
-        dark_tiles = self._glyph_dark_rings[glyph_ids]
-        dark_glyph_ring = dark_tiles.transpose(0, 2, 1, 3).reshape(glyph_mask.shape)
-        light_tiles = self._glyph_light_rings[glyph_ids]
-        light_glyph_ring = light_tiles.transpose(0, 2, 1, 3).reshape(glyph_mask.shape)
-        color_grid = np.asarray(colors, dtype=np.uint8)
-        glyph_rgb = np.repeat(np.repeat(color_grid, self.CELL_HEIGHT, axis=0),
+        glyph_rgb = np.repeat(np.repeat(cell_colors, self.CELL_HEIGHT, axis=0),
                               self.CELL_WIDTH, axis=1)
-        output = np.empty((*glyph_mask.shape, 4), dtype=np.uint8)
-        height, width = output.shape[:2]
+        output = np.zeros((*mask.shape, 4), dtype=np.uint8)
         if not transparent:
             output[:, :, :3] = background
             output[:, :, 3] = 255
         else:
-            output[:, :, :3] = 0
-            output[:, :, 3] = 0
-        np.copyto(output[:, :, :3], np.asarray(self.outline_inner, dtype=np.uint8),
-                  where=dark_glyph_ring[:, :, None])
-        np.copyto(output[:, :, 3], 255, where=dark_glyph_ring)
-        if self.double_outline:
-            np.copyto(output[:, :, :3], np.asarray(self.outline_outer, dtype=np.uint8),
-                      where=light_glyph_ring[:, :, None])
-            np.copyto(output[:, :, 3], 255, where=light_glyph_ring)
-        np.copyto(output[:, :, :3], glyph_rgb, where=glyph_mask[:, :, None])
-        np.copyto(output[:, :, 3], 255, where=glyph_mask)
-        return QImage(output.data, width, height, width * 4,
-                      QImage.Format.Format_RGBA8888).copy()
+            # The floating pet sits over arbitrary desktop content. A one-pixel
+            # ink edge keeps pale glyphs legible on bright wallpapers without
+            # changing the eye's colors or adding a solid backdrop.
+            outline_mask = np.zeros_like(mask)
+            outline_mask[1:, 1:] |= mask[:-1, :-1]
+            outline_mask[1:, :] |= mask[:-1, :]
+            outline_mask[1:, :-1] |= mask[:-1, 1:]
+            outline_mask[:, 1:] |= mask[:, :-1]
+            outline_mask[:, :-1] |= mask[:, 1:]
+            outline_mask[:-1, 1:] |= mask[1:, :-1]
+            outline_mask[:-1, :] |= mask[1:, :]
+            outline_mask[:-1, :-1] |= mask[1:, 1:]
+            outline = outline_mask & ~mask
+            output[outline, :3] = (5, 12, 20)
+            output[outline, 3] = 230
+        output[mask, :3] = glyph_rgb[mask]
+        output[mask, 3] = 255
+        return QImage(output.data, output.shape[1], output.shape[0],
+                      output.shape[1] * 4, QImage.Format.Format_RGBA8888).copy()
 
     def render_frame(self, now: float | None = None,
                      local_time: datetime | None = None) -> QImage:
@@ -1083,13 +803,18 @@ class AnimatedAsciiEyeWidget(QWidget):
         self.state = self.animator.advance(self.target_state, now)
         palette, daylight, twilight, label = self._cycle(local_time)
         chars, colors = self._new_grid(palette["sky"])
+        vector_style = self.render_style in {"spectral", "vector"}
+        spectral_opening, spectral_gaze = (self._spectral_pose(now)
+                                            if vector_style else (1.0, self.gaze))
         if self.mode == "pet":
-            self._draw_eye(chars, colors, palette, now)
+            if not vector_style:
+                self._draw_eye(chars, colors, palette, now)
         else:
             self._draw_sky(chars, colors, palette, daylight, twilight, label,
                            local_time, now)
             self._draw_landscape(chars, colors, palette, daylight, twilight, now)
-            self._draw_eye(chars, colors, palette, now)
+            if not vector_style:
+                self._draw_eye(chars, colors, palette, now)
             accent = palette["accent"]
             muted = _mix(palette["sky"], palette["star"], 0.58)
             self._text(chars, colors, 2, 2, f"> OCULUS  /  {label}", accent,
@@ -1110,169 +835,43 @@ class AnimatedAsciiEyeWidget(QWidget):
                        self.rows - 2, legend, muted)
         self._last_frame = self._render_cells(
             chars, colors, palette["sky"], transparent=self.mode == "pet")
+        if vector_style:
+            self._spectral_eye.draw(self._last_frame, self.state, now,
+                                    spectral_opening, spectral_gaze,
+                                    style=self.render_style)
         self.rendered_frames += 1
         return self._last_frame
-
-    def _paint_pet_plate(self, painter: QPainter) -> None:
-        if self._eye_geometry is None or self.plate_alpha <= 0.0:
-            return
-        cx, cy, rx, ry, opening = self._eye_geometry
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-        path = QPainterPath()
-        left, right = (cx - rx) * self.CELL_WIDTH, (cx + rx) * self.CELL_WIDTH
-        middle_x, middle_y = cx * self.CELL_WIDTH, cy * self.CELL_HEIGHT
-        half_height = max(0.5, ry * opening * self.CELL_HEIGHT)
-        if opening < 0.105:
-            path.moveTo(left, middle_y)
-            path.cubicTo(left + rx * 0.40 * self.CELL_WIDTH,
-                         middle_y - half_height,
-                         middle_x + rx * 0.42 * self.CELL_WIDTH,
-                         middle_y - half_height, right, middle_y)
-        else:
-            # Smooth oval silhouette instead of pointed or stepped ends.
-            path.addEllipse(left, middle_y - half_height,
-                            right - left, half_height * 2.0)
-        painter.setPen(Qt.PenStyle.NoPen)
-        small_eye = (self.compact and self.lod_level == "small"
-                     and self.mode == "pet" and opening >= 0.105)
-        palette = self._render_palette or {}
-        fill = QColor(*(palette.get("sclera", self.plate_color)
-                        if small_eye else self.plate_color))
-        fill.setAlphaF(0.96 if small_eye else self.plate_alpha)
-        painter.fillPath(path, fill)
-        if self.double_outline:
-            # Two thin strokes create one dark inner and one light outer pixel.
-            outer_pen = QPen(QColor(*self.outline_outer), 2.0)
-            outer_pen.setCapStyle(Qt.PenCapStyle.RoundCap)
-            outer_pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
-            painter.setPen(outer_pen)
-            painter.setBrush(Qt.BrushStyle.NoBrush)
-            painter.drawPath(path)
-        inner_pen = QPen(QColor(*self.outline_inner),
-                         float(self.outline_thickness))
-        inner_pen.setCapStyle(Qt.PenCapStyle.RoundCap)
-        inner_pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
-        painter.setPen(inner_pen)
-        painter.drawPath(path)
-        if small_eye and self._iris_geometry and self._pupil_geometry:
-            ix, iy, iris_radius = self._iris_geometry
-            _, _, pupil_radius = self._pupil_geometry
-            iris_rect = QPainterPath()
-            iris_rect.addEllipse((ix - iris_radius) * self.CELL_WIDTH,
-                                 (iy - iris_radius) * self.CELL_HEIGHT,
-                                 iris_radius * 2 * self.CELL_WIDTH,
-                                 iris_radius * 2 * self.CELL_HEIGHT)
-            painter.setPen(QPen(QColor(*palette.get("iris_dark", (28, 63, 86))),
-                                1.0))
-            painter.setBrush(QColor(*palette.get("iris", (58, 106, 130))))
-            painter.drawPath(iris_rect)
-
-            # A restrained ring and a few radial strokes preserve iris detail
-            # without turning the tiny eye into a block mosaic.
-            center_x, center_y = ix * self.CELL_WIDTH, iy * self.CELL_HEIGHT
-            for index in range(12):
-                angle = math.tau * index / 12.0
-                inner = iris_radius * (0.48 if index % 3 else 0.42)
-                outer = iris_radius * 0.82
-                color = (palette.get("amber", (235, 180, 64)) if index % 4 == 0
-                         else palette.get("iris_dark", (28, 63, 86)))
-                pen = QPen(QColor(*color), 0.8 if index % 3 else 1.0)
-                painter.setPen(pen)
-                painter.drawLine(
-                    round(center_x + math.cos(angle) * inner * self.CELL_WIDTH),
-                    round(center_y + math.sin(angle) * inner * self.CELL_HEIGHT),
-                    round(center_x + math.cos(angle) * outer * self.CELL_WIDTH),
-                    round(center_y + math.sin(angle) * outer * self.CELL_HEIGHT),
-                )
-            painter.setPen(QPen(QColor(*palette.get("amber", (235, 180, 64))),
-                                1.0))
-            painter.setBrush(Qt.BrushStyle.NoBrush)
-            collar = iris_radius * 0.48
-            painter.drawEllipse(center_x - collar * self.CELL_WIDTH,
-                                center_y - collar * self.CELL_HEIGHT,
-                                collar * 2 * self.CELL_WIDTH,
-                                collar * 2 * self.CELL_HEIGHT)
-
-            pupil_rect = QPainterPath()
-            pupil_rect.addEllipse((ix - pupil_radius) * self.CELL_WIDTH,
-                                  (iy - pupil_radius) * self.CELL_HEIGHT,
-                                  pupil_radius * 2 * self.CELL_WIDTH,
-                                  pupil_radius * 2 * self.CELL_HEIGHT)
-            painter.setPen(QPen(QColor(3, 8, 17), 1.0))
-            painter.setBrush(QColor(*palette.get("pupil", (5, 12, 24))))
-            painter.drawPath(pupil_rect)
-
-            # Big and medium rounded reflections are key to the friendly look.
-            main_size = max(8.0, self.CELL_WIDTH * 1.55)
-            main_x = center_x - pupil_radius * self.CELL_WIDTH * 0.50
-            main_y = center_y - pupil_radius * self.CELL_HEIGHT * 0.56
-            painter.setPen(QPen(QColor(35, 52, 64, 110), 0.8))
-            painter.setBrush(QColor(*palette.get("white", (255, 255, 250))))
-            painter.drawEllipse(main_x, main_y, main_size, main_size)
-            secondary_size = max(5.0, self.CELL_WIDTH * 0.88)
-            painter.drawEllipse(center_x + pupil_radius * self.CELL_WIDTH * 0.32,
-                                center_y + pupil_radius * self.CELL_HEIGHT * 0.32,
-                                secondary_size, secondary_size)
-        if opening > 0.16 and self._iris_geometry:
-            if small_eye:
-                return
-            ix, iy, iris_radius = self._iris_geometry
-            diameter = max(1, round(iris_radius * 2 * self.CELL_WIDTH))
-            color = (self._render_palette or {}).get("iris", (73, 137, 158))
-            painter.drawImage(
-                (ix - iris_radius) * self.CELL_WIDTH,
-                (iy - iris_radius) * self.CELL_HEIGHT,
-                self._iris_underlay(diameter, color))
-
-    def _composite_pet_plate(self, glyph_layer: QImage) -> QImage:
-        if self._eye_geometry is None or self.plate_alpha <= 0.0 or glyph_layer.isNull():
-            return glyph_layer
-        plate = QImage(glyph_layer.size(), QImage.Format.Format_RGBA8888)
-        plate.fill(Qt.GlobalColor.transparent)
-        painter = QPainter(plate)
-        self._paint_pet_plate(painter)
-        painter.end()
-
-        composite = QImage(glyph_layer.size(), QImage.Format.Format_RGBA8888)
-        composite.fill(Qt.GlobalColor.transparent)
-        painter = QPainter(composite)
-        painter.drawImage(0, 0, plate)
-        painter.drawImage(0, 0, glyph_layer)
-        painter.end()
-        return composite
-
-    def _iris_underlay(self, diameter: int, color: Color) -> QImage:
-        key = (diameter, color)
-        cached = self._iris_bitmap_cache.get(key)
-        if cached is not None:
-            self._iris_bitmap_cache.move_to_end(key)
-            return cached
-        scale = 3
-        mask = Image.new("L", (diameter * scale, diameter * scale), 0)
-        ImageDraw.Draw(mask).ellipse(
-            (0, 0, diameter * scale - 1, diameter * scale - 1), fill=255)
-        mask = mask.resize((diameter, diameter), Image.Resampling.LANCZOS)
-        alpha = np.asarray(mask, dtype=np.uint8).copy()
-        rgba = np.zeros((diameter, diameter, 4), dtype=np.uint8)
-        rgba[:, :, :3] = color
-        rgba[:, :, 3] = (alpha.astype(np.uint16) * 56 // 255).astype(np.uint8)
-        image = QImage(rgba.data, diameter, diameter, diameter * 4,
-                       QImage.Format.Format_RGBA8888).copy()
-        self._iris_bitmap_cache[key] = image
-        while len(self._iris_bitmap_cache) > 4:
-            self._iris_bitmap_cache.popitem(last=False)
-        return image
 
     def paintEvent(self, _event) -> None:
         image = self.render_frame()
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, False)
-        if self.mode == "pet":
-            painter.save()
-            painter.scale(self.width() / max(1, image.width()),
-                          self.height() / max(1, image.height()))
-            self._paint_pet_plate(painter)
-            painter.restore()
+        if self.mode == "pet" and self.render_style == "ascii":
+            # A translucent glassy eye rim gives the transparent avatar a
+            # stable silhouette over both bright and dark desktop backgrounds.
+            width, height = float(self.width()), float(self.height())
+            rim = QPainterPath()
+            rim.moveTo(width * 0.045, height * 0.50)
+            rim.cubicTo(width * 0.18, height * 0.15, width * 0.82,
+                        height * 0.15, width * 0.955, height * 0.50)
+            rim.cubicTo(width * 0.82, height * 0.85, width * 0.18,
+                        height * 0.85, width * 0.045, height * 0.50)
+            rim.closeSubpath()
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+            painter.fillPath(rim, QColor(5, 15, 23, 58))
+            painter.setPen(QPen(QColor(3, 12, 21, 205), 5.0))
+            painter.drawPath(rim)
+            painter.setPen(QPen(QColor(62, 216, 227, 190), 2.4))
+            painter.drawPath(rim)
+            painter.setPen(QPen(QColor(235, 246, 238, 155), 0.8))
+            painter.drawPath(rim)
+        width_scale = self.width() / max(1, image.width())
+        height_scale = self.height() / max(1, image.height())
+        scale_deviation = max(width_scale, height_scale,
+                              1.0 / max(width_scale, 0.001),
+                              1.0 / max(height_scale, 0.001)) - 1.0
+        painter.setRenderHint(
+            QPainter.RenderHint.SmoothPixmapTransform,
+            self.render_style != "ascii" and scale_deviation > 0.035)
         painter.drawImage(self.rect(), image)
         painter.end()
 

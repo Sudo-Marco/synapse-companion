@@ -25,6 +25,11 @@ class SpikingNetwork:
         self.rng = np.random.default_rng(seed)
         self.dt_ms, self.noise, self.connectivity = dt_ms, noise, connectivity
         self.synaptic_gain = max(0.0, float(synaptic_gain))
+        # Optional output competition. It changes only currents when explicitly
+        # enabled; the shipped configuration keeps the historical path intact.
+        self.tool_output_inhibition_enabled = False
+        self.tool_output_inhibition_strength = 0.35
+        self.tool_output_inhibition_interval_steps = 5
         self.n_sensor = int(total_neurons * 0.16)
         self.n_hidden = int(total_neurons * 0.64)
         self.hidden_start = self.n_sensor
@@ -50,7 +55,23 @@ class SpikingNetwork:
             self.output_groups[name] = np.array([self.output_start + i % max(1, self.n_output)], dtype=np.int32)
         self.initiative_index = self.output_start + min(6, self.n_output - 1)
         self.output_groups["iniciativa"] = np.array([self.initiative_index], dtype=np.int32)
+        self._refresh_tool_output_indices()
         self.tick_count = 0
+
+    def _refresh_tool_output_indices(self) -> None:
+        groups = [indices - self.output_start
+                  for name, indices in self.output_groups.items()
+                  if name.startswith("tool:") and len(indices)]
+        self._tool_output_local_indices = (
+            np.stack(groups).astype(np.int32, copy=False) if groups
+            else np.empty((0, self.tool_group_size), dtype=np.int32))
+        self._tool_output_slice: tuple[int, int] | None = None
+        if groups:
+            first = int(self._tool_output_local_indices[0, 0])
+            expected = np.arange(first, first + len(groups) * self.tool_group_size,
+                                 dtype=np.int32).reshape(-1, self.tool_group_size)
+            if np.array_equal(self._tool_output_local_indices, expected):
+                self._tool_output_slice = (first, len(groups))
 
     def add_tool_group(self, name: str) -> NDArray[np.int32]:
         key = f"tool:{name}"
@@ -87,6 +108,7 @@ class SpikingNetwork:
         self.n_output += add
         ids = np.arange(old_size, old_size + add, dtype=np.int32)
         self.output_groups[key] = ids
+        self._refresh_tool_output_indices()
         return ids
 
     @property
@@ -193,6 +215,24 @@ class SpikingNetwork:
             signature, weights, used, reused_from)
         self._context_use_clock = max(self._context_use_clock, used)
 
+    def _apply_tool_output_inhibition(self,
+                                      output_current: NDArray[np.float32]) -> None:
+        """Suppress non-winning tool groups without changing the LIF topology."""
+        descriptor = self._tool_output_slice
+        if descriptor is None or descriptor[1] < 2:
+            return
+        first, count = descriptor
+        grouped_current = output_current[
+            first:first + count * self.tool_group_size].reshape(
+                count, self.tool_group_size)
+        scores = np.mean(grouped_current, axis=1, dtype=np.float32)
+        winner = int(np.argmax(scores))
+        winning_score = np.maximum(np.float32(0.0), scores[winner])
+        strength = np.float32(max(0.0, self.tool_output_inhibition_strength))
+        inhibition = np.maximum(np.float32(0.0), winning_score - scores) * strength
+        inhibition[winner] = np.float32(0.0)
+        grouped_current -= inhibition[:, None]
+
     def step(self, sensor_current: NDArray[np.float32] | None = None) -> NDArray[np.bool_]:
         n = self.population.size
         current = np.zeros(n, dtype=np.float32)
@@ -205,8 +245,13 @@ class SpikingNetwork:
         current[h] += (self.sensor_to_hidden.currents(spikes[:self.n_sensor])
                        * np.float32(self.synaptic_gain))
         current[h] += self.recurrent.currents(spikes[h]) * np.float32(self.synaptic_gain)
-        current[self.output_start:self.output_start + self.hidden_to_output.n_post] += (
-            self.hidden_to_output.currents(spikes[h]) * np.float32(self.synaptic_gain))
+        output_current = self.hidden_to_output.currents(spikes[h]) * np.float32(
+            self.synaptic_gain)
+        if (self.tool_output_inhibition_enabled
+                and self.tick_count % max(1, int(
+                    self.tool_output_inhibition_interval_steps)) == 0):
+            self._apply_tool_output_inhibition(output_current)
+        current[self.output_start:self.output_start + self.hidden_to_output.n_post] += output_current
         out = self.population.step(current, self.dt_ms, self.rng, self.noise,
                                    gain=1.0 + 0.5 * getattr(self, "stress", 0.0))
         self.tick_count += 1
@@ -219,6 +264,9 @@ class SpikingNetwork:
 
     def grow_population(self, target_neurons: int, seed: int = 41) -> "SpikingNetwork":
         """Safely expand the network population to target_neurons, preserving state, weights, and context readouts."""
+        tool_output_inhibition_enabled = self.tool_output_inhibition_enabled
+        tool_output_inhibition_strength = self.tool_output_inhibition_strength
+        tool_output_inhibition_interval_steps = self.tool_output_inhibition_interval_steps
         tool_names = [key[5:] for key in self.output_groups if key.startswith("tool:")]
         tool_count = len(tool_names)
         tool_neurons = tool_count * self.tool_group_size
@@ -391,6 +439,12 @@ class SpikingNetwork:
             ids = np.arange(new_base_total + j * self.tool_group_size,
                             new_base_total + (j + 1) * self.tool_group_size, dtype=np.int32)
             self.output_groups[key] = ids
+
+        self._refresh_tool_output_indices()
+
+        self.tool_output_inhibition_enabled = tool_output_inhibition_enabled
+        self.tool_output_inhibition_strength = tool_output_inhibition_strength
+        self.tool_output_inhibition_interval_steps = tool_output_inhibition_interval_steps
 
         return self
 

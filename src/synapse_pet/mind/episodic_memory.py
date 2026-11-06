@@ -44,6 +44,40 @@ class EpisodicMemory:
                 "WHERE ABS(rpe) > 0 ORDER BY ABS(rpe) DESC, id DESC LIMIT ?",
                 (max(0, int(limit)),)).fetchall()
 
+    def replay_candidates(self, limit: int = 12,
+                          recent_fraction: float = 0.25) -> list[tuple[Any, ...]]:
+        """Mix high-absolute-RPE examples with recent reward events.
+
+        Recent samples keep replay from becoming a pure reward archive. IDs
+        are removed from the returned payload after deterministic de-duplication.
+        """
+        count = max(0, int(limit))
+        if count == 0:
+            return []
+        fraction = max(0.0, min(1.0, float(recent_fraction)))
+        top_count = max(1, min(count, int(round(count * (1.0 - fraction)))))
+        recent_count = count - top_count
+        with sqlite3.connect(self.path) as db:
+            top = db.execute(
+                "SELECT id,context,action,rpe,timestamp,emotion FROM episodes "
+                "WHERE ABS(rpe) > 0 ORDER BY ABS(rpe) DESC,id DESC LIMIT ?",
+                (top_count,)
+            ).fetchall()
+            rows = list(top)
+            if recent_count:
+                excluded = [int(row[0]) for row in top]
+                query = ("SELECT id,context,action,rpe,timestamp,emotion "
+                         "FROM episodes WHERE ABS(rpe) > 0")
+                params: list[Any] = []
+                if excluded:
+                    query += f" AND id NOT IN ({','.join('?' for _ in excluded)})"
+                    params.extend(excluded)
+                query += " ORDER BY id DESC LIMIT ?"
+                params.append(recent_count)
+                rows.extend(db.execute(query, params).fetchall())
+        return [(context, action, rpe, timestamp, emotion)
+                for _row_id, context, action, rpe, timestamp, emotion in rows]
+
     def observe_habit(self, context_category: str, action: str, rpe: float,
                       *, minimum_observations: int = 4,
                       minimum_mean_rpe: float = 0.015) -> bool:

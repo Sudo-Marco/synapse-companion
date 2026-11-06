@@ -11,7 +11,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from PySide6.QtCore import (QEvent, QEasingCurve, QPoint, QPointF,
-                            QRect, QSettings, Qt, QTimer,
+                            QPropertyAnimation, QRect, QSettings, Qt, QTimer,
                             QUrl, QVariantAnimation, Signal)
 from PySide6.QtGui import (QAction, QBrush, QColor, QCursor, QDesktopServices,
                            QFont, QGuiApplication, QIcon, QPainter, QPainterPath,
@@ -44,6 +44,8 @@ SENSOR_LABELS = {
     "clipboard": "Detectar mudança no clipboard",
     "system_stats": "Ler CPU e memória",
 }
+PIXEL_FRAME_PATH = (Path(__file__).resolve().parents[1] / "assets" / "pixel"
+                    / "ui_frame.png").as_posix()
 
 
 STYLESHEET = f"""
@@ -63,6 +65,31 @@ QProgressBar {{ background: #17242d; border: 0; height: 7px; text-align: center;
 QProgressBar::chunk {{ background: {CYAN}; }}
 QMenu {{ background: #111a22; color: {TEXT}; border: 1px solid {LINE}; }}
 QMenu::item:selected {{ background: #1e3e48; color: {CYAN}; }}
+"""
+
+PIXEL_STYLESHEET = f"""
+QMainWindow, QWidget#Root {{ background: #182542; color: #fff3a0; }}
+QFrame#Header, QFrame#Card, QFrame#Proposal {{
+  background: #293b60;
+  border-image: url({PIXEL_FRAME_PATH}) 3 3 3 3 stretch stretch;
+  border-width: 3px; }}
+QLabel {{ color: #f7f1d9; font-family: 'Silkscreen'; }}
+QLabel#Muted {{ color: #c3d6cb; }}
+QPushButton {{ background: #354a78; color: #fff3a0; border: 2px solid #fff3a0;
+  border-radius: 0; padding: 8px 10px; font: 700 9pt 'Silkscreen'; }}
+QPushButton:hover {{ background: #485b82; border-color: #ffffff; }}
+QPushButton:pressed {{ background: #192b54; border-color: #ffd93b; }}
+QPushButton:disabled {{ color: #8790a2; border-color: #485b82; }}
+QPushButton#Love {{ background: #405a69; color: #f7f1d9; }}
+QPushButton#Love:hover {{ background: #527a75; }}
+QPushButton#Negative {{ background: #59465a; color: #ffe0c6; }}
+QPushButton#Negative:hover {{ background: #735b83; }}
+QPushButton#Gold {{ color: #ffd93b; }}
+QProgressBar {{ background: #192b54; border: 2px solid #fff3a0;
+  height: 11px; text-align: center; }}
+QProgressBar::chunk {{ background: #ffd93b; }}
+QMenu {{ background: #293b60; color: #fff3a0; border: 2px solid #fff3a0; }}
+QMenu::item:selected {{ background: #485b82; color: #ffffff; }}
 """
 
 
@@ -141,22 +168,55 @@ class DragHeader(QFrame):
         super().mouseReleaseEvent(event)
 
 
-class MetricCard(QFrame):
-    def __init__(self, title: str, accent: str) -> None:
+class SegmentedProgressBar(QProgressBar):
+    """Pixel-style progress bar composed of discrete filled cells."""
+
+    def __init__(self, accent: str, *, pixel_mode: bool = False) -> None:
         super().__init__()
+        self.pixel_mode = bool(pixel_mode)
+        self.accent = QColor(accent)
+
+    def paintEvent(self, event) -> None:
+        if not self.pixel_mode:
+            super().paintEvent(event)
+            return
+        painter = QPainter(self)
+        painter.fillRect(self.rect(), QColor("#192b54"))
+        painter.setPen(QPen(QColor("#fff3a0"), 1))
+        painter.drawRect(self.rect().adjusted(0, 0, -1, -1))
+        inner = self.rect().adjusted(3, 3, -3, -3)
+        if inner.width() <= 0 or inner.height() <= 0:
+            painter.end()
+            return
+        count = max(1, inner.width() // 13)
+        gap = 2
+        cell_width = max(1, (inner.width() - gap * (count - 1)) // count)
+        filled = round(self.value() * count / max(1, self.maximum()))
+        for index in range(filled):
+            left = inner.left() + index * (cell_width + gap)
+            painter.fillRect(left, inner.top(), cell_width, inner.height(),
+                             self.accent)
+        painter.end()
+
+
+class MetricCard(QFrame):
+    def __init__(self, title: str, accent: str, *, pixel_mode: bool = False) -> None:
+        super().__init__()
+        self.pixel_mode = bool(pixel_mode)
         self.setObjectName("Card")
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 8, 12, 9)
         row = QHBoxLayout()
         label = QLabel(title.upper())
-        label.setStyleSheet(f"color: {MUTED}; font: bold 8pt Consolas;")
+        font_family = "Silkscreen" if self.pixel_mode else "Consolas"
+        label.setStyleSheet(f"color: {MUTED}; font: bold 8pt '{font_family}';")
         row.addWidget(label)
         row.addStretch(1)
         self.value = QLabel("50%")
-        self.value.setStyleSheet("font: bold 9pt Consolas;")
+        self.value.setStyleSheet(f"font: bold 9pt '{font_family}';")
         row.addWidget(self.value)
         layout.addLayout(row)
-        self.bar = QProgressBar()
+        self.bar = SegmentedProgressBar(accent, pixel_mode=self.pixel_mode)
         self.bar.setRange(0, 100)
         self.bar.setTextVisible(False)
         self.bar.setValue(50)
@@ -304,6 +364,8 @@ class PetWindow(QMainWindow):
         self.pet_config = self.config.get("pet", {})
         self.teleport_config = self.config.get("teleport", {})
         self.pet_motion_config = self.config.get("pet_motion", {})
+        self._pixel_theme = str(self.pet_config.get("render_style", "pixel")).lower() == "pixel"
+        self._window_stylesheet = PIXEL_STYLESHEET if self._pixel_theme else STYLESHEET
         self.autonomy_config = self.config.get("autonomy", {})
         self.autonomy = AutonomyController(self.autonomy_config)
         self._postit_store = PostItStore(engine.data_dir / "postits.sqlite3")
@@ -325,6 +387,8 @@ class PetWindow(QMainWindow):
         self._requested_exit = False
         self._settings = QSettings("SynapsePet", "Oculus")
         self._panel_size = (1000, 790)
+        self._pet_animation = None
+        self._pet_hover_start_geometry: QRect | None = None
         self._jump_animation: QVariantAnimation | None = None
         self._jump_start_geometry: QRect | None = None
         jump_seed = int(self.config.get("seed", 41)) ^ 0x4A554D50
@@ -349,7 +413,7 @@ class PetWindow(QMainWindow):
         self.setWindowFlags(window_flags)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground,
                           self._pet_mode_enabled)
-        self.setStyleSheet(STYLESHEET)
+        self.setStyleSheet(self._window_stylesheet)
         self.resize(self._panel_size[0], self._panel_size[1])
         self.last_state = VisualState()
         self.render_mode = "ascii"
@@ -378,6 +442,7 @@ class PetWindow(QMainWindow):
         layout.addWidget(self.header)
 
         configured_renderer = str(self.config.get("renderer", "ascii"))
+        pet_config = self.config.get("pet", {})
         self.canvas = EyeCanvas(
             "ascii" if self._pet_mode_enabled else configured_renderer,
             int(self.visual_config.get("width", 960)),
@@ -393,14 +458,17 @@ class PetWindow(QMainWindow):
             affection_drag_min_s=float(self.interaction_config.get(
                 "affection_drag_min_s", 1.0)),
             compact=self._pet_mode_enabled,
-            outline=self.pet_config.get("outline", {}),
-            density=str(self.pet_config.get("density", "normal")))
+            render_style=str(pet_config.get("render_style", "pixel")),
+            spectral_config=pet_config.get("spectral", {}),
+            seed=int(self.config.get("seed", 41)),
+            depth_in_pet_mode=bool(pet_config.get("depth_in_pet_mode", False)))
         layout.addWidget(self.canvas, 1)
         self.canvas.petRequested.connect(self._give_affection)
         self.canvas.panelRequested.connect(self._show_panel)
         self.canvas.activityDetected.connect(self._register_visual_activity)
         self.canvas.animationStarted.connect(self._accelerate_animation)
         self.canvas.rendererChanged.connect(self._renderer_changed)
+        self.canvas.spriteMaskChanged.connect(self._refresh_pet_mask)
         self._mouse_sample_position: tuple[int, int] | None = None
         self._mouse_last_move = time.monotonic()
         self._mouse_last_category: str | None = None
@@ -430,9 +498,12 @@ class PetWindow(QMainWindow):
         layout.addLayout(identity)
 
         metrics = QHBoxLayout()
-        self.happiness_card = MetricCard("Humor", GOLD)
-        self.energy_card = MetricCard("Energia", CYAN)
-        self.stress_card = MetricCard("Alerta", "#e58665")
+        self.happiness_card = MetricCard("Humor", GOLD,
+                                         pixel_mode=self._pixel_theme)
+        self.energy_card = MetricCard("Energia", CYAN,
+                                      pixel_mode=self._pixel_theme)
+        self.stress_card = MetricCard("Alerta", "#e58665",
+                                      pixel_mode=self._pixel_theme)
         metrics.addWidget(self.happiness_card)
         metrics.addWidget(self.energy_card)
         metrics.addWidget(self.stress_card)
@@ -471,6 +542,8 @@ class PetWindow(QMainWindow):
         self.sensor_button.setObjectName("Gold")
         self.sensor_button.clicked.connect(self._show_sensor_menu)
         self.mode_button = QPushButton("EXPRESSÕES · ASCII")
+        if self._pixel_theme:
+            self.mode_button.setText("VISUAL · CENÁRIO")
         self.mode_button.setToolTip(
             "Alterna a arte ASCII animada e o painel HUD. Atalho: M.")
         self.mode_button.clicked.connect(self._cycle_mode)
@@ -637,6 +710,7 @@ class PetWindow(QMainWindow):
             self.raise_()
             self.activateWindow()
             return
+        self._stop_pet_animation(restore_start=True)
         self._stop_jump(restore_start=True)
         self._pet_last_click_at = 0.0
         self._pet_last_click_position = None
@@ -651,7 +725,7 @@ class PetWindow(QMainWindow):
         for child in self.canvas.findChildren(QWidget):
             child.removeEventFilter(self)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
-        self.setStyleSheet(STYLESHEET)
+        self.setStyleSheet(self._window_stylesheet)
         self._root_widget.setStyleSheet("")
         self._root_layout.setContentsMargins(12, 12, 12, 10)
         self._root_layout.setSpacing(9)
@@ -675,6 +749,7 @@ class PetWindow(QMainWindow):
             self.showNormal()
             self.raise_()
             return
+        self._stop_pet_animation(restore_start=True)
         self._stop_jump(restore_start=True)
         for panel in (self._debug_panel, self._learning_panel):
             if panel is not None:
@@ -708,6 +783,9 @@ class PetWindow(QMainWindow):
         self.raise_()
 
     def _pet_mask(self) -> QRegion:
+        sprite_mask = self.canvas.sprite_mask(self.size())
+        if not sprite_mask.isEmpty():
+            return sprite_mask
         width, height = self.width(), self.height()
         path = QPainterPath()
         path.moveTo(width * 0.025, height * 0.50)
@@ -717,6 +795,10 @@ class PetWindow(QMainWindow):
                      height * 0.92, width * 0.025, height * 0.50)
         path.closeSubpath()
         return QRegion(path.toFillPolygon().toPolygon())
+
+    def _refresh_pet_mask(self) -> None:
+        if self._is_floating and self.isVisible():
+            self.setMask(self._pet_mask())
 
     def _restore_pet_position(self, preferred_position: QPoint | None = None) -> None:
         saved_x = self._settings.value("pet/x", None)
@@ -757,6 +839,7 @@ class PetWindow(QMainWindow):
         event_type = event.type()
         if event_type == QEvent.Type.Enter and not self._pet_hovering:
             self._pet_hovering = True
+            self._grow_pet()
         elif event_type == QEvent.Type.Leave:
             self._pet_hovering = False
         if event_type == QEvent.Type.MouseButtonPress:
@@ -776,6 +859,7 @@ class PetWindow(QMainWindow):
                     self._show_panel()
                     return True
                 self._stop_jump(restore_start=False)
+                self._stop_pet_animation(restore_start=True)
                 self._pet_drag_offset = point - self.frameGeometry().topLeft()
                 self._pet_drag_origin = point
                 self._pet_drag_started = time.monotonic()
@@ -828,6 +912,46 @@ class PetWindow(QMainWindow):
         elif self.isVisible():
             self._panel_size = (max(700, self.width()), max(390, self.height()))
 
+    def _grow_pet(self) -> None:
+        if not self._is_floating:
+            return
+        self._stop_pet_animation(restore_start=False)
+        start = self.geometry()
+        self._pet_hover_start_geometry = QRect(start)
+        grown_width, grown_height = round(start.width() * 1.08), round(start.height() * 1.08)
+        center = start.center()
+        grown = start.__class__(center.x() - grown_width // 2,
+                                center.y() - grown_height // 2,
+                                grown_width, grown_height)
+        animation = QPropertyAnimation(self, b"geometry", self)
+        animation.setDuration(700)
+        animation.setStartValue(start)
+        animation.setKeyValueAt(0.28, grown)
+        animation.setKeyValueAt(0.72, grown)
+        animation.setEndValue(start)
+        animation.setEasingCurve(QEasingCurve.Type.InOutCubic)
+        animation.finished.connect(
+            lambda animation=animation: self._pet_animation_finished(animation))
+        animation.start()
+        self._pet_animation = animation
+
+    def _pet_animation_finished(self, animation: QPropertyAnimation) -> None:
+        if self._pet_animation is animation:
+            self._pet_animation = None
+            self._pet_hover_start_geometry = None
+            animation.deleteLater()
+
+    def _stop_pet_animation(self, *, restore_start: bool) -> None:
+        animation = self._pet_animation
+        start = self._pet_hover_start_geometry
+        self._pet_animation = None
+        self._pet_hover_start_geometry = None
+        if animation is not None:
+            animation.stop()
+            animation.deleteLater()
+        if restore_start and start is not None and self._is_floating:
+            self.setGeometry(start)
+
     def _consider_jump(self, state: VisualState, health: dict[str, object],
                        now: float) -> None:
         if (not self._is_floating or not self.isVisible()
@@ -838,6 +962,7 @@ class PetWindow(QMainWindow):
                 or int(health["proposal_queue"]) > 0
                 or self._teleport_animation is not None
                 or self._jump_animation is not None
+                or self._pet_animation is not None
                 or self._pet_drag_offset is not None
                 or self._pet_hovering):
             return
@@ -1087,6 +1212,7 @@ class PetWindow(QMainWindow):
         if not self._is_floating or self._teleport_animation is not None:
             return
         self._stop_jump(restore_start=False)
+        self._stop_pet_animation(restore_start=True)
         start = QRect(self.geometry())
         end = QRect(destination_center.x() - (start.width() - 1) // 2,
                     destination_center.y() - (start.height() - 1) // 2,
@@ -1222,6 +1348,7 @@ class PetWindow(QMainWindow):
         window = PostItWindow(
             note, self._postit_text(note.template),
             quick_dismiss_s=float(postit_cfg.get("quick_dismiss_s", 10.0)),
+            pixel_theme=self._pixel_theme,
             on_interact=self._postit_interacted,
             on_close=self._postit_closed,
             parent=self, origin=origin, animate=animate)
@@ -1319,6 +1446,7 @@ class PetWindow(QMainWindow):
     def _give_affection(self) -> None:
         self.engine.submit_affection()
         self.last_interaction = time.monotonic()
+        self._grow_pet()
 
     def _register_visual_activity(self) -> None:
         self.last_interaction = time.monotonic()
@@ -1381,9 +1509,15 @@ class PetWindow(QMainWindow):
     def _set_mode(self, mode: str) -> None:
         self.render_mode = mode
         self.canvas.set_mode(mode)
-        title = dict(self.MODES).get(mode, "REALISTA")
+        title = (("CENÁRIO" if mode == "ascii" else "HUD") if self._pixel_theme
+                 else dict(self.MODES).get(mode, "REALISTA"))
         self.mode_button.setText(f"EXPRESSÕES · {title}")
         self.last_interaction = time.monotonic()
+
+    def request_move(self, target: str | tuple[float, float],
+                     style: str = "walk") -> bool:
+        """Request a data-driven scene movement from autonomy or a UI action."""
+        return self.canvas.request_move(target, style)
 
     def _toggle_fullscreen(self) -> None:
         if self.isFullScreen():
@@ -1459,6 +1593,12 @@ class PetWindow(QMainWindow):
                         QSystemTrayIcon.MessageIcon.Information, 4000)
             else:
                 self.proposal.show()
+        proposal_pending = bool(
+            self._proposal_name
+            and self.engine.proposal_is_pending(self._proposal_name))
+        self.canvas.set_motion_blocked(
+            dragging=self._pet_drag_offset is not None,
+            proposal_pending=proposal_pending)
         while True:
             try:
                 result = self.engine.action_results.get_nowait()

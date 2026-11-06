@@ -2,24 +2,18 @@ seed: 41
 renderer: ascii
 pet:
   mode: floating          # floating (somente o olho) ou window (painel ao iniciar)
+  render_style: pixel     # pixel (Piu), spectral, ascii ou vector
+  depth_in_pet_mode: false
+  spectral:
+    glow_strength: 0.82   # 0..1
+    rune_count: 10        # 0..12; reduz automaticamente em tamanhos pequenos
+    smoke_density: 0.62   # 0..1
   width: 320
   height: 180
   anchor: none             # none, top_left, top_right, bottom_left, bottom_right
   margin: 24
   panel_hotkey: "<ctrl>+<alt>+o"
   start_with_windows: false
-  density: normal
-  outline:
-    theme_auto: true
-    double: true
-    thickness_px: 1
-    min_cell_px: 8
-    font_size: 7
-    dark: [7, 13, 23]
-    light: [250, 252, 255]
-    plate_alpha: 0.42
-    plate_dark: [12, 20, 32]
-    plate_light: [235, 242, 246]
 pet_motion:
   enabled: true
   interval_min_s: 6.0
@@ -64,6 +58,12 @@ network:
   tick_idle_ms: 250
   background_noise: 0.015
   synaptic_gain: 1.7
+  # Experimental lateral competition among tool outputs; disabled to preserve
+  # the established dynamics and deterministic reference by default.
+  tool_output_inhibition: false
+  tool_output_inhibition_strength: 0.35
+  # Sample competition every 20 ms instead of every 2 ms LIF substep.
+  tool_output_inhibition_interval_steps: 10
   allow_neuron_growth_migration: false
 plasticity:
   learning_rate: 0.0005
@@ -189,7 +189,10 @@ autonomy:
       habit: "Reconheci um padrão novo no meu aprendizado. Você pode vê-lo na aba Aprendizado."
 sleep:
   replay_enabled: false
-  max_replay_episodes: 12
+  # Bounded replay is opt-in; 120 retained high-RPE events improved the
+  # one-shot neural retention score in scenario e; 5% slots stay recent.
+  max_replay_episodes: 120
+  replay_recent_fraction: 0.05
   replay_noise: 0.005
   replay_steps: 2
 habits:

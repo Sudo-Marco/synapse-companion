@@ -17,8 +17,8 @@ flowchart LR
     M --> L[Reward-modulated plasticity]
     N --> A[Action selector and contextual preferences]
     A --> T[Permission-checked tools]
-    M --> X[Autonomy controller]
-    X --> W[Teleport and post-it windows]
+    M --> X[Autonomy controller and motion requests]
+    X --> W[Teleport, Piu movement, and post-it windows]
     EN --> V[Immutable visual snapshot queue, max size 1]
     V --> UI[PySide6 render thread]
     EN --> SAVE[Snapshot request]
@@ -35,14 +35,22 @@ flowchart LR
 | Visual state | `src/synapse_pet/runtime/visual_state.py` | Publish immutable state snapshots and interpolate visual changes. |
 | Autonomy | `src/synapse_pet/runtime/autonomy.py` | Enforce action budgets and persist post-it template metadata / aggregate habits. |
 | Qt interface | `src/synapse_pet/ui/qt_app.py` | Manage floating/panel windows, tray, controls, panel refresh, and telemetry. |
-| Renderers | `src/synapse_pet/ui/` | Draw ASCII, HUD, shader-compatible, or CPU fallback views. |
+| Renderers | `src/synapse_pet/ui/` | Draw the Piu pixel scene by default, legacy ASCII/HUD and spectral/vector eye views, and CPU fallback. |
+| Pixel assets | `src/synapse_pet/assets/pixel/` | Hold sprite atlases, native-depth variants, frame metadata, and JSON pose routes. |
+| Motion controller | `src/synapse_pet/ui/pet_motion.py` | Advance scene position, depth, jump height, stride phase, and hysteretic sprite size. |
 | Tools | `src/synapse_pet/tools/` | Validate manifest schemas, enforce permission policy, and run allowed operations. |
 
 ## SNN and action selection
 
 The network has sensor, recurrent hidden, and output populations connected by sparse projections. Output firing rates represent named emotional or tool groups. The runtime appends tool-output groups as tools are registered. Context projections, when used, keep separate readout weights over the shared sparse topology; contexts are keyed by hashes in persistence.
 
-The action selector combines a normalized neural score with learned contextual action preferences. The offline evaluation reports the combined policy separately from neural-only and preference-only ablations. No language model or textual encoder is part of this path.
+The action selector combines a normalized neural score with learned contextual action preferences. The offline evaluation reports the combined policy separately from neural-only and preference-only ablations. No language model or textual encoder is part of this path. `network.tool_output_inhibition` is an experimental output-current adjustment, disabled by default; at the configured 10-step interval it matched the baseline in scenarios b/c and left c/Z below its SNN-only target, so it is not recommended as a release setting.
+
+## Pixel view path
+
+`pet.render_style: pixel` is the default. The UI loads transparent sprite sheets and routes states to frames using `assets/pixel/animations.json`. Movement requests use the common `request_move(target, style)` entry point; scene-mode motion advances x, depth, height, stride, and LOD, while the floating window has its own bounded hop/teleport effects. The floating window mask is generated from the currently selected sprite frame's alpha. Sprite poses are static/source data; the simulation contributes read-only emotional state and spike summaries.
+
+Adding a new emotion-to-frame route can be done in the source animation JSON without an emotion branch in the renderer. A new movement behavior still requires a controller action. See [ART](ART.md) for the asset format and current limits.
 
 ## Event and failure boundaries
 

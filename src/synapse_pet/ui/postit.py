@@ -23,6 +23,7 @@ class PostItWindow(QWidget):
 
     def __init__(self, note: StoredPostIt, text: str, *, quick_dismiss_s: float,
                  on_interact, on_close, parent: QWidget | None = None,
+                 pixel_theme: bool = False,
                  origin: QPoint | None = None, animate: bool = True) -> None:
         flags = (Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint |
                  Qt.WindowType.WindowStaysOnTopHint |
@@ -31,6 +32,7 @@ class PostItWindow(QWidget):
         super().__init__(parent, flags)
         self.note = note
         self.text = str(text)
+        self.pixel_theme = bool(pixel_theme)
         self.quick_dismiss_s = max(0.0, float(quick_dismiss_s))
         self.on_interact = on_interact
         self.on_close = on_close
@@ -39,6 +41,8 @@ class PostItWindow(QWidget):
         self._created_at = note.created_at
         self._rotation = {"estressado": -2.0, "entediado": 1.7,
                           "curioso": -1.2, "atencao": 1.4}.get(note.emotion, 0.8)
+        if self.pixel_theme:
+            self._rotation = 0.0
         self.setFixedSize(286, 132)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, True)
@@ -73,23 +77,33 @@ class PostItWindow(QWidget):
 
     def paintEvent(self, _event) -> None:
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing,
+                              not self.pixel_theme)
         painter.translate(self.width() / 2, self.height() / 2)
         painter.rotate(self._rotation)
         card = QRectF(-130, -52, 260, 104)
-        painter.setPen(QPen(QColor(self._accent), 1.2))
+        painter.setPen(QPen(QColor(self._accent),
+                            2 if self.pixel_theme else 1.2))
         painter.setBrush(QColor(self._color))
-        painter.drawRoundedRect(card, 8, 8)
+        if self.pixel_theme:
+            painter.drawRect(card)
+        else:
+            painter.drawRoundedRect(card, 8, 8)
         painter.setPen(QPen(QColor(self._accent)))
-        painter.setFont(QFont("Consolas", 8, QFont.Weight.Bold))
+        font_family = "Silkscreen" if self.pixel_theme else "Consolas"
+        painter.setFont(QFont(font_family, 8, QFont.Weight.Bold))
         painter.drawText(QRectF(-112, -39, 195, 17), "POST-IT · " + self.note.emotion.upper())
-        painter.setFont(QFont("Segoe UI", 10))
+        body_font = "Silkscreen" if self.pixel_theme else "Segoe UI"
+        painter.setFont(QFont(body_font, 9 if self.pixel_theme else 10))
         painter.setPen(QPen(QColor("#e8eeee")))
         painter.drawText(QRectF(-112, -17, 224, 47),
                          Qt.AlignmentFlag.AlignLeft | Qt.TextFlag.TextWordWrap, self.text)
         painter.setPen(QPen(QColor(self._accent)))
-        painter.setFont(QFont("Segoe UI", 8, QFont.Weight.DemiBold))
-        painter.drawRoundedRect(QRectF(48, 28, 62, 20), 5, 5)
+        painter.setFont(QFont(body_font, 8, QFont.Weight.DemiBold))
+        if self.pixel_theme:
+            painter.drawRect(QRectF(48, 28, 62, 20))
+        else:
+            painter.drawRoundedRect(QRectF(48, 28, 62, 20), 5, 5)
         painter.drawText(QRectF(48, 28, 62, 20), Qt.AlignmentFlag.AlignCenter, "Entendi")
         painter.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
         painter.drawText(QRectF(112, -46, 18, 18), Qt.AlignmentFlag.AlignCenter, "×")

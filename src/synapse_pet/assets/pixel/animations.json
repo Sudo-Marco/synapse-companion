@@ -1,0 +1,1593 @@
+{
+  "schema_version": 1,
+  "source": "docs/mockups/piu/vistas_etapa1/inventario_frames.json",
+  "canvas": [
+    32,
+    44
+  ],
+  "pivot_canvas": [
+    16,
+    40
+  ],
+  "transparent_key_removed": "#24365E",
+  "animations": {
+    "frente": {
+      "sheet": "frente.png",
+      "frames": [
+        {
+          "label": "IDLE",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            1,
+            8,
+            32,
+            42
+          ],
+          "rect": [
+            0,
+            0,
+            32,
+            44
+          ],
+          "label_key": "idle"
+        },
+        {
+          "label": "PISCAR",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            1,
+            8,
+            32,
+            42
+          ],
+          "rect": [
+            32,
+            0,
+            32,
+            44
+          ],
+          "label_key": "piscar"
+        },
+        {
+          "label": "FELIZ",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            1,
+            8,
+            32,
+            42
+          ],
+          "rect": [
+            64,
+            0,
+            32,
+            44
+          ],
+          "label_key": "feliz"
+        },
+        {
+          "label": "CANTAR",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            1,
+            8,
+            32,
+            42
+          ],
+          "rect": [
+            96,
+            0,
+            32,
+            44
+          ],
+          "label_key": "cantar"
+        },
+        {
+          "label": "SUSTO",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            1,
+            8,
+            32,
+            42
+          ],
+          "rect": [
+            0,
+            44,
+            32,
+            44
+          ],
+          "label_key": "susto"
+        },
+        {
+          "label": "DORMIR",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            1,
+            8,
+            32,
+            42
+          ],
+          "rect": [
+            32,
+            44,
+            32,
+            44
+          ],
+          "label_key": "dormir"
+        },
+        {
+          "label": "POST-IT",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            1,
+            8,
+            32,
+            42
+          ],
+          "rect": [
+            64,
+            44,
+            32,
+            44
+          ],
+          "label_key": "post-it"
+        },
+        {
+          "label": "P/CIMA",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            1,
+            8,
+            32,
+            42
+          ],
+          "rect": [
+            96,
+            44,
+            32,
+            44
+          ],
+          "label_key": "p/cima"
+        }
+      ]
+    },
+    "costas": {
+      "sheet": "costas.png",
+      "frames": [
+        {
+          "label": "IDLE",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            3,
+            8,
+            29,
+            41
+          ],
+          "rect": [
+            0,
+            0,
+            32,
+            44
+          ],
+          "label_key": "idle"
+        },
+        {
+          "label": "CAUDA A",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            3,
+            8,
+            29,
+            41
+          ],
+          "rect": [
+            32,
+            0,
+            32,
+            44
+          ],
+          "label_key": "cauda_a"
+        },
+        {
+          "label": "CAUDA C",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            3,
+            8,
+            29,
+            41
+          ],
+          "rect": [
+            64,
+            0,
+            32,
+            44
+          ],
+          "label_key": "cauda_c"
+        },
+        {
+          "label": "CAUDA B",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            3,
+            8,
+            29,
+            41
+          ],
+          "rect": [
+            96,
+            0,
+            32,
+            44
+          ],
+          "label_key": "cauda_b"
+        },
+        {
+          "label": "VENTO A",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            3,
+            8,
+            29,
+            41
+          ],
+          "rect": [
+            0,
+            44,
+            32,
+            44
+          ],
+          "label_key": "vento_a"
+        },
+        {
+          "label": "VENTO B",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            3,
+            8,
+            29,
+            41
+          ],
+          "rect": [
+            32,
+            44,
+            32,
+            44
+          ],
+          "label_key": "vento_b"
+        },
+        {
+          "label": "OMBRO",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            3,
+            8,
+            31,
+            41
+          ],
+          "rect": [
+            64,
+            44,
+            32,
+            44
+          ],
+          "label_key": "ombro"
+        }
+      ]
+    },
+    "corrida_lateral": {
+      "sheet": "corrida_lateral.png",
+      "frames": [
+        {
+          "label": "PASSO 1",
+          "duration_ms": 100,
+          "loop": true,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            3,
+            8,
+            32,
+            41
+          ],
+          "rect": [
+            0,
+            0,
+            32,
+            44
+          ],
+          "label_key": "passo_1"
+        },
+        {
+          "label": "PASSO 2",
+          "duration_ms": 100,
+          "loop": true,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            4,
+            8,
+            32,
+            42
+          ],
+          "rect": [
+            32,
+            0,
+            32,
+            44
+          ],
+          "label_key": "passo_2"
+        },
+        {
+          "label": "PASSO 3",
+          "duration_ms": 100,
+          "loop": true,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            4,
+            8,
+            32,
+            43
+          ],
+          "rect": [
+            64,
+            0,
+            32,
+            44
+          ],
+          "label_key": "passo_3"
+        },
+        {
+          "label": "PASSO 4",
+          "duration_ms": 100,
+          "loop": true,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            4,
+            8,
+            32,
+            42
+          ],
+          "rect": [
+            96,
+            0,
+            32,
+            44
+          ],
+          "label_key": "passo_4"
+        },
+        {
+          "label": "PASSO 5",
+          "duration_ms": 100,
+          "loop": true,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            3,
+            8,
+            32,
+            41
+          ],
+          "rect": [
+            0,
+            44,
+            32,
+            44
+          ],
+          "label_key": "passo_5"
+        },
+        {
+          "label": "PASSO 6",
+          "duration_ms": 100,
+          "loop": true,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            4,
+            8,
+            32,
+            42
+          ],
+          "rect": [
+            32,
+            44,
+            32,
+            44
+          ],
+          "label_key": "passo_6"
+        },
+        {
+          "label": "PASSO 7",
+          "duration_ms": 100,
+          "loop": true,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            4,
+            8,
+            32,
+            43
+          ],
+          "rect": [
+            64,
+            44,
+            32,
+            44
+          ],
+          "label_key": "passo_7"
+        },
+        {
+          "label": "PASSO 8",
+          "duration_ms": 100,
+          "loop": true,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            4,
+            8,
+            32,
+            42
+          ],
+          "rect": [
+            96,
+            44,
+            32,
+            44
+          ],
+          "label_key": "passo_8"
+        }
+      ],
+      "distance_per_cycle_px": 24,
+      "distance_is_tunable_estimate": true
+    },
+    "pulo": {
+      "sheet": "pulo.png",
+      "frames": [
+        {
+          "label": "AGACHA 1",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            3,
+            14,
+            32,
+            41
+          ],
+          "rect": [
+            0,
+            0,
+            32,
+            44
+          ],
+          "label_key": "agacha_1"
+        },
+        {
+          "label": "AGACHA 2",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            3,
+            16,
+            32,
+            41
+          ],
+          "rect": [
+            32,
+            0,
+            32,
+            44
+          ],
+          "label_key": "agacha_2"
+        },
+        {
+          "label": "IMPULSO",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            2,
+            5,
+            32,
+            41
+          ],
+          "rect": [
+            64,
+            0,
+            32,
+            44
+          ],
+          "label_key": "impulso"
+        },
+        {
+          "label": "SUBIDA",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            2,
+            2,
+            32,
+            41
+          ],
+          "rect": [
+            96,
+            0,
+            32,
+            44
+          ],
+          "label_key": "subida"
+        },
+        {
+          "label": "APICE",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            2,
+            0,
+            32,
+            41
+          ],
+          "rect": [
+            0,
+            44,
+            32,
+            44
+          ],
+          "label_key": "apice"
+        },
+        {
+          "label": "DESCIDA",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            2,
+            1,
+            32,
+            41
+          ],
+          "rect": [
+            32,
+            44,
+            32,
+            44
+          ],
+          "label_key": "descida"
+        },
+        {
+          "label": "POUSO 1",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            3,
+            15,
+            32,
+            41
+          ],
+          "rect": [
+            64,
+            44,
+            32,
+            44
+          ],
+          "label_key": "pouso_1"
+        },
+        {
+          "label": "POUSO 2",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            3,
+            17,
+            32,
+            41
+          ],
+          "rect": [
+            96,
+            44,
+            32,
+            44
+          ],
+          "label_key": "pouso_2"
+        },
+        {
+          "label": "RECUPERA",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            3,
+            10,
+            32,
+            41
+          ],
+          "rect": [
+            0,
+            88,
+            32,
+            44
+          ],
+          "label_key": "recupera"
+        }
+      ]
+    },
+    "corrida_para_fundo": {
+      "sheet": "corrida_para_fundo.png",
+      "frames": [
+        {
+          "label": "B32-A",
+          "duration_ms": 100,
+          "loop": true,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            3,
+            8,
+            30,
+            41
+          ],
+          "rect": [
+            0,
+            0,
+            32,
+            44
+          ],
+          "label_key": "b32-a"
+        },
+        {
+          "label": "B32-B",
+          "duration_ms": 100,
+          "loop": true,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            4,
+            8,
+            29,
+            42
+          ],
+          "rect": [
+            32,
+            0,
+            32,
+            44
+          ],
+          "label_key": "b32-b"
+        },
+        {
+          "label": "B24-A",
+          "duration_ms": 100,
+          "loop": true,
+          "native_size": 24,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            8,
+            16,
+            26,
+            43
+          ],
+          "rect": [
+            64,
+            0,
+            32,
+            44
+          ],
+          "label_key": "b24-a"
+        },
+        {
+          "label": "B24-B",
+          "duration_ms": 100,
+          "loop": true,
+          "native_size": 24,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            8,
+            16,
+            26,
+            42
+          ],
+          "rect": [
+            96,
+            0,
+            32,
+            44
+          ],
+          "label_key": "b24-b"
+        },
+        {
+          "label": "B16-A",
+          "duration_ms": 100,
+          "loop": true,
+          "native_size": 16,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            4,
+            23,
+            29,
+            42
+          ],
+          "rect": [
+            0,
+            44,
+            32,
+            44
+          ],
+          "label_key": "b16-a"
+        },
+        {
+          "label": "B16-B",
+          "duration_ms": 100,
+          "loop": true,
+          "native_size": 16,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            10,
+            23,
+            24,
+            43
+          ],
+          "rect": [
+            32,
+            44,
+            32,
+            44
+          ],
+          "label_key": "b16-b"
+        }
+      ]
+    },
+    "volta_para_camera": {
+      "sheet": "volta_para_camera.png",
+      "frames": [
+        {
+          "label": "F16-A",
+          "duration_ms": 100,
+          "loop": true,
+          "native_size": 16,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            9,
+            23,
+            25,
+            43
+          ],
+          "rect": [
+            0,
+            0,
+            32,
+            44
+          ],
+          "label_key": "f16-a"
+        },
+        {
+          "label": "F16-B",
+          "duration_ms": 100,
+          "loop": true,
+          "native_size": 16,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            9,
+            23,
+            25,
+            43
+          ],
+          "rect": [
+            32,
+            0,
+            32,
+            44
+          ],
+          "label_key": "f16-b"
+        },
+        {
+          "label": "F24-A",
+          "duration_ms": 100,
+          "loop": true,
+          "native_size": 24,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            5,
+            16,
+            29,
+            44
+          ],
+          "rect": [
+            64,
+            0,
+            32,
+            44
+          ],
+          "label_key": "f24-a"
+        },
+        {
+          "label": "F24-B",
+          "duration_ms": 100,
+          "loop": true,
+          "native_size": 24,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            6,
+            16,
+            29,
+            43
+          ],
+          "rect": [
+            96,
+            0,
+            32,
+            44
+          ],
+          "label_key": "f24-b"
+        },
+        {
+          "label": "F32-A",
+          "duration_ms": 100,
+          "loop": true,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            2,
+            8,
+            32,
+            42
+          ],
+          "rect": [
+            0,
+            44,
+            32,
+            44
+          ],
+          "label_key": "f32-a"
+        },
+        {
+          "label": "F32-B",
+          "duration_ms": 100,
+          "loop": true,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            2,
+            8,
+            32,
+            43
+          ],
+          "rect": [
+            32,
+            44,
+            32,
+            44
+          ],
+          "label_key": "f32-b"
+        }
+      ]
+    },
+    "virada_vistas": {
+      "sheet": "virada_vistas.png",
+      "frames": [
+        {
+          "label": "PERFIL",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            3,
+            8,
+            32,
+            40
+          ],
+          "rect": [
+            0,
+            0,
+            32,
+            44
+          ],
+          "label_key": "perfil"
+        },
+        {
+          "label": "P 3/4 A",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            3,
+            8,
+            32,
+            41
+          ],
+          "rect": [
+            32,
+            0,
+            32,
+            44
+          ],
+          "label_key": "p_3/4_a"
+        },
+        {
+          "label": "P 3/4 B",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            3,
+            8,
+            32,
+            41
+          ],
+          "rect": [
+            64,
+            0,
+            32,
+            44
+          ],
+          "label_key": "p_3/4_b"
+        },
+        {
+          "label": "FRENTE",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            1,
+            8,
+            32,
+            42
+          ],
+          "rect": [
+            96,
+            0,
+            32,
+            44
+          ],
+          "label_key": "frente"
+        },
+        {
+          "label": "F 3/4 A",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            1,
+            8,
+            32,
+            42
+          ],
+          "rect": [
+            0,
+            44,
+            32,
+            44
+          ],
+          "label_key": "f_3/4_a"
+        },
+        {
+          "label": "F 3/4 B",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            3,
+            8,
+            31,
+            41
+          ],
+          "rect": [
+            32,
+            44,
+            32,
+            44
+          ],
+          "label_key": "f_3/4_b"
+        },
+        {
+          "label": "COSTAS",
+          "duration_ms": 160,
+          "loop": false,
+          "native_size": 32,
+          "pivot": [
+            16,
+            40
+          ],
+          "hitbox": [
+            3,
+            8,
+            29,
+            41
+          ],
+          "rect": [
+            64,
+            44,
+            32,
+            44
+          ],
+          "label_key": "costas"
+        }
+      ]
+    }
+  },
+  "routes": {
+    "actions": {
+      "away": {
+        "animation": "corrida_para_fundo",
+        "mode": "stride",
+        "match_lod": true
+      },
+      "return": {
+        "animation": "volta_para_camera",
+        "mode": "stride",
+        "match_lod": true
+      },
+      "walk": {
+        "animation": "corrida_lateral",
+        "mode": "stride"
+      },
+      "run": {
+        "animation": "corrida_lateral",
+        "mode": "stride"
+      },
+      "jump": {
+        "animation": "pulo",
+        "mode": "progress"
+      },
+      "fly": {
+        "animation": "pulo",
+        "mode": "progress"
+      }
+    },
+    "emotions": {
+      "alegre": {
+        "animation": "frente",
+        "frame": "feliz"
+      },
+      "assustado": {
+        "animation": "frente",
+        "frame": "susto"
+      },
+      "cantando": {
+        "animation": "frente",
+        "frame": "cantar"
+      },
+      "curioso": {
+        "animation": "frente",
+        "frame": "p/cima"
+      },
+      "curioso_esquerda": {
+        "animation": "virada_vistas",
+        "frame": "p_3/4_a"
+      },
+      "curioso_direita": {
+        "animation": "virada_vistas",
+        "frame": "p_3/4_b"
+      },
+      "dormindo": {
+        "animation": "frente",
+        "frame": "dormir"
+      },
+      "piscar": {
+        "animation": "frente",
+        "frame": "piscar"
+      },
+      "sonolento": {
+        "animation": "frente",
+        "frame": "dormir"
+      },
+      "estressado": {
+        "animation": "frente",
+        "frame": "susto"
+      },
+      "triste": {
+        "animation": "frente",
+        "frame": "idle"
+      }
+    },
+    "views": {
+      "back": {
+        "animation": "costas",
+        "frame": "idle"
+      },
+      "front": {
+        "animation": "frente",
+        "frame": "idle"
+      },
+      "profile": {
+        "animation": "virada_vistas",
+        "frame": "perfil"
+      }
+    },
+    "default": {
+      "animation": "virada_vistas",
+      "frame": "perfil"
+    }
+  },
+  "lod": {
+    "sheet": "lod.png",
+    "sizes": [
+      32,
+      24,
+      16
+    ],
+    "entries": {
+      "profile_idle": [
+        {
+          "size": 32,
+          "rect": [
+            0,
+            0,
+            32,
+            44
+          ],
+          "pivot": [
+            16,
+            40
+          ],
+          "native_draw": true
+        },
+        {
+          "size": 24,
+          "rect": [
+            32,
+            0,
+            32,
+            44
+          ],
+          "pivot": [
+            16,
+            40
+          ],
+          "native_draw": true
+        },
+        {
+          "size": 16,
+          "rect": [
+            64,
+            0,
+            32,
+            44
+          ],
+          "pivot": [
+            16,
+            40
+          ],
+          "native_draw": true
+        }
+      ],
+      "profile_run": [
+        {
+          "size": 32,
+          "rect": [
+            0,
+            44,
+            32,
+            44
+          ],
+          "pivot": [
+            16,
+            40
+          ],
+          "native_draw": true
+        },
+        {
+          "size": 24,
+          "rect": [
+            32,
+            44,
+            32,
+            44
+          ],
+          "pivot": [
+            16,
+            40
+          ],
+          "native_draw": true
+        },
+        {
+          "size": 16,
+          "rect": [
+            64,
+            44,
+            32,
+            44
+          ],
+          "pivot": [
+            16,
+            40
+          ],
+          "native_draw": true
+        }
+      ],
+      "front_idle": [
+        {
+          "size": 32,
+          "rect": [
+            0,
+            88,
+            32,
+            44
+          ],
+          "pivot": [
+            16,
+            40
+          ],
+          "native_draw": true
+        },
+        {
+          "size": 24,
+          "rect": [
+            32,
+            88,
+            32,
+            44
+          ],
+          "pivot": [
+            16,
+            40
+          ],
+          "native_draw": true
+        },
+        {
+          "size": 16,
+          "rect": [
+            64,
+            88,
+            32,
+            44
+          ],
+          "pivot": [
+            16,
+            40
+          ],
+          "native_draw": true
+        }
+      ],
+      "front_run": [
+        {
+          "size": 32,
+          "rect": [
+            0,
+            132,
+            32,
+            44
+          ],
+          "pivot": [
+            16,
+            40
+          ],
+          "native_draw": true
+        },
+        {
+          "size": 24,
+          "rect": [
+            32,
+            132,
+            32,
+            44
+          ],
+          "pivot": [
+            16,
+            40
+          ],
+          "native_draw": true
+        },
+        {
+          "size": 16,
+          "rect": [
+            64,
+            132,
+            32,
+            44
+          ],
+          "pivot": [
+            16,
+            40
+          ],
+          "native_draw": true
+        }
+      ],
+      "back_idle": [
+        {
+          "size": 32,
+          "rect": [
+            0,
+            176,
+            32,
+            44
+          ],
+          "pivot": [
+            16,
+            40
+          ],
+          "native_draw": true
+        },
+        {
+          "size": 24,
+          "rect": [
+            32,
+            176,
+            32,
+            44
+          ],
+          "pivot": [
+            16,
+            40
+          ],
+          "native_draw": true
+        },
+        {
+          "size": 16,
+          "rect": [
+            64,
+            176,
+            32,
+            44
+          ],
+          "pivot": [
+            16,
+            40
+          ],
+          "native_draw": true
+        }
+      ],
+      "back_run": [
+        {
+          "size": 32,
+          "rect": [
+            0,
+            220,
+            32,
+            44
+          ],
+          "pivot": [
+            16,
+            40
+          ],
+          "native_draw": true
+        },
+        {
+          "size": 24,
+          "rect": [
+            32,
+            220,
+            32,
+            44
+          ],
+          "pivot": [
+            16,
+            40
+          ],
+          "native_draw": true
+        },
+        {
+          "size": 16,
+          "rect": [
+            64,
+            220,
+            32,
+            44
+          ],
+          "pivot": [
+            16,
+            40
+          ],
+          "native_draw": true
+        }
+      ]
+    }
+  }
+}

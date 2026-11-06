@@ -1,0 +1,98 @@
+{
+  "renderer": "pixel/QPainter CPU offscreen",
+  "window_size": [
+    800,
+    450
+  ],
+  "before": {
+    "seconds_per_phase": 5.0,
+    "modes": {
+      "ascii": {
+        "active": {
+          "fps_target": 30,
+          "fps_measured": 30.39,
+          "timer_callbacks_per_second": 30.19,
+          "cpu_percent_average": 5.53,
+          "vram_mib_before": 0,
+          "vram_mib_after": 0,
+          "vram_scope": "cpu_renderer_no_opengl"
+        },
+        "idle": {
+          "fps_target": 5,
+          "fps_measured": 5.0,
+          "timer_callbacks_per_second": 5.0,
+          "cpu_percent_average": 2.59,
+          "vram_mib_before": 0,
+          "vram_mib_after": 0,
+          "vram_scope": "cpu_renderer_no_opengl"
+        }
+      },
+      "hud": {
+        "active": {
+          "fps_target": 30,
+          "fps_measured": 29.99,
+          "timer_callbacks_per_second": 29.79,
+          "cpu_percent_average": 7.14,
+          "vram_mib_before": 0,
+          "vram_mib_after": 0,
+          "vram_scope": "cpu_renderer_no_opengl"
+        },
+        "idle": {
+          "fps_target": 5,
+          "fps_measured": 5.0,
+          "timer_callbacks_per_second": 5.0,
+          "cpu_percent_average": 2.6,
+          "vram_mib_before": 0,
+          "vram_mib_after": 0,
+          "vram_scope": "cpu_renderer_no_opengl"
+        }
+      }
+    }
+  },
+  "after": {
+    "seconds_per_phase": 10.0,
+    "modes": {
+      "ascii": {
+        "active": {
+          "fps_target": 30,
+          "fps_measured": 30.3,
+          "timer_callbacks_per_second": 30.3,
+          "cpu_percent_average": 5.5,
+          "vram_mib_before": 0,
+          "vram_mib_after": 0,
+          "vram_scope": "cpu_renderer_no_opengl"
+        },
+        "idle": {
+          "fps_target": 5,
+          "fps_measured": 5.0,
+          "timer_callbacks_per_second": 4.9,
+          "cpu_percent_average": 2.52,
+          "vram_mib_before": 0,
+          "vram_mib_after": 0,
+          "vram_scope": "cpu_renderer_no_opengl"
+        }
+      },
+      "hud": {
+        "active": {
+          "fps_target": 30,
+          "fps_measured": 30.3,
+          "timer_callbacks_per_second": 30.3,
+          "cpu_percent_average": 6.3,
+          "vram_mib_before": 0,
+          "vram_mib_after": 0,
+          "vram_scope": "cpu_renderer_no_opengl"
+        },
+        "idle": {
+          "fps_target": 5,
+          "fps_measured": 5.0,
+          "timer_callbacks_per_second": 5.0,
+          "cpu_percent_average": 1.1,
+          "vram_mib_before": 0,
+          "vram_mib_after": 0,
+          "vram_scope": "cpu_renderer_no_opengl"
+        }
+      }
+    }
+  },
+  "notes": "Approximate comparison: 5-second before sample vs 10-second after sample; CPU-only offscreen, not a physical desktop."
+}
