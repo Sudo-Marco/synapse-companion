@@ -440,6 +440,10 @@ class EyeCanvas(QWidget):
         if self._pixel is not None:
             self._pixel.set_behavior_action(action)
 
+    def set_audio_status(self, **status) -> None:
+        if self._pixel is not None:
+            self._pixel.set_audio_status(**status)
+
     def _check_gl(self) -> None:
         if self._gl is not None and not self._gl.isValid():
             self._activate_cpu("QOpenGLWidget sem contexto válido")

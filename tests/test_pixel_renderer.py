@@ -157,6 +157,66 @@ def test_world_travel_selects_back_lod_and_rest_uses_manifest_pose():
         widget.close()
 
 
+def test_audio_badges_join_pet_mask_and_music_phase_drives_dance_frames():
+    ensure_application()
+    widget = PixelPetWidget(compact=True)
+    try:
+        widget.resize(320, 180)
+        widget.set_mode("pet")
+        widget.set_audio_status(microphone_enabled=True,
+                                loopback_enabled=True,
+                                music_active=True, bpm=120.0,
+                                beat_phase=0.05, level=0.4)
+        widget.set_behavior_action("dance_sway")
+        widget.render_frame(2.0, datetime(2026, 11, 5, 12))
+        first_index = widget._current_frame_entry["label_key"]
+        assert len(widget._audio_badge_rects) == 2
+        mask = widget.sprite_mask()
+        assert all(mask.contains(rect.center())
+                   for rect in widget._audio_badge_rects)
+
+        widget.set_audio_status(microphone_enabled=True,
+                                loopback_enabled=True,
+                                music_active=True, bpm=120.0,
+                                beat_phase=0.85, level=0.4)
+        widget.render_frame(2.1, datetime(2026, 11, 5, 12))
+        second_index = widget._current_frame_entry["label_key"]
+        assert first_index != second_index
+    finally:
+        widget.close()
+
+
+def test_audio_controls_are_opt_in_and_update_tray_indicator(tmp_path, monkeypatch):
+    QSettings.setDefaultFormat(QSettings.Format.IniFormat)
+    QSettings.setPath(QSettings.Format.IniFormat, QSettings.Scope.UserScope,
+                      str(tmp_path / "settings"))
+    ensure_application()
+    monkeypatch.setattr(PetWindow, "_start_global_panel_hotkey", lambda _self: None)
+    from synapse_pet.runtime.engine import PetEngine
+
+    engine = PetEngine(seed=94, data_dir=tmp_path / "pet-data")
+    window = PetWindow(engine)
+    try:
+        assert not window._audio_enabled["microphone"]
+        assert not window._audio_enabled["loopback"]
+        assert window.audio_service.active_sources == ()
+        started = []
+        monkeypatch.setattr(window.audio_service, "start",
+                            lambda source: started.append(source) or True)
+        window.audio_actions["microphone"].setChecked(True)
+        assert started == ["microphone"]
+        assert "microfone" in window._tray_icon.toolTip()
+        window.audio_actions["microphone"].setChecked(False)
+        assert not window._audio_enabled["microphone"]
+        assert "microfone" not in window._tray_icon.toolTip()
+    finally:
+        window._requested_exit = True
+        window.close()
+        deadline = __import__("time").monotonic() + 6.0
+        while __import__("time").monotonic() < deadline and not window._really_close:
+            ensure_application().processEvents()
+
+
 def test_floating_panel_can_use_pixel_sprite_mask_and_return_to_pixel_pet(tmp_path, monkeypatch):
     QSettings.setDefaultFormat(QSettings.Format.IniFormat)
     QSettings.setPath(QSettings.Format.IniFormat, QSettings.Scope.UserScope,

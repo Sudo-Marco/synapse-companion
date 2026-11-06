@@ -25,6 +25,8 @@ from PySide6.QtWidgets import (QApplication, QDialog, QFileDialog, QFrame,
 
 from ..runtime.visual_state import VisualState
 from ..runtime.autonomy import AutonomyController, PostItStore, StoredPostIt
+from ..sensors.audio_analysis import AudioMetrics
+from ..sensors.audio_service import AudioMonitorService
 from ..sensors.window_geometry import WindowGeometryObserver
 from .desktop_motion import (DesktopBehaviorSelector, WorkArea,
                              choose_work_area_target, clamp_window_top_left,
@@ -369,6 +371,26 @@ class PetWindow(QMainWindow):
         self.teleport_config = self.config.get("teleport", {})
         self.pet_motion_config = self.config.get("pet_motion", {})
         self.desktop_motion_config = self.pet_motion_config.get("desktop", {})
+        self.audio_config = self.config.get("audio", {})
+        self.audio_privacy = self.config.get("privacy", {}).get("sensors", {})
+        self.audio_service = AudioMonitorService(
+            sample_rate=int(self.audio_config.get("sample_rate", 11025)),
+            block_size=int(self.audio_config.get("block_size", 512)),
+            config=self.audio_config)
+        self._audio_enabled = {"microphone": False, "loopback": False}
+        self._audio_metrics: dict[str, AudioMetrics] = {}
+        self._audio_voice_since: float | None = None
+        self._audio_last_voice_at = -math.inf
+        self._audio_voice_triggered = False
+        self._audio_voice_last_trigger = -math.inf
+        self._audio_voice_events: deque[float] = deque()
+        self._audio_listening_until = 0.0
+        self._audio_music_active = False
+        self._audio_music_level = 0.0
+        self._audio_bpm = 0.0
+        self._audio_beat_phase = 0.0
+        self._audio_dance_cooldown_until = 0.0
+        self._audio_dance_events: deque[float] = deque()
         behavior_config = self.pet_motion_config.get("behaviors", {})
         self.desktop_behavior_selector = DesktopBehaviorSelector(
             behavior_config, seed=int(self.config.get("seed", 41)))
@@ -649,6 +671,7 @@ class PetWindow(QMainWindow):
         painter.drawEllipse(11, 11, 10, 10)
         painter.end()
         self._tray_icon = QSystemTrayIcon(QIcon(pixmap), self)
+        self._update_tray_icon()
         menu = QMenu(self)
         self._tray_panel_action = menu.addAction("Abrir painel")
         self._tray_panel_action.triggered.connect(self._show_panel)
@@ -691,6 +714,133 @@ class PetWindow(QMainWindow):
         if not self._window_geometry_enabled:
             self._active_window_geometry = None
         self._poll_window_geometry()
+
+    def _update_tray_icon(self) -> None:
+        tray_icon = getattr(self, "_tray_icon", None)
+        if tray_icon is None:
+            return
+        pixmap = QPixmap(32, 32)
+        pixmap.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setPen(QPen(QColor(CYAN), 2))
+        painter.setBrush(QColor("#07131b"))
+        painter.drawEllipse(3, 3, 26, 26)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(CYAN))
+        painter.drawEllipse(11, 11, 10, 10)
+        active = []
+        if self._audio_enabled.get("microphone"):
+            painter.setBrush(QColor("#ff5d69"))
+            painter.drawEllipse(21, 1, 9, 9)
+            active.append("microfone")
+        if self._audio_enabled.get("loopback"):
+            painter.setPen(QColor("#ffd166"))
+            painter.setFont(QFont("Segoe UI Symbol", 10, QFont.Weight.Bold))
+            painter.drawText(17, 31, "♪")
+            active.append("áudio do sistema")
+        painter.end()
+        tray_icon.setIcon(QIcon(pixmap))
+        suffix = " · " + ", ".join(active) if active else ""
+        tray_icon.setToolTip("Synapse Pet" + suffix)
+
+    def _set_audio_enabled(self, source: str, enabled: bool) -> None:
+        source = str(source)
+        if source not in self._audio_enabled:
+            return
+        if enabled:
+            self._audio_enabled[source] = True
+            self.audio_service.start(source)
+        else:
+            self._audio_enabled[source] = False
+            self.audio_service.stop(source)
+            self._audio_metrics.pop(source, None)
+            if source == "microphone":
+                self._audio_voice_since = None
+                self._audio_last_voice_at = -math.inf
+                self._audio_voice_triggered = False
+                self._audio_listening_until = 0.0
+            elif source == "loopback":
+                self._audio_music_active = False
+                self._audio_bpm = 0.0
+                self._audio_beat_phase = 0.0
+        self._update_tray_icon()
+        self._update_canvas_audio_status()
+
+    def _update_canvas_audio_status(self) -> None:
+        if not hasattr(self, "canvas"):
+            return
+        microphone = self._audio_metrics.get("microphone", AudioMetrics())
+        loopback = self._audio_metrics.get("loopback", AudioMetrics())
+        self.canvas.set_audio_status(
+            microphone_enabled=self._audio_enabled.get("microphone", False),
+            loopback_enabled=self._audio_enabled.get("loopback", False),
+            voice_active=microphone.voice_active,
+            music_active=loopback.music_active,
+            bpm=self._audio_bpm,
+            beat_phase=self._audio_beat_phase,
+            level=max(microphone.level, loopback.level))
+
+    def _update_audio_state(self, now: float) -> None:
+        for source, status in self.audio_service.drain_events():
+            if status != "unavailable":
+                continue
+            self._audio_enabled[source] = False
+            action = getattr(self, "audio_actions", {}).get(source)
+            if action is not None:
+                action.blockSignals(True)
+                action.setChecked(False)
+                action.blockSignals(False)
+            self._notice = ("MICROFONE INDISPONÍVEL" if source == "microphone"
+                            else "ÁUDIO DO SISTEMA INDISPONÍVEL")
+            self._notice_until = now + 5.0
+            self._update_tray_icon()
+
+        self._audio_metrics = self.audio_service.metrics_snapshot()
+        microphone = self._audio_metrics.get("microphone", AudioMetrics())
+        loopback = self._audio_metrics.get("loopback", AudioMetrics())
+        self._audio_music_active = bool(
+            self._audio_enabled.get("loopback") and loopback.music_active)
+        self._audio_music_level = max(0.0, min(1.0, loopback.level / 0.15))
+        self._audio_bpm = (loopback.bpm if self._audio_music_active else 0.0)
+        self._audio_beat_phase = (loopback.beat_phase
+                                  if self._audio_music_active else 0.0)
+
+        voice_active = bool(
+            self._audio_enabled.get("microphone") and microphone.voice_active)
+        if voice_active:
+            self._audio_last_voice_at = now
+            if self._audio_voice_since is None:
+                self._audio_voice_since = now
+            min_s = max(0.1, float(self.audio_config.get(
+                "voice_sustain_s", 0.65)))
+            release_s = max(0.5, float(self.audio_config.get(
+                "voice_release_s", 2.5)))
+            if (not self._audio_voice_triggered
+                    and now - self._audio_voice_since >= min_s):
+                hour = 3600.0
+                while self._audio_voice_events and now - self._audio_voice_events[0] > hour:
+                    self._audio_voice_events.popleft()
+                cooldown = max(0.0, float(self.audio_config.get(
+                    "voice_cooldown_s", 8.0)))
+                max_per_hour = max(0, int(self.audio_config.get(
+                    "voice_gestures_per_hour", 24)))
+                if (len(self._audio_voice_events) < max_per_hour
+                        and now - self._audio_voice_last_trigger >= cooldown):
+                    self._audio_voice_events.append(now)
+                    self._audio_voice_last_trigger = now
+                    if self._is_floating and self.engine.autonomy_enabled:
+                        self._audio_listening_until = now + release_s
+                self._audio_voice_triggered = True
+        else:
+            release_s = max(0.5, float(self.audio_config.get(
+                "voice_release_s", 2.5)))
+            if now - self._audio_last_voice_at >= release_s:
+                self._audio_voice_since = None
+                self._audio_voice_triggered = False
+                self._audio_listening_until = 0.0
+
+        self._update_canvas_audio_status()
 
     def _start_global_panel_hotkey(self) -> None:
         if not self._pet_mode_enabled:
@@ -994,7 +1144,7 @@ class PetWindow(QMainWindow):
         costs = self.desktop_motion_config.get("stamina", {})
         if self._desktop_animation is not None:
             rate = float(costs.get("run_cost_per_s", 0.025))
-        elif self._desktop_behavior == "dance":
+        elif self._desktop_behavior in {"dance", "audio_dance"}:
             rate = float(costs.get("dance_cost_per_s", 0.045))
         elif self._desktop_behavior == "rest":
             rate = -float(costs.get("rest_recovery_per_s", 0.12))
@@ -1017,6 +1167,47 @@ class PetWindow(QMainWindow):
                 or self._is_fullscreen_foreground()):
             self._stop_desktop_motion()
             return
+        if now < self._audio_listening_until:
+            if self._desktop_animation is not None:
+                self._stop_desktop_motion()
+            self._desktop_behavior = "listen"
+            self._desktop_behavior_until = self._audio_listening_until
+            self.canvas.set_behavior_action("listen")
+            return
+        if self._desktop_behavior == "listen":
+            self._desktop_behavior = None
+            self.canvas.set_behavior_action(None)
+        if self._desktop_behavior == "audio_dance" and not self._audio_music_active:
+            self._desktop_behavior = None
+            self._desktop_behavior_until = 0.0
+            self.canvas.set_behavior_action(None)
+        if (self._audio_music_active and self._pet_stamina >= float(
+                self.audio_config.get("dance_min_stamina", 0.35))
+                and now >= self._audio_dance_cooldown_until):
+            hour = 3600.0
+            while self._audio_dance_events and now - self._audio_dance_events[0] > hour:
+                self._audio_dance_events.popleft()
+            max_per_hour = max(0, int(self.audio_config.get(
+                "dance_sessions_per_hour", 24)))
+            if len(self._audio_dance_events) < max_per_hour:
+                if self._desktop_animation is not None:
+                    self._stop_desktop_motion()
+                self._audio_dance_events.append(now)
+                duration = max(1.0, min(12.0, float(self.audio_config.get(
+                    "dance_chunk_s", 7.0))))
+                self._desktop_behavior = "audio_dance"
+                self._desktop_behavior_until = now + duration
+                if self._audio_music_level >= 0.50:
+                    dance = "dance_hop" if state.emotion == "alegre" else "dance_sway"
+                elif state.stress >= 0.62:
+                    dance = "dance_sway"
+                else:
+                    dance = "dance_head"
+                self.canvas.set_behavior_action(dance)
+                self._audio_dance_cooldown_until = (
+                    self._desktop_behavior_until + max(0.5, float(
+                        self.audio_config.get("dance_pause_s", 1.0))))
+                return
         if self._desktop_animation is not None:
             self._sync_world_travel_pose()
             return
@@ -1700,6 +1891,27 @@ class PetWindow(QMainWindow):
             "Usa somente o retângulo da janela em foco; nunca lê título, texto ou conteúdo.")
         self.window_geometry_action.toggled.connect(
             self._set_window_geometry_enabled)
+        self.sensor_menu.addSeparator()
+        self.audio_actions = {}
+        labels = {
+            "microphone": "Ouvir microfone (sem transcrição)",
+            "loopback": "Ouvir música do sistema (sem título/artista)",
+        }
+        privacy_keys = {"microphone": "microphone",
+                        "loopback": "system_loopback"}
+        for source, label in labels.items():
+            action = self.sensor_menu.addAction(label)
+            action.setCheckable(True)
+            action.setToolTip(
+                "Desligado por padrão. Processa janelas curtas em memória; "
+                "não grava, envia nem transcreve áudio.")
+            enabled = bool(self.audio_privacy.get(privacy_keys[source], False))
+            action.setChecked(enabled)
+            action.toggled.connect(
+                lambda checked, key=source: self._set_audio_enabled(key, checked))
+            self.audio_actions[source] = action
+            if enabled:
+                self._set_audio_enabled(source, True)
 
     def _poll_window_geometry(self) -> None:
         snapshot = self._window_geometry_observer.poll()
@@ -1925,6 +2137,7 @@ class PetWindow(QMainWindow):
                 self._notice_until = time.monotonic() + 5.0
 
         now = time.monotonic()
+        self._update_audio_state(now)
         self._frame_count += 1
         if now - self._fps_started >= 1.0:
             self._fps = self._frame_count
@@ -1965,6 +2178,16 @@ class PetWindow(QMainWindow):
         enabled = [name for name, action in self.sensor_actions.items() if action.isChecked()]
         if self._window_geometry_enabled:
             enabled.append("janela-geometria")
+        if self._audio_enabled.get("microphone"):
+            enabled.append("microfone")
+        if self._audio_enabled.get("loopback"):
+            loopback_status = self.audio_service.status_snapshot().get("loopback")
+            if loopback_status == "fallback_active":
+                enabled.append("música (estado Windows)")
+            elif self._audio_music_active and self._audio_bpm > 0.0:
+                enabled.append(f"música {round(self._audio_bpm)} BPM")
+            else:
+                enabled.append("áudio do sistema")
         sensor_text = "SENSORES: " + " · ".join(enabled) if enabled else "SENSORES DESLIGADOS"
         if paused:
             self.status_label.setText(f"SIMULAÇÃO PAUSADA · TICK {health['tick']}")
@@ -2031,6 +2254,7 @@ class PetWindow(QMainWindow):
         self.frame_timer.stop()
         if hasattr(self, "_window_geometry_timer"):
             self._window_geometry_timer.stop()
+        self.audio_service.stop_all()
         self._stop_desktop_motion()
         self._tray_icon.hide()
         self.hide()

@@ -79,6 +79,14 @@ class PixelPetWidget(QWidget):
         self._world_direction = 1
         self._world_stride_phase = 0.0
         self._behavior_action: str | None = None
+        self._audio_microphone_enabled = False
+        self._audio_loopback_enabled = False
+        self._audio_voice_active = False
+        self._audio_music_active = False
+        self._audio_bpm = 0.0
+        self._audio_beat_phase = 0.0
+        self._audio_level = 0.0
+        self._audio_badge_rects: list[QRect] = []
         self._current_source: tuple[str, QRect] | None = None
         self._current_frame_entry: dict[str, object] = {}
         self._current_destination = QRect()
@@ -165,6 +173,25 @@ class PixelPetWidget(QWidget):
                           "peek", "dance_sway", "dance_hop", "dance_head"}:
             action = None
         self._behavior_action = action
+        self.update()
+
+    def set_audio_status(self, *, microphone_enabled: bool = False,
+                         loopback_enabled: bool = False,
+                         voice_active: bool = False,
+                         music_active: bool = False, bpm: float = 0.0,
+                         beat_phase: float = 0.0, level: float = 0.0) -> None:
+        previous = (self._audio_microphone_enabled, self._audio_loopback_enabled)
+        self._audio_microphone_enabled = bool(microphone_enabled)
+        self._audio_loopback_enabled = bool(loopback_enabled)
+        self._audio_voice_active = bool(voice_active)
+        self._audio_music_active = bool(music_active)
+        self._audio_bpm = max(0.0, float(bpm))
+        self._audio_beat_phase = max(0.0, min(1.0, float(beat_phase)))
+        self._audio_level = max(0.0, min(1.0, float(level)))
+        if previous != (self._audio_microphone_enabled,
+                        self._audio_loopback_enabled):
+            self._mask_geometry_key = None
+            self.spriteMaskChanged.emit()
         self.update()
 
     @staticmethod
@@ -341,6 +368,7 @@ class PixelPetWidget(QWidget):
             self._draw_pixel_heart(painter, destination, now)
         if self.mode == "hud":
             self._draw_hud(painter, bounds, state, local_time)
+        self._draw_audio_badges(painter, bounds)
         if self.mode == "pet" and self._mask_geometry_key != previous_mask_key:
             self.spriteMaskChanged.emit()
         self.rendered_frames += 1
@@ -354,6 +382,33 @@ class PixelPetWidget(QWidget):
         # render buffer is nearest-neighbour enlarged, so this integer factor
         # retains crisp pixels without oversized panel sprites.
         return max(1, min(8, round(bounds.height() * 0.20 / 48)))
+
+    def _draw_audio_badges(self, painter: QPainter, bounds: QRect) -> None:
+        self._audio_badge_rects = []
+        if self.mode != "pet" or not (self._audio_microphone_enabled
+                                       or self._audio_loopback_enabled):
+            return
+        sources = []
+        if self._audio_microphone_enabled:
+            sources.append(("MIC", QColor("#ff6371"), self._audio_voice_active))
+        if self._audio_loopback_enabled:
+            sources.append(("♪", QColor("#ffd166"), self._audio_music_active))
+        badge_width, badge_height, gap = 32, 22, 5
+        total_width = badge_width * len(sources) + gap * (len(sources) - 1)
+        left = bounds.right() - total_width - 7
+        top = bounds.top() + 7
+        painter.save()
+        painter.setFont(QFont("Segoe UI", 8, QFont.Weight.Bold))
+        for index, (label, accent, detected) in enumerate(sources):
+            rect = QRect(left + index * (badge_width + gap), top,
+                         badge_width, badge_height)
+            self._audio_badge_rects.append(rect)
+            painter.setPen(QPen(accent, 2 if detected else 1))
+            painter.setBrush(QColor(7, 19, 27, 230))
+            painter.drawRoundedRect(rect, 4, 4)
+            painter.setPen(accent)
+            painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, label)
+        painter.restore()
 
     def _draw_scene(self, painter: QPainter, bounds: QRect, now: float,
                     local_time: datetime) -> None:
@@ -515,15 +570,21 @@ class PixelPetWidget(QWidget):
                          int(motion.progress * len(candidates)))
             index = candidates[offset]
         elif mode == "time_loop":
-            durations = [max(1, int(frames[position].get("duration_ms", 100)))
-                         for position in candidates]
-            elapsed = int(max(0.0, now) * 1000.0) % sum(durations)
-            offset = 0
-            for offset, duration in enumerate(durations):
-                if elapsed < duration:
-                    break
-                elapsed -= duration
-            index = candidates[offset]
+            if (self._audio_music_active and self._audio_bpm > 0.0
+                    and group.startswith("danca_")):
+                offset = min(len(candidates) - 1,
+                             int(self._audio_beat_phase * len(candidates)))
+                index = candidates[offset]
+            else:
+                durations = [max(1, int(frames[position].get("duration_ms", 100)))
+                             for position in candidates]
+                elapsed = int(max(0.0, now) * 1000.0) % sum(durations)
+                offset = 0
+                for offset, duration in enumerate(durations):
+                    if elapsed < duration:
+                        break
+                    elapsed -= duration
+                index = candidates[offset]
         elif mode == "stride":
             index = candidates[PetMotionController.frame_index(
                 motion, len(candidates))]
@@ -655,7 +716,10 @@ class PixelPetWidget(QWidget):
         painter.end()
         alpha_mask = image.createAlphaMask()
         bitmap = QBitmap.fromImage(alpha_mask)
-        return QRegion(bitmap)
+        region = QRegion(bitmap)
+        for badge_rect in self._audio_badge_rects:
+            region = region.united(QRegion(badge_rect))
+        return region
 
     def current_frame(self) -> QImage:
         return self.render_frame()

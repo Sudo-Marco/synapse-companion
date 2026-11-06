@@ -104,6 +104,22 @@ visual:
   palette: cyan_amber_white
   scene_time: auto       # auto, noite, dia ou entardecer
   eye_design: A          # A (íris redonda) ou B (olho alongado)
+audio:
+  sample_rate: 11025
+  block_size: 512
+  voice_rms_min: 0.012
+  music_rms_min: 0.008
+  band_ratio_min: 0.35
+  modulation_min: 0.045
+  flux_min: 0.035
+  voice_sustain_s: 0.65
+  voice_release_s: 2.5
+  voice_cooldown_s: 8.0
+  voice_gestures_per_hour: 24
+  dance_min_stamina: 0.35
+  dance_sessions_per_hour: 24
+  dance_chunk_s: 7.0
+  dance_pause_s: 1.0
 context_projections:
   max_contexts: 8
   similarity_threshold: 0.85
@@ -208,6 +224,8 @@ privacy:
     clipboard: false
     system_stats: false
     window_geometry: false
+    microphone: false
+    system_loopback: false
 tools:
   max_automatic_per_hour: 6
   failure_cooldown_s: 300
