@@ -43,7 +43,14 @@ Issues = "https://github.com/Sudo-Marco/synapse-companion/issues"
 where = ["src"]
 
 [tool.setuptools.package-data]
-synapse_pet = ["ui/shaders/*.frag"]
+synapse_pet = [
+    "ui/shaders/*.frag",
+    "assets/pixel/*.png",
+    "assets/pixel/*.json",
+    "assets/pixel/README.md",
+    "assets/fonts/silkscreen/*.ttf",
+    "assets/fonts/silkscreen/OFL.txt",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

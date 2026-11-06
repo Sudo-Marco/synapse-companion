@@ -138,7 +138,7 @@ def main() -> None:
     parser.add_argument("--seconds", type=float, default=3.0,
                         help="duration per mode and activity phase")
     parser.add_argument("--renderer", choices=("ascii", "cpu", "auto"), default="ascii")
-    parser.add_argument("--render-style", choices=("spectral", "ascii", "vector"),
+    parser.add_argument("--render-style", choices=("pixel", "spectral", "ascii", "vector"),
                         default=None,
                         help="estilo do olho; por padrão usa pet.render_style do YAML")
     parser.add_argument("--size", type=parse_size, default=(1000, 600),
@@ -152,7 +152,7 @@ def main() -> None:
     config = yaml.safe_load((ROOT / "configs" / "default.yaml").read_text(encoding="utf-8"))
     visual = config.get("visual", {})
     pet = config.get("pet", {})
-    render_style = args.render_style or str(pet.get("render_style", "spectral"))
+    render_style = args.render_style or str(pet.get("render_style", "pixel"))
     window = QMainWindow()
     canvas = EyeCanvas(args.renderer,
                        int(visual.get("width", 800)), int(visual.get("height", 450)),
@@ -163,7 +163,9 @@ def main() -> None:
                        ascii_max_columns=int(visual.get("ascii_max_columns", 170)),
                        ascii_max_rows=int(visual.get("ascii_max_rows", 96)),
                        render_style=render_style,
-                       spectral_config=pet.get("spectral", {}))
+                       spectral_config=pet.get("spectral", {}),
+                       depth_in_pet_mode=bool(pet.get("depth_in_pet_mode", False)),
+                       seed=int(config.get("seed", 41)))
     window.setCentralWidget(canvas)
     window.resize(*args.size)
     window.setWindowFlags(Qt.WindowType.Window | Qt.WindowType.WindowStaysOnTopHint)

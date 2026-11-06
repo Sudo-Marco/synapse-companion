@@ -5,8 +5,8 @@ from pathlib import Path
 import time
 
 import numpy as np
-from PySide6.QtCore import QPointF, Qt, QTimer, Signal
-from PySide6.QtGui import QImage, QPainter
+from PySide6.QtCore import QPointF, QSize, Qt, QTimer, Signal
+from PySide6.QtGui import QImage, QPainter, QRegion
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtWidgets import QStackedWidget, QWidget
 
@@ -302,22 +302,42 @@ class EyeCanvas(QWidget):
                  affection_drag_min_s: float = 1.0,
                  compact: bool = False,
                  render_style: str = "spectral",
-                 spectral_config: dict | None = None) -> None:
+                 spectral_config: dict | None = None,
+                 seed: int = 41,
+                 depth_in_pet_mode: bool = False) -> None:
         super().__init__(parent)
         self.renderer_config = renderer.lower()
-        self.render_style = (render_style if render_style in {"spectral", "ascii", "vector"}
+        self.render_style = (render_style if render_style in {"pixel", "spectral", "ascii", "vector"}
                              else "spectral")
         spectral_config = spectral_config or {}
         self._state = VisualState()
         self._mode = "ascii"
         self._stack = QStackedWidget(self)
         self._ascii_eye: AnimatedAsciiEyeWidget | None = None
+        self._pixel: QWidget | None = None
         self._cpu: CpuEyeWidget | AnimatedAsciiEyeWidget | None = None
         self._gl: OpenGLEyeWidget | None = None
         self._fallback_timer: QTimer | None = None
         use_direct = (compact or self.render_style in {"spectral", "vector"}
                       or self.renderer_config in {"ascii", "cpu"})
-        if use_direct:
+        if self.render_style == "pixel":
+            from .pixel_renderer import PixelPetWidget
+
+            self._pixel = PixelPetWidget(
+                scene_time=scene_time, compact=compact,
+                affection_drag_min_s=affection_drag_min_s,
+                seed=seed, depth_in_pet_mode=depth_in_pet_mode,
+                parent=self._stack)
+            self._cpu = self._pixel
+            self._pixel.petRequested.connect(self.petRequested.emit)
+            self._pixel.panelRequested.connect(self.panelRequested.emit)
+            self._pixel.activityDetected.connect(self.activityDetected.emit)
+            self._pixel.animationStarted.connect(self.animationStarted.emit)
+            self._stack.addWidget(self._pixel)
+            self._stack.setCurrentWidget(self._pixel)
+            self.renderer_name = "Piu pixel art · QPainter nearest-neighbour"
+            self.rendererChanged.emit(self.renderer_name)
+        elif use_direct:
             self._ascii_eye = AnimatedAsciiEyeWidget(
                 ascii_columns, ascii_rows, scene_time, eye_design, max_particles,
                 max_columns=ascii_max_columns, max_rows=ascii_max_rows,
@@ -341,7 +361,7 @@ class EyeCanvas(QWidget):
                 affection_drag_min_s=affection_drag_min_s)
             self._cpu.petRequested.connect(self.petRequested.emit)
             self._stack.addWidget(self._cpu)
-        if self._ascii_eye is None and self.renderer_config != "cpu":
+        if self._pixel is None and self._ascii_eye is None and self.renderer_config != "cpu":
             self._gl = OpenGLEyeWidget(width, height, ascii_columns, ascii_rows,
                                        palette, max_particles,
                                        affection_drag_min_s=affection_drag_min_s)
@@ -356,7 +376,7 @@ class EyeCanvas(QWidget):
             self._fallback_timer.timeout.connect(self._check_gl)
             self._fallback_timer.start(900)
             self.renderer_name = "OpenGL 3.3 inicializando"
-        elif self._ascii_eye is None:
+        elif self._pixel is None and self._ascii_eye is None:
             self.renderer_name = "QPainter CPU"
             self.rendererChanged.emit(self.renderer_name)
 
@@ -372,7 +392,8 @@ class EyeCanvas(QWidget):
 
     @property
     def attention_animating(self) -> bool:
-        return bool(self._ascii_eye and self._ascii_eye.attention_animating)
+        return bool((self._ascii_eye and self._ascii_eye.attention_animating)
+                    or (self._pixel and self._pixel.attention_animating))
 
     def set_mode(self, mode: str) -> None:
         self._mode = mode
@@ -391,6 +412,18 @@ class EyeCanvas(QWidget):
         if self._gl is not None:
             self._gl.set_state(state)
 
+    def request_move(self, target: str | tuple[float, float],
+                     style: str = "walk") -> bool:
+        if self._pixel is None:
+            return False
+        return self._pixel.request_move(target, style)
+
+    def set_motion_blocked(self, *, dragging: bool = False,
+                           proposal_pending: bool = False) -> None:
+        if self._pixel is not None:
+            self._pixel.set_motion_blocked(
+                dragging=dragging, proposal_pending=proposal_pending)
+
     def _check_gl(self) -> None:
         if self._gl is not None and not self._gl.isValid():
             self._activate_cpu("QOpenGLWidget sem contexto válido")
@@ -408,6 +441,8 @@ class EyeCanvas(QWidget):
 
     def current_frame(self) -> QImage:
         widget = self._stack.currentWidget()
+        if self._pixel is not None and widget is self._pixel:
+            return self._pixel.current_frame()
         if widget is self._ascii_eye:
             return self._ascii_eye.current_frame()
         if isinstance(widget, OpenGLEyeWidget):
@@ -425,3 +460,8 @@ class EyeCanvas(QWidget):
     @property
     def current_renderer(self) -> str:
         return self.renderer_name
+
+    def sprite_mask(self, size: QSize | None = None) -> QRegion:
+        if self._pixel is not None:
+            return self._pixel.sprite_mask(size)
+        return QRegion()

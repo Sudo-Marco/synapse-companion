@@ -2,7 +2,8 @@ seed: 41
 renderer: ascii
 pet:
   mode: floating          # floating (somente o olho) ou window (painel ao iniciar)
-  render_style: spectral  # spectral (QPainter), ascii ou vector
+  render_style: pixel     # pixel (Piu), spectral, ascii ou vector
+  depth_in_pet_mode: false
   spectral:
     glow_strength: 0.82   # 0..1
     rune_count: 10        # 0..12; reduz automaticamente em tamanhos pequenos
@@ -57,6 +58,10 @@ network:
   tick_idle_ms: 250
   background_noise: 0.015
   synaptic_gain: 1.7
+  # Experimental lateral competition among tool outputs; disabled to preserve
+  # the established dynamics and deterministic reference by default.
+  tool_output_inhibition: false
+  tool_output_inhibition_strength: 0.35
   allow_neuron_growth_migration: false
 plasticity:
   learning_rate: 0.0005

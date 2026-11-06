@@ -65,6 +65,27 @@ QMenu {{ background: #111a22; color: {TEXT}; border: 1px solid {LINE}; }}
 QMenu::item:selected {{ background: #1e3e48; color: {CYAN}; }}
 """
 
+PIXEL_STYLESHEET = """
+QMainWindow, QWidget#Root { background: #182542; color: #fff3a0; }
+QFrame#Header, QFrame#Card, QFrame#Proposal {
+  background: #293b60; border: 2px solid #fff3a0; }
+QLabel { color: #f7f1d9; font-family: 'Silkscreen'; }
+QLabel#Muted { color: #c3d6cb; }
+QPushButton { background: #354a78; color: #fff3a0; border: 2px solid #fff3a0;
+  border-radius: 0; padding: 8px 10px; font: 700 9pt 'Silkscreen'; }
+QPushButton:hover { background: #485b82; border-color: #ffffff; }
+QPushButton#Love { background: #405a69; color: #f7f1d9; }
+QPushButton#Love:hover { background: #527a75; }
+QPushButton#Negative { background: #59465a; color: #ffe0c6; }
+QPushButton#Negative:hover { background: #735b83; }
+QPushButton#Gold { color: #ffd93b; }
+QProgressBar { background: #192b54; border: 2px solid #fff3a0;
+  height: 11px; text-align: center; }
+QProgressBar::chunk { background: #ffd93b; }
+QMenu { background: #293b60; color: #fff3a0; border: 2px solid #fff3a0; }
+QMenu::item:selected { background: #485b82; color: #ffffff; }
+"""
+
 
 def configure_opengl() -> None:
     fmt = QSurfaceFormat()
@@ -304,6 +325,8 @@ class PetWindow(QMainWindow):
         self.pet_config = self.config.get("pet", {})
         self.teleport_config = self.config.get("teleport", {})
         self.pet_motion_config = self.config.get("pet_motion", {})
+        self._pixel_theme = str(self.pet_config.get("render_style", "pixel")).lower() == "pixel"
+        self._window_stylesheet = PIXEL_STYLESHEET if self._pixel_theme else STYLESHEET
         self.autonomy_config = self.config.get("autonomy", {})
         self.autonomy = AutonomyController(self.autonomy_config)
         self._postit_store = PostItStore(engine.data_dir / "postits.sqlite3")
@@ -351,7 +374,7 @@ class PetWindow(QMainWindow):
         self.setWindowFlags(window_flags)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground,
                           self._pet_mode_enabled)
-        self.setStyleSheet(STYLESHEET)
+        self.setStyleSheet(self._window_stylesheet)
         self.resize(self._panel_size[0], self._panel_size[1])
         self.last_state = VisualState()
         self.render_mode = "ascii"
@@ -396,8 +419,10 @@ class PetWindow(QMainWindow):
             affection_drag_min_s=float(self.interaction_config.get(
                 "affection_drag_min_s", 1.0)),
             compact=self._pet_mode_enabled,
-            render_style=str(pet_config.get("render_style", "spectral")),
-            spectral_config=pet_config.get("spectral", {}))
+            render_style=str(pet_config.get("render_style", "pixel")),
+            spectral_config=pet_config.get("spectral", {}),
+            seed=int(self.config.get("seed", 41)),
+            depth_in_pet_mode=bool(pet_config.get("depth_in_pet_mode", False)))
         layout.addWidget(self.canvas, 1)
         self.canvas.petRequested.connect(self._give_affection)
         self.canvas.panelRequested.connect(self._show_panel)
@@ -474,6 +499,8 @@ class PetWindow(QMainWindow):
         self.sensor_button.setObjectName("Gold")
         self.sensor_button.clicked.connect(self._show_sensor_menu)
         self.mode_button = QPushButton("EXPRESSÕES · ASCII")
+        if self._pixel_theme:
+            self.mode_button.setText("VISUAL · CENÁRIO")
         self.mode_button.setToolTip(
             "Alterna a arte ASCII animada e o painel HUD. Atalho: M.")
         self.mode_button.clicked.connect(self._cycle_mode)
@@ -655,7 +682,7 @@ class PetWindow(QMainWindow):
         for child in self.canvas.findChildren(QWidget):
             child.removeEventFilter(self)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
-        self.setStyleSheet(STYLESHEET)
+        self.setStyleSheet(self._window_stylesheet)
         self._root_widget.setStyleSheet("")
         self._root_layout.setContentsMargins(12, 12, 12, 10)
         self._root_layout.setSpacing(9)
@@ -713,6 +740,9 @@ class PetWindow(QMainWindow):
         self.raise_()
 
     def _pet_mask(self) -> QRegion:
+        sprite_mask = self.canvas.sprite_mask(self.size())
+        if not sprite_mask.isEmpty():
+            return sprite_mask
         width, height = self.width(), self.height()
         path = QPainterPath()
         path.moveTo(width * 0.025, height * 0.50)
@@ -1431,9 +1461,15 @@ class PetWindow(QMainWindow):
     def _set_mode(self, mode: str) -> None:
         self.render_mode = mode
         self.canvas.set_mode(mode)
-        title = dict(self.MODES).get(mode, "REALISTA")
+        title = (("CENÁRIO" if mode == "ascii" else "HUD") if self._pixel_theme
+                 else dict(self.MODES).get(mode, "REALISTA"))
         self.mode_button.setText(f"EXPRESSÕES · {title}")
         self.last_interaction = time.monotonic()
+
+    def request_move(self, target: str | tuple[float, float],
+                     style: str = "walk") -> bool:
+        """Request a data-driven scene movement from autonomy or a UI action."""
+        return self.canvas.request_move(target, style)
 
     def _toggle_fullscreen(self) -> None:
         if self.isFullScreen():
@@ -1509,6 +1545,12 @@ class PetWindow(QMainWindow):
                         QSystemTrayIcon.MessageIcon.Information, 4000)
             else:
                 self.proposal.show()
+        proposal_pending = bool(
+            self._proposal_name
+            and self.engine.proposal_is_pending(self._proposal_name))
+        self.canvas.set_motion_blocked(
+            dragging=self._pet_drag_offset is not None,
+            proposal_pending=proposal_pending)
         while True:
             try:
                 result = self.engine.action_results.get_nowait()

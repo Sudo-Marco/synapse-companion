@@ -21,12 +21,13 @@ from synapse_pet.ui.qt_app import PetWindow, ensure_application
 from synapse_pet.ui.spectral_eye import SpectralEyeRenderer
 
 
-def test_spectral_style_is_default_and_documented_in_config():
+def test_pixel_style_is_default_and_legacy_styles_remain_documented():
     config_path = Path(__file__).resolve().parents[1] / "configs" / "default.yaml"
     config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     pet = config["pet"]
 
-    assert pet["render_style"] == "spectral"
+    assert pet["render_style"] == "pixel"
+    assert pet["depth_in_pet_mode"] is False
     assert 0 <= pet["spectral"]["glow_strength"] <= 1
     assert 0 <= pet["spectral"]["rune_count"] <= 12
     assert 0 <= pet["spectral"]["smoke_density"] <= 1
@@ -136,8 +137,8 @@ def test_floating_pet_switches_to_panel_and_back(tmp_path, monkeypatch):
     engine.config["pet"].update({"mode": "floating", "anchor": "bottom_right"})
     window = PetWindow(engine)
     try:
-        assert window.canvas.render_style == "spectral"
-        assert window.canvas._ascii_eye.render_style == "spectral"
+        assert window.canvas.render_style == "pixel"
+        assert window.canvas._pixel is not None
         window._enter_floating_mode()
         assert window._is_floating
         assert window.canvas.mode == "pet"
