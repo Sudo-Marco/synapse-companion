@@ -14,6 +14,8 @@ from PySide6.QtGui import (QBitmap, QColor, QFont, QFontDatabase, QImage,
 from PySide6.QtWidgets import QWidget
 
 from ..runtime.visual_state import StateAnimator, VisualState
+from .day_cycle import (moon_phase, moon_position, period_name, scene_palette,
+                        sun_position, sun_times)
 from .interaction import AffectionDragTracker
 from .pet_motion import MotionFrame, PetMotionController
 
@@ -37,6 +39,8 @@ class PixelPetWidget(QWidget):
                  affection_drag_min_s: float = 1.0, seed: int = 41,
                  depth_in_pet_mode: bool = False,
                  depth_config: dict[str, object] | None = None,
+                 day_cycle_config: dict[str, object] | None = None,
+                 weather_config: dict[str, object] | None = None,
                  parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.compact = bool(compact)
@@ -47,6 +51,13 @@ class PixelPetWidget(QWidget):
         self.depth_min_scale = max(0.2, min(
             1.0, float(depth_config.get("min_scale", 0.42))))
         self.scene_time = str(scene_time).strip().lower()
+        self.day_cycle_config = dict(day_cycle_config or {})
+        weather_config = weather_config or {}
+        self.weather_mode = str(weather_config.get("mode", "none")).strip().lower()
+        if self.weather_mode not in {"none", "rain", "fog", "wind"}:
+            self.weather_mode = "none"
+        self.weather_density = max(0.0, min(
+            1.0, float(weather_config.get("density", 0.22))))
         self.mode = "pet" if compact else "ascii"
         self.rendered_frames = 0
         self.current_renderer = "Piu pixel art · QPainter nearest-neighbour"
@@ -195,27 +206,13 @@ class PixelPetWidget(QWidget):
         self.update()
 
     @staticmethod
-    def _clock_palette(local_time: datetime, setting: str) -> tuple[QColor, QColor, QColor, QColor, bool]:
-        hour = local_time.hour + local_time.minute / 60.0
-        if setting in {"dia", "day"}:
-            phase = "day"
-        elif setting in {"entardecer", "dusk", "sunset"}:
-            phase = "dusk"
-        elif setting in {"noite", "night"}:
-            phase = "night"
-        elif 6.0 <= hour < 17.5:
-            phase = "day"
-        elif 17.5 <= hour < 20.0:
-            phase = "dusk"
-        else:
-            phase = "night"
-        palettes = {
-            "day": ("#9bd8e8", "#d9f3d0", "#69aa62", "#42784c", False),
-            "dusk": ("#e79b86", "#f4c27d", "#735b83", "#4d486e", False),
-            "night": ("#192b54", "#354a78", "#34466d", "#253557", True),
-        }
-        sky, horizon, far, near, night = palettes[phase]
-        return QColor(sky), QColor(horizon), QColor(far), QColor(near), night
+    def _clock_palette(local_time: datetime, setting: str,
+                       day_cycle_config: dict | None = None
+                       ) -> tuple[QColor, QColor, QColor, QColor, float]:
+        palette = scene_palette(local_time, setting, day_cycle_config)
+        return (QColor(palette.sky), QColor(palette.horizon),
+                QColor(palette.far), QColor(palette.near),
+                palette.night_weight)
 
     def render_frame(self, now: float | None = None,
                      local_time: datetime | None = None) -> QImage:
@@ -345,7 +342,7 @@ class PixelPetWidget(QWidget):
             destination.height(), self._current_mirror)
 
         if self.mode != "pet":
-            self._draw_shadow(painter, destination, motion)
+            self._draw_shadow(painter, destination, motion, local_time)
         painter.save()
         if self._current_mirror:
             painter.translate(destination.left() * 2 + destination.width(), 0)
@@ -361,6 +358,8 @@ class PixelPetWidget(QWidget):
                 painter.fillRect(destination.left() + px * art_scale,
                                  destination.top() + py * art_scale,
                                  art_scale, art_scale, QColor(color))
+        if self.mode == "pet":
+            self._draw_pet_tint(painter, destination, local_time)
         self._draw_snn_sparks(painter, destination, state, now)
         if self.mode != "pet":
             self._draw_depth_occlusion(painter, bounds, motion)
@@ -412,56 +411,77 @@ class PixelPetWidget(QWidget):
 
     def _draw_scene(self, painter: QPainter, bounds: QRect, now: float,
                     local_time: datetime) -> None:
-        sky, horizon, far, near, night = self._clock_palette(
-            local_time, self.scene_time)
+        sky, horizon, far, near, night_weight = self._clock_palette(
+            local_time, self.scene_time, self.day_cycle_config)
+        night = night_weight >= 0.55
         w, h = bounds.width(), bounds.height()
-        key = (w, h, sky.rgba(), horizon.rgba(), far.rgba(), near.rgba())
+        palette_key = tuple(tuple((component // 4) * 4 for component in
+                                  (color.red(), color.green(), color.blue()))
+                            for color in (sky, horizon, far, near))
+        key = (w, h, palette_key)
         if self._scene_cache is None or self._scene_cache_key != key:
             self._scene_cache = QImage(w, h, QImage.Format.Format_ARGB32_Premultiplied)
             self._scene_cache.fill(sky)
             background = QPainter(self._scene_cache)
             background.setRenderHint(QPainter.RenderHint.Antialiasing, False)
-            self._draw_static_scene(background, w, h, sky, horizon, far, near, night)
+            self._draw_static_scene(background, w, h, sky, horizon, far, near,
+                                    night_weight)
             background.end()
             self._scene_cache_key = key
         painter.drawImage(bounds.topLeft(), self._scene_cache)
 
-        # Only clouds and fireflies move; landscape and solar elements are cached.
-        cloud_x = int((now * 8.0) % max(1, w // 3)) + int(w * 0.08)
+        # Solar bodies and weather stay local, deterministic and network-free.
+        self._draw_solar_objects(painter, bounds, local_time, sky,
+                                 night_weight, now)
+        cloud_speed = 18.0 if self.weather_mode == "wind" else 8.0
+        cloud_x = int((now * cloud_speed) % max(1, w // 3)) + int(w * 0.08)
         cloud = QColor("#d6eff0" if not night else "#62779a")
-        for cx, cy in ((cloud_x, int(h * 0.25)),
-                       (int(w * 0.72) - int((now * 4) % max(1, w // 8)),
-                        int(h * 0.39))):
+        for cx, cy in ((bounds.left() + cloud_x, bounds.top() + int(h * 0.25)),
+                       (bounds.left() + int(w * 0.72)
+                        - int((now * cloud_speed * 0.5) % max(1, w // 8)),
+                        bounds.top() + int(h * 0.39))):
             painter.fillRect(cx + 10, cy, 28, 7, cloud)
             painter.fillRect(cx + 18, cy - 5, 14, 5, cloud)
             painter.fillRect(cx + 4, cy + 7, 40, 4, cloud)
-        if night:
+        self._draw_weather(painter, bounds, now)
+        if night_weight > 0.12:
+            alpha = round(180 * night_weight)
             for index in range(5):
-                fx = (index * 173 + int(now * (7 + index))) % max(1, w)
-                fy = int(h * (0.64 + 0.08 * math.sin(now * 1.3 + index)))
-                painter.fillRect(fx, fy, 3, 3,
-                                 QColor("#d7e990" if index % 2 else "#a5ded1"))
+                fx = bounds.left() + (index * 173 + int(now * (7 + index))) % max(1, w)
+                fy = bounds.top() + int(h * (0.64 + 0.08 * math.sin(now * 1.3 + index)))
+                firefly = QColor("#d7e990" if index % 2 else "#a5ded1")
+                firefly.setAlpha(alpha)
+                painter.fillRect(fx, fy, 3, 3, firefly)
+        elif period_name(local_time, self.day_cycle_config) in {"manha", "tarde"}:
+            for index in range(3):
+                phase = now * 1.8 + index * 2.1
+                bx = bounds.left() + int(w * (0.18 + 0.27 * ((now * 0.025 + index * 0.31) % 1.0)))
+                by = bounds.top() + int(h * (0.42 + 0.07 * math.sin(phase)))
+                self._draw_butterfly(painter, bx, by, phase)
 
     @staticmethod
     def _draw_static_scene(painter: QPainter, w: int, h: int,
                            sky: QColor, horizon: QColor, far: QColor,
-                           near: QColor, night: bool) -> None:
+                           near: QColor, night_weight: float) -> None:
+        night = night_weight >= 0.55
         painter.fillRect(0, int(h * 0.31), w, max(1, int(h * 0.27)), horizon)
-        # Banded sky and pixel sun/moon keep the scenery crisp at every size.
-        if night:
-            moon_x, moon_y = int(w * 0.78), int(h * 0.18)
-            painter.fillRect(moon_x, moon_y, 18, 18, QColor("#f8edc6"))
-            painter.fillRect(moon_x + 6, moon_y - 3, 18, 18, sky)
-            for index in range(22):
-                sx = (index * 97 + 23) % max(1, w)
-                sy = (index * 43 + 17) % max(1, int(h * 0.52))
-                color = QColor("#ffe9a3" if index % 3 == 0 else "#d4ecdb")
-                painter.fillRect(sx, sy, 2 if index % 4 == 0 else 1, 2, color)
-        else:
-            sun = QColor("#ffe38b" if horizon.red() > 200 else "#fff1a8")
-            painter.fillRect(int(w * 0.79), int(h * 0.14), 22, 22, sun)
-            painter.fillRect(int(w * 0.79) - 4, int(h * 0.14) + 7, 30, 8, sun)
-        # Two angular hills and a pixel garden form the static parallax layer.
+        sky_band_height = max(2, int(h * 0.31) // 6)
+        for band in range(1, 6):
+            shade = QColor(sky)
+            shade.setAlpha(13 if band % 2 else 8)
+            y = band * sky_band_height
+            painter.fillRect(0, y, w, sky_band_height, shade)
+        # A sparse, deterministic dither softens the sky bands without adding
+        # texture to the bird or foreground art.
+        dot_step = max(7, h // 42)
+        dot = QColor("#eef7e5" if not night else "#b6cde5")
+        dot.setAlpha(24)
+        for row in range(5, max(6, int(h * 0.30)), dot_step):
+            offset = (row // dot_step * 5) % 17
+            for column in range(offset, w, 17):
+                if (column // 17 + row // dot_step) % 3 == 0:
+                    painter.fillRect(column, row, 1, 1, dot)
+        # Three overlapping landscape planes add depth without moving the Piu.
         far_y = int(h * 0.65)
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(far)
@@ -470,6 +490,35 @@ class PixelPetWidget(QWidget):
             QPoint(int(w * 0.37), far_y + 4), QPoint(int(w * 0.61), far_y - 30),
             QPoint(int(w * 0.83), far_y + 9), QPoint(w, far_y - 12),
             QPoint(w, h), QPoint(0, h)])
+        middle = QColor(far)
+        middle.setRed(max(0, min(255, middle.red() - (12 if night else 8))))
+        middle.setGreen(max(0, min(255, middle.green() - (8 if night else 4))))
+        middle.setBlue(max(0, min(255, middle.blue() + (3 if night else 0))))
+        painter.setBrush(middle)
+        painter.drawPolygon([
+            QPoint(0, int(h * 0.75)), QPoint(int(w * 0.19), int(h * 0.68)),
+            QPoint(int(w * 0.36), int(h * 0.73)), QPoint(int(w * 0.58), int(h * 0.66)),
+            QPoint(int(w * 0.78), int(h * 0.74)), QPoint(w, int(h * 0.68)),
+            QPoint(w, int(h * 0.80)), QPoint(0, int(h * 0.80))])
+        # Distant cottage with a warm pixel window.
+        house_x, house_y = int(w * 0.70), int(h * 0.59)
+        painter.fillRect(house_x, house_y + 12, 34, 25, QColor("#b99877"))
+        painter.setBrush(QColor("#684c55" if night else "#8c5d57"))
+        painter.drawPolygon([QPoint(house_x - 4, house_y + 13),
+                             QPoint(house_x + 17, house_y),
+                             QPoint(house_x + 38, house_y + 13)])
+        painter.fillRect(house_x + 7, house_y + 20, 7, 8,
+                         QColor("#ffe5a1" if night else "#87c7d0"))
+        painter.fillRect(house_x + 22, house_y + 20, 7, 17, QColor("#694b48"))
+        # Layered tree silhouettes frame the view.
+        for tx, ty, size in ((int(w * 0.12), int(h * 0.64), 1.0),
+                             (int(w * 0.88), int(h * 0.61), 0.82)):
+            trunk_h = int(36 * size)
+            painter.fillRect(tx + 9, ty + 19, 5, trunk_h, QColor("#70503f"))
+            foliage = QColor("#3e725b" if not night else "#375a59")
+            painter.fillRect(tx, ty + 7, 22, 16, foliage)
+            painter.fillRect(tx + 4, ty, 15, 22, foliage)
+            painter.fillRect(tx + 2, ty + 12, 20, 11, foliage)
         painter.fillRect(0, int(h * 0.79), w, int(h * 0.21), near)
         grass = QColor("#a2c978" if not night else "#597856")
         painter.fillRect(0, int(h * 0.79), w, 5, grass)
@@ -481,6 +530,28 @@ class PixelPetWidget(QWidget):
             leaf = QColor("#7aae66" if not night else "#496b69")
             painter.fillRect(fx, branch_y - 9, 8, 5, leaf)
             painter.fillRect(fx + 4, branch_y - 13, 7, 5, leaf)
+        # Short fence and three flower shapes sit on the near plane.
+        fence_y = int(h * 0.755)
+        painter.fillRect(int(w * 0.36), fence_y + 8, int(w * 0.18), 3,
+                         QColor("#92745b"))
+        painter.fillRect(int(w * 0.36), fence_y + 17, int(w * 0.18), 3,
+                         QColor("#92745b"))
+        for fx in (int(w * 0.37), int(w * 0.42), int(w * 0.49), int(w * 0.53)):
+            painter.fillRect(fx, fence_y, 3, 23, QColor("#a18567"))
+        stream_y = int(h * 0.775)
+        painter.fillRect(int(w * 0.57), stream_y, int(w * 0.18), 6,
+                         QColor("#578fa0" if night else "#76c9d2"))
+        painter.fillRect(int(w * 0.60), stream_y + 1, int(w * 0.09), 2,
+                         QColor("#b6e7dc"))
+        for fx, flower in ((int(w * 0.08), "#f7cb81"),
+                           (int(w * 0.61), "#ef9eaa"),
+                           (int(w * 0.82), "#e5d889")):
+            flower_y = int(h * 0.79) - 9
+            painter.fillRect(fx + 3, flower_y + 5, 2, 8, QColor("#396b4d"))
+            painter.fillRect(fx + 1, flower_y + 1, 3, 3, QColor(flower))
+            painter.fillRect(fx + 5, flower_y + 1, 3, 3, QColor(flower))
+            painter.fillRect(fx + 3, flower_y - 1, 3, 3, QColor(flower))
+            painter.fillRect(fx + 3, flower_y + 2, 3, 3, QColor("#fff0bd"))
         for fx in range(20, w, max(71, w // 8)):
             painter.fillRect(fx, int(h * 0.91), 3, 7, QColor("#2f604c"))
             painter.fillRect(fx - 3, int(h * 0.90), 9, 3, QColor("#f7cb81"))
@@ -491,6 +562,75 @@ class PixelPetWidget(QWidget):
         painter.fillRect(post_x - 12, post_y + 8, 24, 18, QColor("#fff0a0"))
         painter.fillRect(post_x - 8, post_y + 12, 14, 2, QColor("#917a4e"))
         painter.fillRect(post_x - 8, post_y + 17, 10, 2, QColor("#917a4e"))
+
+    def _draw_solar_objects(self, painter: QPainter, bounds: QRect,
+                            local_time: datetime, sky: QColor,
+                            night_weight: float, now: float) -> None:
+        w, h = bounds.width(), bounds.height()
+        sun = sun_position(local_time, self.day_cycle_config)
+        if sun is not None:
+            fraction, altitude = sun
+            x = bounds.left() + int(w * (0.07 + 0.86 * fraction))
+            y = bounds.top() + int(h * (0.34 - 0.22 * altitude))
+            halo = QColor("#ffe8a0")
+            halo.setAlpha(40)
+            painter.fillRect(x - 20, y - 20, 40, 40, halo)
+            painter.fillRect(x - 14, y - 14, 28, 28, QColor("#f9ca77"))
+            painter.fillRect(x - 9, y - 9, 18, 18, QColor("#fff0a1"))
+            painter.fillRect(x - 15, y - 5, 30, 10, QColor("#fff0a1"))
+        moon = moon_position(local_time, self.day_cycle_config)
+        if moon is not None:
+            fraction, altitude = moon
+            x = bounds.left() + int(w * (0.09 + 0.82 * fraction))
+            y = bounds.top() + int(h * (0.34 - 0.20 * altitude))
+            size = 20
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QColor("#f8edc6"))
+            painter.drawEllipse(x - size // 2, y - size // 2, size, size)
+            illumination = (1.0 - math.cos(2.0 * math.pi
+                                           * moon_phase(local_time))) / 2.0
+            shadow_width = round(size * (1.0 - illumination))
+            if shadow_width > 0:
+                waxing = moon_phase(local_time) < 0.5
+                shadow_x = x - size // 2 + (0 if waxing else size - shadow_width)
+                painter.setBrush(sky)
+                painter.drawEllipse(shadow_x, y - size // 2,
+                                    max(1, shadow_width), size)
+        star_alpha = round(max(0.0, min(1.0, night_weight)) * 210)
+        if star_alpha:
+            for index in range(22):
+                sx = bounds.left() + (index * 97 + 23) % max(1, w)
+                sy = bounds.top() + (index * 43 + 17) % max(1, int(h * 0.52))
+                star = QColor("#ffe9a3" if index % 3 == 0 else "#d4ecdb")
+                star.setAlpha(star_alpha)
+                size = 2 if index % 4 == 0 else 1
+                painter.fillRect(sx, sy, size, size, star)
+
+    def _draw_weather(self, painter: QPainter, bounds: QRect, now: float) -> None:
+        density = self.weather_density
+        if self.weather_mode == "rain":
+            painter.save()
+            rain = QColor("#d5efff")
+            rain.setAlpha(100)
+            painter.setPen(QPen(rain, 1))
+            count = max(1, round(18 * density))
+            for index in range(count):
+                x = bounds.left() + (index * 67 + int(now * 74)) % max(1, bounds.width())
+                y = bounds.top() + (index * 41 + int(now * 130)) % max(1, bounds.height())
+                painter.drawLine(x, y, x - 2, y + 6)
+            painter.restore()
+        elif self.weather_mode == "fog":
+            fog = QColor(220, 235, 232, round(75 * density))
+            painter.fillRect(bounds.left(), bounds.top() + int(bounds.height() * 0.52),
+                             bounds.width(), int(bounds.height() * 0.24), fog)
+
+    @staticmethod
+    def _draw_butterfly(painter: QPainter, x: int, y: int,
+                        phase: float) -> None:
+        wing = QColor("#e8b6dc" if math.sin(phase) > 0 else "#f0d887")
+        painter.fillRect(x - 3, y, 3, 3, wing)
+        painter.fillRect(x + 1, y, 3, 3, wing)
+        painter.fillRect(x, y, 2, 4, QColor("#59445f"))
 
     def _schedule_mood_motion(self, state: VisualState, now: float) -> None:
         self._next_idle_action = now + self._rng.uniform(8.0, 14.0)
@@ -609,18 +749,38 @@ class PixelPetWidget(QWidget):
         return self._manifest["animations"][group]["sheet"], QRect(*entry["rect"])
 
     def _draw_shadow(self, painter: QPainter, destination: QRect,
-                     motion: MotionFrame) -> None:
+                     motion: MotionFrame, local_time: datetime) -> None:
         width = max(12, int(destination.width() * (0.50 - motion.depth * 0.18)))
         height = max(3, destination.height() // 24)
         x = destination.center().x() - width // 2
         y = destination.bottom() - height // 2
         alpha = max(45, 110 - int(motion.height * 300))
+        period = period_name(local_time, self.day_cycle_config)
+        shadow = (QColor("#182b49") if period in {"madrugada", "noite"} else
+                  QColor("#604c55") if period == "entardecer" else
+                  QColor("#293d40"))
+        shadow.setAlpha(alpha)
         painter.save()
         painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(QColor(40, 50, 65, alpha // 2))
+        highlight = QColor(shadow)
+        highlight.setAlpha(alpha // 2)
+        painter.setBrush(highlight)
         painter.drawEllipse(QRect(x + 2, y + height, width - 4, 3))
-        painter.setBrush(QColor(41, 52, 66, alpha))
+        painter.setBrush(shadow)
         painter.drawEllipse(QRect(x, y, width, height))
+        painter.restore()
+
+    def _draw_pet_tint(self, painter: QPainter, destination: QRect,
+                       local_time: datetime) -> None:
+        period = period_name(local_time, self.day_cycle_config)
+        tone = (QColor("#aac9ff") if period in {"madrugada", "noite"} else
+                QColor("#ffd1a1") if period == "entardecer" else
+                QColor("#dcfff0"))
+        tone.setAlpha(9 if period in {"madrugada", "noite"} else 7)
+        painter.save()
+        painter.setCompositionMode(
+            QPainter.CompositionMode.CompositionMode_SourceAtop)
+        painter.fillRect(destination, tone)
         painter.restore()
 
     def _draw_depth_occlusion(self, painter: QPainter, bounds: QRect,
@@ -678,7 +838,9 @@ class PixelPetWidget(QWidget):
             font = QFont(self._font_family, 9)
             cache_painter.setFont(font)
             cache_painter.setPen(QColor("#f5edcf"))
-            cache_painter.drawText(22, 31, f"PIU  /  {state.emotion.upper()[:15]}")
+            period = period_name(local_time, self.day_cycle_config).upper()
+            period = period.replace("MANHA", "MANHÃ")
+            cache_painter.drawText(22, 31, f"PIU  /  {period[:15]}")
             cache_painter.drawText(
                 22, 48, f"HUMOR {round(state.happiness * 100):02d}%  "
                 f"{local_time:%H:%M}")

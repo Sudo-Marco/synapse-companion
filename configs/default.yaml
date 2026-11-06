@@ -120,6 +120,14 @@ audio:
   dance_sessions_per_hour: 24
   dance_chunk_s: 7.0
   dance_pause_s: 1.0
+day_cycle:
+  sunrise_hour: 6.0
+  sunset_hour: 18.0
+  latitude: null       # Opcional; coordenadas manuais, sem localização/rede.
+  longitude: null
+weather:
+  mode: none            # none, rain, fog ou wind; apenas decoração local.
+  density: 0.22
 context_projections:
   max_contexts: 8
   similarity_threshold: 0.85

@@ -8,6 +8,7 @@ import threading
 import time
 from collections import deque
 from dataclasses import replace
+from datetime import datetime
 from pathlib import Path
 
 from PySide6.QtCore import (QEvent, QEasingCurve, QPoint, QPointF,
@@ -28,6 +29,7 @@ from ..runtime.autonomy import AutonomyController, PostItStore, StoredPostIt
 from ..sensors.audio_analysis import AudioMetrics
 from ..sensors.audio_service import AudioMonitorService
 from ..sensors.window_geometry import WindowGeometryObserver
+from .day_cycle import activity_factor, period_name
 from .desktop_motion import (DesktopBehaviorSelector, WorkArea,
                              choose_work_area_target, clamp_window_top_left,
                              desktop_depth)
@@ -372,6 +374,8 @@ class PetWindow(QMainWindow):
         self.pet_motion_config = self.config.get("pet_motion", {})
         self.desktop_motion_config = self.pet_motion_config.get("desktop", {})
         self.audio_config = self.config.get("audio", {})
+        self.day_cycle_config = self.config.get("day_cycle", {})
+        self.weather_config = self.config.get("weather", {})
         self.audio_privacy = self.config.get("privacy", {}).get("sensors", {})
         self.audio_service = AudioMonitorService(
             sample_rate=int(self.audio_config.get("sample_rate", 11025)),
@@ -400,9 +404,11 @@ class PetWindow(QMainWindow):
         self._desktop_behavior: str | None = None
         self._desktop_behavior_until = 0.0
         self._desktop_rng = random.Random(int(self.config.get("seed", 41)) ^ 0x44534B54)
+        initial_scale = activity_factor(datetime.now().astimezone(),
+                                        self.day_cycle_config)
         self._desktop_next_action_at = time.monotonic() + self._desktop_rng.uniform(
             float(self.pet_motion_config.get("interval_min_s", 6.0)),
-            float(self.pet_motion_config.get("interval_max_s", 12.0)))
+            float(self.pet_motion_config.get("interval_max_s", 12.0))) / initial_scale
         self._pet_stamina = 1.0
         self._pet_stamina_updated_at = time.monotonic()
         self._active_window_geometry = None
@@ -509,7 +515,9 @@ class PetWindow(QMainWindow):
             seed=int(self.config.get("seed", 41)),
             depth_in_pet_mode=bool(pet_config.get("depth", {}).get(
                 "enabled", pet_config.get("depth_in_pet_mode", False))),
-            depth_config=pet_config.get("depth", {}))
+            depth_config=pet_config.get("depth", {}),
+            day_cycle_config=self.day_cycle_config,
+            weather_config=self.weather_config)
         layout.addWidget(self.canvas, 1)
         self.canvas.petRequested.connect(self._give_affection)
         self.canvas.panelRequested.connect(self._show_panel)
@@ -532,9 +540,9 @@ class PetWindow(QMainWindow):
 
         identity = QHBoxLayout()
         labels = QVBoxLayout()
-        name = QLabel("OCULUS / NOCTURNE")
-        name.setStyleSheet("font: bold 10pt Consolas;")
-        labels.addWidget(name)
+        self.identity_label = QLabel("PIU / MADRUGADA")
+        self.identity_label.setStyleSheet("font: bold 10pt Consolas;")
+        labels.addWidget(self.identity_label)
         self.mood_label = QLabel("observando em silêncio")
         self.mood_label.setStyleSheet(f"color: {MUTED}; font: 9pt 'Segoe UI';")
         labels.addWidget(self.mood_label)
@@ -629,7 +637,7 @@ class PetWindow(QMainWindow):
         self._build_shortcuts()
         self.panelHotkeyPressed.connect(self._show_panel)
         self._panel_only_widgets = [
-            self.header, name, self.mood_label, self.system_label,
+            self.header, self.identity_label, self.mood_label, self.system_label,
             self.happiness_card, self.energy_card, self.stress_card,
             self.proposal, self.love_button, self.feedback_button,
             self.debug_button, self.sensor_button, self.mode_button,
@@ -1220,7 +1228,10 @@ class PetWindow(QMainWindow):
             return
         minimum = max(2.0, float(self.pet_motion_config.get("interval_min_s", 6.0)))
         maximum = max(minimum, float(self.pet_motion_config.get("interval_max_s", 12.0)))
-        self._desktop_next_action_at = now + self._desktop_rng.uniform(minimum, maximum)
+        circadian_scale = activity_factor(datetime.now().astimezone(),
+                                          self.day_cycle_config)
+        self._desktop_next_action_at = (
+            now + self._desktop_rng.uniform(minimum, maximum) / circadian_scale)
         behavior_cfg = self.pet_motion_config.get("behaviors", {})
         action_defs = behavior_cfg.get("actions", {})
         if self._pet_stamina < 0.20:
@@ -2152,6 +2163,9 @@ class PetWindow(QMainWindow):
                                  self.last_state.expression_override),
         )
         self.canvas.set_state(render_state)
+        period = period_name(datetime.now().astimezone(), self.day_cycle_config)
+        self.identity_label.setText(
+            "PIU / " + period.upper().replace("MANHA", "MANHÃ"))
         health = self.engine.health_snapshot()
         self._consider_teleport(render_state, health, now)
         self._consider_jump(render_state, health, now)

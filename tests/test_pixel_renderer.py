@@ -73,6 +73,48 @@ def test_pixel_expressions_sleep_and_scene_time_render_differently():
     widget.close()
 
 
+def test_local_day_cycle_and_optional_weather_change_scene_and_pet_tint():
+    ensure_application()
+    widget = PixelPetWidget(day_cycle_config={"sunrise_hour": 6,
+                                               "sunset_hour": 18})
+    try:
+        widget.resize(800, 450)
+        samples = [datetime(2026, 11, 5, hour) for hour in (4, 9, 14, 17, 22)]
+        scenes = []
+        for sample in samples:
+            frame = widget.render_frame(8.0, sample)
+            assert frame.width() == 800 and frame.height() == 450
+            scenes.append(widget._scene_cache_key)
+        assert len(set(scenes)) == 5
+    finally:
+        widget.close()
+
+    rain = PixelPetWidget(weather_config={"mode": "rain", "density": 0.5})
+    calm = PixelPetWidget(weather_config={"mode": "none"})
+    try:
+        rain.resize(800, 450)
+        calm.resize(800, 450)
+        rain.render_frame(12.0, datetime(2026, 11, 5, 14))
+        calm.render_frame(12.0, datetime(2026, 11, 5, 14))
+        assert rain._frame_buffer.pixelColor(44, 105) != calm._frame_buffer.pixelColor(44, 105)
+    finally:
+        rain.close()
+        calm.close()
+
+    pet = PixelPetWidget(compact=True, day_cycle_config={
+        "sunrise_hour": 6, "sunset_hour": 18})
+    try:
+        pet.resize(320, 180)
+        night = pet.render_frame(14.0, datetime(2026, 11, 5, 4))
+        sample = pet._current_destination.center()
+        night_tone = night.pixelColor(sample)
+        day = pet.render_frame(14.0, datetime(2026, 11, 5, 14))
+        day_tone = day.pixelColor(sample)
+        assert night_tone != day_tone
+    finally:
+        pet.close()
+
+
 def test_pixel_canvas_switches_without_losing_state_or_mode():
     ensure_application()
     canvas = EyeCanvas("ascii", 800, 450, 80, 45, "cyan_amber_white", 8,

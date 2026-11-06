@@ -306,7 +306,9 @@ class EyeCanvas(QWidget):
                  spectral_config: dict | None = None,
                  seed: int = 41,
                  depth_in_pet_mode: bool = False,
-                 depth_config: dict[str, object] | None = None) -> None:
+                 depth_config: dict[str, object] | None = None,
+                 day_cycle_config: dict[str, object] | None = None,
+                 weather_config: dict[str, object] | None = None) -> None:
         super().__init__(parent)
         self.renderer_config = renderer.lower()
         self.render_style = (render_style if render_style in {"pixel", "spectral", "ascii", "vector"}
@@ -330,6 +332,8 @@ class EyeCanvas(QWidget):
                 affection_drag_min_s=affection_drag_min_s,
                 seed=seed, depth_in_pet_mode=depth_in_pet_mode,
                 depth_config=depth_config,
+                day_cycle_config=day_cycle_config,
+                weather_config=weather_config,
                 parent=self._stack)
             self._cpu = self._pixel
             self._pixel.petRequested.connect(self.petRequested.emit)
