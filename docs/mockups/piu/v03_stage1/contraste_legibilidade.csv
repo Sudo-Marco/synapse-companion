@@ -1,0 +1,7 @@
+background,min_paired_outline_ratio,mean_paired_outline_ratio,pass_3_to_1
+preto,17.84,17.84,True
+branco,11.94,11.94,True
+cinza_medio,3.49,3.49,True
+azul_escuro,13.21,13.21,True
+xadrez_ruido,3.27,5.36,True
+foto,3.26,6.03,True

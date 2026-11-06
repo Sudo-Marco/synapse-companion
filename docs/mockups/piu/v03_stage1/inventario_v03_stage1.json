@@ -1,0 +1,322 @@
+{
+  "schema_version": 1,
+  "purpose": "offline_visual_review_only_not_integrated",
+  "native_lod_px": {
+    "perto": 48,
+    "medio": 32,
+    "longe": 20
+  },
+  "views": [
+    "perfil",
+    "frente",
+    "costas"
+  ],
+  "depth_views": [
+    "perfil_48px",
+    "perfil_32px",
+    "perfil_20px",
+    "frente_48px",
+    "frente_32px",
+    "frente_20px",
+    "costas_48px",
+    "costas_32px",
+    "costas_20px"
+  ],
+  "special_poses": [
+    {
+      "label": "pensando",
+      "view": "frente",
+      "native_size_px": 48,
+      "pivot": [
+        24,
+        44
+      ],
+      "hitbox": [
+        2,
+        2,
+        46,
+        46
+      ]
+    },
+    {
+      "label": "cansado",
+      "view": "perfil",
+      "native_size_px": 48,
+      "pivot": [
+        24,
+        44
+      ],
+      "hitbox": [
+        2,
+        2,
+        46,
+        46
+      ]
+    },
+    {
+      "label": "descansando",
+      "view": "frente",
+      "native_size_px": 48,
+      "pivot": [
+        24,
+        44
+      ],
+      "hitbox": [
+        2,
+        2,
+        46,
+        46
+      ]
+    },
+    {
+      "label": "ouvindo",
+      "view": "frente",
+      "native_size_px": 48,
+      "pivot": [
+        24,
+        44
+      ],
+      "hitbox": [
+        2,
+        2,
+        46,
+        46
+      ]
+    },
+    {
+      "label": "dança balanço A",
+      "view": "frente",
+      "native_size_px": 48,
+      "pivot": [
+        24,
+        44
+      ],
+      "hitbox": [
+        2,
+        2,
+        46,
+        46
+      ]
+    },
+    {
+      "label": "dança balanço B",
+      "view": "frente",
+      "native_size_px": 48,
+      "pivot": [
+        24,
+        44
+      ],
+      "hitbox": [
+        2,
+        2,
+        46,
+        46
+      ]
+    },
+    {
+      "label": "dança balanço C",
+      "view": "frente",
+      "native_size_px": 48,
+      "pivot": [
+        24,
+        44
+      ],
+      "hitbox": [
+        2,
+        2,
+        46,
+        46
+      ]
+    },
+    {
+      "label": "dança pulinho A",
+      "view": "frente",
+      "native_size_px": 48,
+      "pivot": [
+        24,
+        44
+      ],
+      "hitbox": [
+        2,
+        2,
+        46,
+        46
+      ]
+    },
+    {
+      "label": "dança pulinho B",
+      "view": "frente",
+      "native_size_px": 48,
+      "pivot": [
+        24,
+        44
+      ],
+      "hitbox": [
+        2,
+        2,
+        46,
+        46
+      ]
+    },
+    {
+      "label": "dança pulinho C",
+      "view": "frente",
+      "native_size_px": 48,
+      "pivot": [
+        24,
+        44
+      ],
+      "hitbox": [
+        2,
+        2,
+        46,
+        46
+      ]
+    },
+    {
+      "label": "dança pulinho D",
+      "view": "frente",
+      "native_size_px": 48,
+      "pivot": [
+        24,
+        44
+      ],
+      "hitbox": [
+        2,
+        2,
+        46,
+        46
+      ]
+    },
+    {
+      "label": "dança cabeça A",
+      "view": "perfil",
+      "native_size_px": 48,
+      "pivot": [
+        24,
+        44
+      ],
+      "hitbox": [
+        2,
+        2,
+        46,
+        46
+      ]
+    },
+    {
+      "label": "dança cabeça B",
+      "view": "perfil",
+      "native_size_px": 48,
+      "pivot": [
+        24,
+        44
+      ],
+      "hitbox": [
+        2,
+        2,
+        46,
+        46
+      ]
+    },
+    {
+      "label": "dança cabeça C",
+      "view": "perfil",
+      "native_size_px": 48,
+      "pivot": [
+        24,
+        44
+      ],
+      "hitbox": [
+        2,
+        2,
+        46,
+        46
+      ]
+    },
+    {
+      "label": "pego no alto",
+      "view": "frente",
+      "native_size_px": 48,
+      "pivot": [
+        24,
+        44
+      ],
+      "hitbox": [
+        2,
+        2,
+        46,
+        46
+      ]
+    },
+    {
+      "label": "queda / pancada",
+      "view": "perfil",
+      "native_size_px": 48,
+      "pivot": [
+        24,
+        44
+      ],
+      "hitbox": [
+        2,
+        2,
+        46,
+        46
+      ]
+    },
+    {
+      "label": "espiando",
+      "view": "frente",
+      "native_size_px": 48,
+      "pivot": [
+        24,
+        44
+      ],
+      "hitbox": [
+        2,
+        2,
+        46,
+        46
+      ]
+    }
+  ],
+  "dance_cycles": {
+    "balanco": 3,
+    "pulinho": 4,
+    "cabecada": 3,
+    "frame_duration_ms": 120,
+    "loop": true
+  },
+  "periods": [
+    "madrugada",
+    "manhã",
+    "tarde",
+    "entardecer",
+    "noite"
+  ],
+  "scene_size_px": [
+    640,
+    240
+  ],
+  "piu_scene_height_fraction": 0.2,
+  "enlargement": "nearest-neighbor only",
+  "palette": {
+    "outline_outer": "#4A3216",
+    "outline_inner": "#8A5A2C",
+    "outline_light": "#FFF3A0",
+    "yellow_light": "#FFF08A",
+    "yellow": "#FFD93B",
+    "yellow_mid": "#F8C22B",
+    "yellow_shadow": "#EAA823",
+    "wing_light": "#F7B64D",
+    "wing": "#D9820F",
+    "wing_shadow": "#B96112",
+    "beak_light": "#FFD36A",
+    "beak": "#FF9B2F",
+    "beak_shadow": "#D86B1D",
+    "eye": "#30251C",
+    "white": "#FFFFFF",
+    "glint_blue": "#BFEFFF",
+    "cheek": "#FF9DB5",
+    "feet": "#E97825"
+  }
+}

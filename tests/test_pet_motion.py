@@ -19,7 +19,7 @@ def test_far_and_return_moves_change_view_and_hysteretic_lod():
     for _ in range(8):
         frame = controller.advance(0.2)
     assert frame.depth > 0.75
-    assert frame.lod_size == 16
+    assert frame.lod_size == 20
     assert frame.view == "back"
 
     assert controller.request_move("camera", "return")
@@ -27,7 +27,7 @@ def test_far_and_return_moves_change_view_and_hysteretic_lod():
     for _ in range(8):
         frame = controller.advance(0.2)
     assert frame.depth < 0.35
-    assert frame.lod_size == 32
+    assert frame.lod_size == 48
     assert frame.view == "front"
 
 

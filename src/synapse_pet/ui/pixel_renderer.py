@@ -69,6 +69,7 @@ class PixelPetWidget(QWidget):
         self._drag_tracker = AffectionDragTracker(affection_drag_min_s)
         self._motion_blocked = False
         self._current_source: tuple[str, QRect] | None = None
+        self._current_frame_entry: dict[str, object] = {}
         self._current_destination = QRect()
         self._current_frame_size = QSize()
         self._current_mirror = False
@@ -224,7 +225,7 @@ class PixelPetWidget(QWidget):
                 and not self.motion.moving and now >= self._next_idle_action):
             self._schedule_mood_motion(state, now)
         if self.mode == "pet" and not self.depth_in_pet_mode:
-            motion = replace(motion, depth=0.0, lod_size=32)
+            motion = replace(motion, depth=0.0, lod_size=48)
         group, index, use_lod = self._select_pose(state, motion, now)
         source_sheet, source_rect = self._source_rect(group, index, use_lod,
                                                       motion)
@@ -233,8 +234,13 @@ class PixelPetWidget(QWidget):
             return
 
         art_scale = scale
-        dest_width, dest_height = 32 * art_scale, 44 * art_scale
-        x = round(bounds.left() + motion.x * max(0, bounds.width() - dest_width))
+        native_width, native_height = source_rect.width(), source_rect.height()
+        dest_width, dest_height = native_width * art_scale, native_height * art_scale
+        pivot = self._current_frame_entry.get(
+            "pivot", [native_width // 2, native_height])
+        pivot_x, pivot_y = map(int, pivot)
+        anchor_x = round(bounds.left() + motion.x * bounds.width())
+        x = anchor_x - pivot_x * art_scale
         ground_y = (bounds.bottom() - 3 - 4 * art_scale if self.mode == "pet"
                     else round(bounds.top() + bounds.height() * 0.83))
         bob = round(math.sin(now * 1.7) * (0 if motion.action != "idle" else 1))
@@ -245,13 +251,14 @@ class PixelPetWidget(QWidget):
         stress_wobble = (round(math.sin(now * 42.0) * min(2.0, state.stress * 2.0))
                          if state.stress >= 0.62 else 0)
         x += stress_wobble * art_scale
-        y = round(ground_y - 40 * art_scale - motion.height * 44 * art_scale
+        y = round(ground_y - pivot_y * art_scale - motion.height * dest_height
                   - depth_lift + bob)
         destination = QRect(x, y, dest_width, dest_height)
         previous_mask_key = self._mask_geometry_key
         self._current_source = (source_sheet, source_rect)
         self._current_destination = destination
-        self._current_mirror = motion.facing < 0 and group == "corrida_lateral"
+        is_run_group = group.startswith("corrida_")
+        self._current_mirror = motion.facing < 0 and is_run_group
         self._mask_geometry_key = (
             source_sheet, source_rect.x(), source_rect.y(),
             source_rect.width(), source_rect.height(),
@@ -261,7 +268,7 @@ class PixelPetWidget(QWidget):
         if self.mode != "pet":
             self._draw_shadow(painter, destination, motion)
         painter.save()
-        if motion.facing < 0 and group == "corrida_lateral":
+        if self._current_mirror:
             painter.translate(destination.left() * 2 + destination.width(), 0)
             painter.scale(-1.0, 1.0)
             draw_rect = destination
@@ -269,7 +276,7 @@ class PixelPetWidget(QWidget):
             draw_rect = destination
         painter.drawImage(draw_rect, self._sheets[source_sheet], source_rect)
         painter.restore()
-        if motion.facing < 0 and group == "corrida_lateral":
+        if self._current_mirror and group == "corrida_lateral":
             for px, py, color in ((20, 18, "#ffd93b"), (23, 19, "#ffd93b"),
                                   (8, 19, "#fff3a0"), (11, 18, "#ffffff")):
                 painter.fillRect(destination.left() + px * art_scale,
@@ -288,12 +295,13 @@ class PixelPetWidget(QWidget):
 
     def _draw_scale(self, bounds: QRect) -> int:
         if self.mode == "pet":
-            return max(2, min(4, bounds.height() // 44))
-        fit = max(2, min(bounds.width() // 64, bounds.height() // 56))
-        fit = min(12, max(2, fit))
-        # The half-resolution buffer doubles each raster cell on screen. Keep
-        # source pixels aligned to integer displayed scales.
-        return max(2, fit - (fit % 2))
+            # A 48 px source sprite fills about three quarters of the floating
+            # window while leaving transparent breathing room around it.
+            return max(2, min(8, round(bounds.height() * 0.75 / 48)))
+        # Keep the actor between 15% and 25% of the scene height. The half-size
+        # render buffer is nearest-neighbour enlarged, so this integer factor
+        # retains crisp pixels without oversized panel sprites.
+        return max(1, min(8, round(bounds.height() * 0.20 / 48)))
 
     def _draw_scene(self, painter: QPainter, bounds: QRect, now: float,
                     local_time: datetime) -> None:
@@ -390,8 +398,6 @@ class PixelPetWidget(QWidget):
 
     def _select_pose(self, state: VisualState, motion: MotionFrame,
                      now: float) -> tuple[str, int, bool]:
-        if motion.action == "idle" and motion.lod_size < 32:
-            return "lod", 0, True
         routes = self._manifest.get("routes", {})
         action_route = routes.get("actions", {}).get(motion.action)
         if action_route is not None:
@@ -435,28 +441,44 @@ class PixelPetWidget(QWidget):
             route = fallback
         frames = animation["frames"]
         mode = str(route.get("mode", "frame"))
+        candidates = list(range(len(frames)))
         if "frame" in route:
             frame_name = str(route["frame"]).lower()
-            index = next((position for position, frame in enumerate(frames)
-                          if frame.get("label_key", "") == frame_name), 0)
-        elif mode == "progress":
-            index = min(len(frames) - 1,
-                        int(motion.progress * (len(frames) - 1)))
+            named = [position for position, frame in enumerate(frames)
+                     if frame.get("label_key", "") == frame_name]
+            if named:
+                candidates = named
+        if bool(route.get("match_lod", False)):
+            nearest = min(abs(int(frames[position].get("native_size", 32))
+                              - motion.lod_size) for position in candidates)
+            candidates = [position for position in candidates
+                          if abs(int(frames[position].get("native_size", 32))
+                                 - motion.lod_size) == nearest]
+            # Do not allow malformed metadata to turn a valid route into an
+            # empty candidate set.
+            if not candidates:
+                candidates = [0]
+        if mode == "progress":
+            offset = min(len(candidates) - 1,
+                         int(motion.progress * len(candidates)))
+            index = candidates[offset]
         elif mode == "time_loop":
-            durations = [max(1, int(frame.get("duration_ms", 100)))
-                         for frame in frames]
+            durations = [max(1, int(frames[position].get("duration_ms", 100)))
+                         for position in candidates]
             elapsed = int(max(0.0, now) * 1000.0) % sum(durations)
-            index = 0
-            for index, duration in enumerate(durations):
+            offset = 0
+            for offset, duration in enumerate(durations):
                 if elapsed < duration:
                     break
                 elapsed -= duration
+            index = candidates[offset]
+        elif mode == "stride":
+            index = candidates[PetMotionController.frame_index(
+                motion, len(candidates))]
+        elif "frame" in route:
+            index = candidates[0]
         else:
-            index = PetMotionController.frame_index(motion, len(frames))
-        match_lod = bool(route.get("match_lod", False))
-        if match_lod and frames[index].get("native_size") != motion.lod_size:
-            index = min(range(len(frames)), key=lambda value: abs(
-                int(frames[value].get("native_size", 32)) - motion.lod_size))
+            index = candidates[0]
         return group, index, False
 
     def _source_rect(self, group: str, index: int, use_lod: bool,
@@ -467,8 +489,10 @@ class PixelPetWidget(QWidget):
             action = "run" if motion.action == "run" else "idle"
             entries = self._manifest["lod"]["entries"][f"{view}_{action}"]
             selected = min(entries, key=lambda item: abs(item["size"] - motion.lod_size))
+            self._current_frame_entry = selected
             return self._manifest["lod"]["sheet"], QRect(*selected["rect"])
         entry = self._manifest["animations"][group]["frames"][index]
+        self._current_frame_entry = entry
         return self._manifest["animations"][group]["sheet"], QRect(*entry["rect"])
 
     def _draw_shadow(self, painter: QPainter, destination: QRect,

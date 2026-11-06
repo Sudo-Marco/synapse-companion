@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from dataclasses import replace
 import json
 from pathlib import Path
 
@@ -113,6 +114,26 @@ def test_new_emotion_pose_can_be_added_through_manifest_data():
             VisualState(expression_override="novo_loop"),
             widget.motion.frame, 1.2)
         assert group == "corrida_lateral" and 0 <= index < 8 and not use_lod
+    finally:
+        widget.close()
+
+
+def test_v03_view_routes_select_exact_native_lod_and_keep_panel_scale():
+    ensure_application()
+    widget = PixelPetWidget()
+    try:
+        route = widget._manifest["routes"]["views"]["back"]
+        for size in (48, 32, 20):
+            motion = replace(widget.motion.frame, view="back", lod_size=size)
+            group, index, use_lod = widget._route_frame(route, motion, 1.0)
+            assert group == "idle_costas" and not use_lod
+            entry = widget._manifest["animations"][group]["frames"][index]
+            assert entry["native_size"] == size
+
+        widget.resize(800, 450)
+        widget.render_frame(5.0, datetime(2026, 11, 5, 12))
+        sprite_height = widget._current_destination.height()
+        assert 0.15 <= sprite_height / 450 <= 0.25
     finally:
         widget.close()
 

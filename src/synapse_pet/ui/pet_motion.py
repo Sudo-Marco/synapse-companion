@@ -11,7 +11,7 @@ class MotionFrame:
     height: float = 0.0
     action: str = "idle"
     view: str = "profile"
-    lod_size: int = 32
+    lod_size: int = 48
     facing: int = 1
     stride_phase: float = 0.0
     traveled_px: float = 0.0
@@ -112,15 +112,15 @@ class PetMotionController:
 
         # Hysteresis prevents a sprite from flickering at LOD boundaries.
         size = self._frame.lod_size
-        if size == 32 and depth > 0.43:
-            size = 24
-        elif size == 24:
+        if size == 48 and depth > 0.43:
+            size = 32
+        if size == 32:
             if depth < 0.35:
-                size = 32
+                size = 48
             elif depth > 0.75:
-                size = 16
-        elif size == 16 and depth < 0.67:
-            size = 24
+                size = 20
+        elif size == 20 and depth < 0.67:
+            size = 32
 
         action = self._style
         view = "back" if action == "away" else "front" if action == "return" else "profile"
