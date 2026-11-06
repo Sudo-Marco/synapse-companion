@@ -103,3 +103,16 @@ statistical evidence.
 
 For full parameter context and limitations, also see [Architecture](ARCHITECTURE.md),
 [Privacy](PRIVACY.md), and [Roadmap](../ROADMAP.md).
+
+## v0.3 release audit
+
+The v0.3 visual, autonomy, audio, and day-cycle work did not change the LIF
+topology or learning update rules. The default YAML keeps
+`network.tool_output_inhibition`, `sleep.replay_enabled`, and
+`network.allow_neuron_growth_migration` disabled. Existing determinism,
+projection-persistence, habit, replay-flag, and migration tests were rerun in
+the full suite. The frozen spike/state hashes are unchanged; this confirms the
+tested reference path, not every possible runtime input or desktop session.
+The full values are recorded in the paired
+[v0.2.0 baseline](../benchmarks/results/snn_baseline_v02_1000tick_matched.json)
+and [v0.3.0 run](../benchmarks/results/snn_baseline_v03.json).

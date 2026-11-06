@@ -14,6 +14,8 @@ Autonomous visual behavior is separate from the SNN simulation loop. It receives
 | Repeated positive habit | One-time informational post-it saying a pattern was recorded. | `habits.*`, `behaviors.habit_notice`. |
 | Low energy / sleep | Piu uses a sleeping pose; floating mode can make a small, state-dependent hop and settles to its starting bounds. | `runtime.sleep_after_s`; `pet_motion.*`; `sleep.replay_enabled` affects optional replay only. |
 | Panel scene movement | `request_move(target, style)` moves across the scene with stride/jump frames, easing, depth view, native LOD selection, and drag/proposal locks. | `pet_motion.enabled`; controller targets/styles in `ui/pet_motion.py`. |
+| Sustained microphone activity | Piu turns to the listening pose for a bounded interval after sustained heuristic voice-like energy. It does not recognize speech or identify a speaker. | `privacy.sensors.microphone`, `audio.voice_*`, and per-hour gesture limits. |
+| System audio activity | Piu selects short sway, head-bob, or hop cycles from heuristic music activity; BPM/beat phase is used when loopback capture supplies enough regular onsets. | `privacy.sensors.system_loopback`, `audio.music_*`, stamina, session cap, and dance chunk/pause settings. |
 | Hover, mouse, idle | Gaze, brief curiosity, glances, blink, and existing visual effects. | `interaction.*`, `curiosity_novelty.*`, `visual.*`. |
 
 All template strings are local YAML configuration. The app does not create files on the desktop. Post-it windows are frameless, topmost, non-activating, draggable, dismissible, and capped at four by default. They expire after ten minutes. SQLite stores template ID, emotion category, timestamps, and position, not the rendered text. The pixel-art renderer reads visual state and does not make SNN weight changes itself.
@@ -28,6 +30,23 @@ All template strings are local YAML configuration. The app does not create files
 - Full-screen detection on Windows compares foreground-window bounds to screen bounds. It does not inspect the foreground title or content. On platforms without that geometry probe, the extra full-screen suppression is unavailable.
 
 The hourly counters are currently in-memory and reset when the application restarts. This is a known limitation; persistent cross-session autonomy budgets are tracked in [ROADMAP.md](../ROADMAP.md).
+
+## Audio and local time
+
+Microphone and system-loopback capture are separately opt-in and off in the
+default configuration. Audio features are analyzed on worker threads using
+short windows and discarded after aggregate metrics are emitted. The voice
+detector uses energy, a broad frequency band, and modulation; the music path
+uses spectral changes/onsets and a short BPM estimate. These are heuristics:
+the pet cannot understand speech, tell whether it is addressed to it, or
+reliably classify every sound. When loopback capture is unavailable, Windows
+playback-session state can provide a coarse active/inactive cue without
+artist/title text or beat synchronization.
+
+Local dawn, morning, afternoon, dusk, and night affect scene colors and labels.
+The clock sensor already present in the simulation remains the time input;
+manual latitude/longitude are optional local YAML values for sunrise/sunset
+estimation. Weather is a decorative local setting, not a network feed.
 
 ## User response feedback
 

@@ -28,7 +28,18 @@ body:
     id: environment
     attributes:
       label: Environment
-      description: Windows version, Python version, renderer, and GPU if relevant.
+      description: Windows version, Python version, renderer, and GPU if relevant. Do not include personal paths or window titles.
+  - type: dropdown
+    id: audio
+    attributes:
+      label: Optional audio sensors
+      description: Report whether a sensor was enabled; never attach recordings or transcripts.
+      options:
+        - Both disabled
+        - Microphone enabled
+        - System loopback enabled
+        - Not applicable
+        - Unsure
   - type: dropdown
     id: validation
     attributes:

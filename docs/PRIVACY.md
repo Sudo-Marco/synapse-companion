@@ -16,6 +16,8 @@ All optional sensors are disabled by default in `configs/default.yaml`.
 | `clipboard` | Clipboard text while the counter sensor is enabled | A length/count signal and an in-memory digest used for change detection; it does not return or persist clipboard contents. |
 | `system_stats` | CPU and memory metrics | Numeric resource measurements. |
 | `clock` | Local time | A normalized hour feature. |
+| `microphone` | Short microphone audio windows, only while explicitly enabled | Temporary level/voice-activity features for a listening gesture; no waveform, speech text, or recording is stored. |
+| `system_loopback` | Short system-output audio windows, only while explicitly enabled | Temporary level/music/BPM features for a dance cue. If loopback capture is unavailable, a coarse Windows playback-active boolean may be used; title and artist are not read. |
 
 The `historico_clipboard` tool is different from the clipboard counter sensor. When explicitly called with `capture: true` and accepted, it stores up to 4,000 characters in local SQLite. This action has medium risk; do not enable or accept it unless storing that clipboard material is intended.
 
@@ -45,6 +47,8 @@ The URL-opening tool can access a URL only as an explicit user action. The app d
 
 - Never capture keyboard text or active-window titles for curiosity, logging, autonomy, or training.
 - Keep sensor-derived inputs numeric or coarse category labels.
+- Keep microphone and loopback sensors off until the user enables each one. Analyze audio in worker memory, then discard the sample; never record, transcribe, upload, or add raw audio to logs.
+- Do not attach recordings or transcripts to issue reports. Synthetic audio tests use generated arrays and do not open hardware devices.
 - Keep post-it templates in local configuration; persist template IDs and metadata only.
 - Do not commit live databases, snapshots, logs, or personal absolute file paths.
 - Review runtime logs and benchmark output before posting them publicly.

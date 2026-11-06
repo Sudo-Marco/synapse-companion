@@ -267,3 +267,17 @@ build/
 *_smoke.*
 *.tmp
 *.bak
+
+# Live companion state, credentials, and raw sensor captures
+creature.json
+*.npz
+*.npy
+*.wav
+*.flac
+*.mp3
+*.ogg
+recordings/
+audio_captures/
+runtime-data/
+runtime_data/
+.secrets/

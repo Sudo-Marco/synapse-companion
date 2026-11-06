@@ -4,6 +4,27 @@ This roadmap distinguishes delivered code from goals that remain experimental.
 Items listed as current were checked in this release's source/tests; offscreen
 tests do not establish behavior on a physical desktop.
 
+## Version 0.3.0 scope — delivered
+
+- Expanded the approved Piu pixel-art package with new views, depth levels,
+  thinking/rest/listening/fall/peek poses, and data-driven movement/dance routes.
+- Added bounded scene and floating-pet movement, depth-aware rendering,
+  stamina costs, and geometry-only active-window interaction with drag and
+  full-screen suppression.
+- Added separately opt-in microphone and system-loopback sensors. Voice/music
+  detection is heuristic, runs on worker threads, and does not record,
+  transcribe, or upload audio.
+- Added a smooth offline local-time scene cycle with five periods, optional
+  manual sunrise/sunset coordinates, moon phase, and decorative local weather.
+- Re-audited the existing SNN experiments, habits, learning panel, and snapshot
+  migration. The LIF topology and learning rules did not change in this release;
+  experimental inhibition, replay, and migration remain off by default.
+- Updated bilingual documentation, privacy guidance, release benchmarks, and
+  headless Windows/Linux CI.
+
+Physical Windows interaction, multiple monitors/mixed DPI, and actual
+microphone/loopback devices remain unvalidated; see the remaining work below.
+
 ## Version 0.2.0 scope
 
 - Piu pixel-art view is the default. Approved sprite art, animation metadata,

@@ -24,6 +24,17 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e ".[dev,windows]"
 ```
 
+Audio capture support is optional. Install it only when you intend to test the
+microphone or system-loopback controls:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -e ".[audio]"
+```
+
+Audio tests use synthetic in-memory signals. Do not add recordings, transcripts,
+database files, live snapshots, credentials, or personal desktop captures to a
+change.
+
 For headless Qt tests:
 
 ```powershell

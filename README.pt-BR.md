@@ -5,7 +5,7 @@ Português (Brasil) · [English](README.md)
 ![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 ![Windows 10/11](https://img.shields.io/badge/Plataforma-Windows%2010%2F11-0078D6?logo=windows&logoColor=white)
 ![MIT](https://img.shields.io/badge/Licença-MIT-2E8B57.svg)
-![Versão](https://img.shields.io/badge/vers%C3%A3o-0.2.0-blue)
+![Versão](https://img.shields.io/badge/vers%C3%A3o-0.3.0-blue)
 
 Synapse Pet é um companheiro de desktop local para Windows e um experimento com redes neurais de disparos pequenas. O companheiro é o **Piu**, um canarinho em pixel art cujas expressões e movimentos mostram o estado da simulação. A política de decisão combina uma SNN feita à mão em NumPy com um seletor pequeno de preferências por contexto.
 
@@ -14,6 +14,10 @@ Synapse Pet é um companheiro de desktop local para Windows e um experimento com
 ![Piu no cenário em pixel art](docs/screenshots/piu/piu-cenario-dia.png)
 
 *Prévia offline renderizada pelo Qt; não é uma captura do programa em um desktop físico.*
+
+![Folha de conceitos dos cinco ambientes pelo horário local](docs/mockups/piu/v03_stage1/ambientes_5_periodos_1x.png)
+
+*Prévia de arte gerada para madrugada, manhã, tarde, entardecer e noite.*
 
 ![Animação flutuante do Piu](docs/screenshots/piu/piu-animacao.gif)
 
@@ -27,7 +31,9 @@ Synapse Pet é um companheiro de desktop local para Windows e um experimento com
 | Personagem | Folhas de sprites aprovadas do Piu, poses emocionais, corrida, pulo, virada e profundidade, cenário e ampliação por vizinho mais próximo. |
 | SNN | População LIF esparsa em NumPy, STDP modulada por recompensa, traços de elegibilidade, homeostase e projeções de saída por contexto sobre topologia esparsa compartilhada. |
 | Política híbrida | Taxas de disparo da SNN combinadas com preferências aprendidas por contexto. Avaliações sintéticas mostram os componentes separadamente. |
-| Autonomia | Movimentos visuais limitados e post-its de templates locais, com bloqueios durante arrasto/proposta e opção para silenciar. A autonomia não executa ferramentas diretamente. |
+| Autonomia | Movimento limitado, vistas por profundidade, pulos e dança limitados pelo fôlego, interação geométrica com janelas e post-its locais. A autonomia não executa ferramentas diretamente. |
+| Áudio opcional | Heurísticas individuais para microfone e loopback do sistema, com pose de escuta e dança simples por batida. O áudio nunca é gravado, transcrito ou enviado. |
+| Ambiente local | Céu e cenário suaves conforme o horário local, nascer/pôr do sol configuráveis manualmente e clima decorativo offline. |
 | Segurança e privacidade | Validação de parâmetros tipados, permissões, propostas e confirmações, dados locais, logs rotativos e sensores opcionais desligados por padrão. |
 | Aprendizado observável | Banco local de episódios e ações, hábitos agregados, replay opcional durante sono e aba de aprendizado sob demanda. |
 
@@ -86,8 +92,11 @@ Edite [`configs/default.yaml`](configs/default.yaml) e reinicie o aplicativo.
 | `pet.render_style` | `pixel` (padrão), `spectral`, `ascii` ou `vector`. Os renderizadores antigos do olho continuam disponíveis. |
 | `pet.mode`, `pet.width`, `pet.height`, `pet.anchor`, `pet.margin` | Escolhe painel ou janela flutuante e sua posição inicial. |
 | `visual.scene_time` | `auto`, `dia`, `entardecer` ou `noite`; `auto` usa o horário local. |
+| `day_cycle.sunrise_hour`, `day_cycle.sunset_hour` | Nascer e pôr do sol padrão; `latitude`/`longitude` manuais refinam a estimativa sem rede. |
+| `weather.mode` | `none` (padrão), `rain`, `fog` ou `wind`; apenas efeitos decorativos locais. |
 | `pet.depth_in_pet_mode` | Habilita escala por profundidade no modo flutuante; padrão `false`. |
-| `pet_motion.*` | Habilita e ajusta pequenos saltos por estado emocional. |
+| `pet_motion.*`, `teleport.*` | Ajusta movimentos limitados e seus orçamentos. |
+| `audio.*` | Ajusta limites heurísticos de voz/música, BPM, cooldowns e limites de fôlego. |
 | `renderer` | Backend de desenho: `ascii`/`cpu` ou `auto` (tenta OpenGL e usa fallback CPU). É separado de `pet.render_style`. |
 | `network.tool_output_inhibition` | Competição experimental entre saídas. Mantenha desligada: no intervalo configurado de 10 passos, c/Z ficou em 77,5% SNN-only, abaixo da meta de >80%. |
 | `sleep.replay_enabled`, `sleep.max_replay_episodes`, `sleep.replay_recent_fraction` | Replay limitado e opcional durante o sono; altera pesos somente se habilitado. |
@@ -96,6 +105,35 @@ Edite [`configs/default.yaml`](configs/default.yaml) e reinicie o aplicativo.
 | `privacy.sensors.*` | Configura sensores opcionais, todos inicialmente desligados. |
 
 Alterações no YAML ou estilo de renderização exigem reiniciar o aplicativo. Os sprites do Piu usam ampliação inteira por vizinho mais próximo. Consulte [ART.md](docs/ART.md) para editar as folhas PNG e os metadados JSON.
+
+## Áudio e comportamento pelo horário local
+
+A detecção de voz usa pequenas janelas em memória e limites simples de energia,
+faixa de frequência e modulação. Ela pode mostrar a pose **ouvindo**; não
+reconhece palavras, intenção nem quem está falando. A detecção de música estima
+atividade e BPM por mudanças espectrais para escolher uma dança curta. Se a
+captura de loopback não estiver disponível, o estado de reprodução do Windows
+pode fornecer uma indicação mais simples, sem sincronização por BPM. Pacotes ou
+dispositivos ausentes deixam o sensor indisponível sem afetar a simulação.
+
+As dependências de áudio são opcionais: instale com `pip install -e ".[audio]"`
+somente se for habilitar esses sensores. Os controles aparecem em **SENSORES** e
+no menu de sensores da bandeja; ambos começam desligados. Leia
+[Privacidade](docs/PRIVACY.md) antes de ativá-los.
+Os adaptadores opcionais usam [SoundCard](https://soundcard.readthedocs.io/en/latest/)
+e, no Windows, [Pycaw](https://andremiras.github.io/pycaw/api/index.html).
+
+O céu e a paisagem interpolam entre madrugada, manhã, tarde, entardecer e noite.
+Nascer e pôr do sol usam 06:00/18:00 por padrão; coordenadas manuais opcionais
+refinam uma estimativa solar offline. O clima é decorativo e não vem de serviços
+externos. A entrada de relógio existente continua alimentando a simulação; a
+cena visual não altera a topologia da SNN.
+
+Detalhes de implementação, privacidade, limitações e resultados sintéticos estão
+em [Arquitetura](docs/ARCHITECTURE.md), [Autonomia](docs/AUTONOMY.md),
+[Privacidade](docs/PRIVACY.md), [Aprendizado](docs/LEARNING.md), [Arte](docs/ART.md),
+[Desempenho](docs/PERFORMANCE.md) e [Roadmap](ROADMAP.md). As regras de
+contribuição e release estão em [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Como funcionam a SNN e o aprendizado
 
@@ -109,6 +147,9 @@ Alterações no YAML ou estilo de renderização exigem reiniciar o aplicativo. 
 flowchart LR
     S[Sensores opcionais e ações explícitas] --> Q[Fila de entrada thread-safe]
     C[Relógio local e categorias] --> Q
+    AU[Microfone ou loopback opt-in] --> AX[Recursos de áudio NumPy limitados]
+    AX --> P[Pistas de escuta e dança; sem transcrição]
+    AU -->|áudio descartado| X[Sem gravação ou envio]
     Q --> N[SNN LIF esparsa em NumPy]
     N --> R[Taxas de saída e traços de elegibilidade]
     R --> E[Emoções e necessidades]
@@ -120,6 +161,7 @@ flowchart LR
     E --> U[Autonomia e movimentos do Piu]
     N --> V[Snapshot visual somente leitura]
     U --> V
+    P --> V
     V --> UI[Interface pixel art PySide6]
 ```
 

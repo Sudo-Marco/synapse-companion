@@ -9,6 +9,38 @@ Notable changes are recorded here. This project follows a simple Keep a Changelo
 - Improve neural-only retention and evaluate the renderer on physical Windows
   desktops with mixed-DPI displays.
 
+## [0.3.0] - 2026-11-06
+
+### Added
+
+- Expanded Piu's approved pixel-art poses and views, including bounded movement,
+  depth, stamina-aware jumps, listening, and data-driven dance cycles.
+- Added opt-in microphone and system-loopback features with worker-thread
+  analysis, synthetic signal coverage, and no recording or transcription.
+- Added a smooth five-period local day cycle, offline sunrise/sunset estimates,
+  moon phases, layered scene depth, and optional decorative weather.
+- Updated English and Brazilian Portuguese READMEs, architecture, autonomy,
+  privacy, art, learning, performance, contributor, and release documentation.
+
+### Changed
+
+- Updated the package release metadata and project documentation to v0.3.0.
+- Made CI's offscreen Windows/Linux test setup explicit about not requiring
+  audio extras or physical audio devices.
+- Rechecked the existing SNN experiment defaults; inhibition, sleep replay, and
+  neuron-growth migration remain opt-in.
+
+### Validation limits
+
+- The local headless Windows suite passed all 136 tests; GitHub Actions still
+  needs to pass on Windows and Linux after the release commits reach main.
+- Automated tests and renderer benchmarks are headless/offscreen. Physical
+  Windows desktop behavior, GPU composition, monitor/DPI edge cases, and real
+  audio devices were not validated.
+- Voice/music recognition is heuristic; it does not understand speech. SNN
+  scenario results remain synthetic and the hybrid policy can rely heavily on
+  the contextual selector.
+
 ## [0.2.0] - 2026-11-06
 
 ### Added

@@ -11,6 +11,7 @@ jobs:
   pytest:
     name: pytest (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -31,6 +32,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends libegl1 libgl1 libxcb-cursor0 libxkbcommon-x11-0
+      # Audio extras and physical audio devices are intentionally not used in CI.
+      # Audio feature tests feed synthetic NumPy arrays to the analyzer.
       - name: Install project and test dependencies
         run: python -m pip install -e ".[dev,windows]"
       - name: Run test suite

@@ -28,9 +28,10 @@ root:
 The builder extracts transparent sprites from the approved contact sheets; it
 does not redraw or rescale the bird. Keep the common foot pivot at `(16, 40)`.
 Animation metadata includes duration, loop, hitbox, label, native size, and
-distance-per-cycle where relevant. `lod.png` contains distinct 32, 24, and 16
-pixel drawings; the renderer chooses them with hysteresis and enlarges by
-nearest-neighbor integer steps.
+distance-per-cycle where relevant. The active 0.3 depth routes use individually
+drawn 48, 32, and 20 pixel sprites. The older `lod.png` (32, 24, and 16 pixel
+drawings) remains packaged for compatibility. The renderer chooses a native
+view with hysteresis and enlarges by nearest-neighbor integer steps.
 
 ## Add a pose or animation route
 
@@ -55,6 +56,14 @@ dusk, and night palettes. The floating mode shows only Piu. Panel cards use a
 nine-slice border; progress bars are segmented; post-its use square corners and
 the bundled pixel font. Existing eye styles remain selectable in
 `pet.render_style`.
+
+The v0.3 scene interpolates five local periods (dawn, morning, afternoon, dusk,
+and night) and adds layered hills, a house, trees, a fence, a stream, flowers,
+and time-dependent sky details. Manual latitude/longitude values can refine
+sunrise and sunset locally; no location lookup or weather service is used.
+Optional rain, fog, or wind effects are decorative. Audio listening and dance
+routes are selected from the same animation JSON; no raw sound is part of an
+art asset.
 
 ## Current visual limits
 
