@@ -36,10 +36,16 @@ class PixelPetWidget(QWidget):
     def __init__(self, *, scene_time: str = "auto", compact: bool = False,
                  affection_drag_min_s: float = 1.0, seed: int = 41,
                  depth_in_pet_mode: bool = False,
+                 depth_config: dict[str, object] | None = None,
                  parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.compact = bool(compact)
         self.depth_in_pet_mode = bool(depth_in_pet_mode)
+        depth_config = depth_config or {}
+        self.depth_far_fraction = max(0.05, min(
+            0.45, float(depth_config.get("far_fraction", 0.18))))
+        self.depth_min_scale = max(0.2, min(
+            1.0, float(depth_config.get("min_scale", 0.42))))
         self.scene_time = str(scene_time).strip().lower()
         self.mode = "pet" if compact else "ascii"
         self.rendered_frames = 0
@@ -68,6 +74,11 @@ class PixelPetWidget(QWidget):
         self._pointer_over = False
         self._drag_tracker = AffectionDragTracker(affection_drag_min_s)
         self._motion_blocked = False
+        self._world_travel_action: str | None = None
+        self._world_depth = 0.0
+        self._world_direction = 1
+        self._world_stride_phase = 0.0
+        self._behavior_action: str | None = None
         self._current_source: tuple[str, QRect] | None = None
         self._current_frame_entry: dict[str, object] = {}
         self._current_destination = QRect()
@@ -131,6 +142,30 @@ class PixelPetWidget(QWidget):
             self.animationStarted.emit()
             self.update()
         return accepted
+
+    def set_world_travel(self, action: str | None, *, depth: float = 0.0,
+                         direction: int = 1,
+                         stride_delta_px: float = 0.0) -> None:
+        """Animate the bird in-place while its transparent window moves on desktop."""
+        action = None if action is None else str(action)
+        if action not in {None, "walk", "run", "away", "return", "fly"}:
+            action = None
+        self._world_travel_action = action
+        self._world_depth = max(0.0, min(1.0, float(depth)))
+        self._world_direction = -1 if direction < 0 else 1
+        if action is not None:
+            self._world_stride_phase += max(0.0, float(stride_delta_px)) * 8.0 / 24.0
+        if action is None:
+            self._world_stride_phase = 0.0
+        self.update()
+
+    def set_behavior_action(self, action: str | None) -> None:
+        action = None if action is None else str(action)
+        if action not in {None, "think", "rest", "listen", "caught", "fall",
+                          "peek", "dance_sway", "dance_hop", "dance_head"}:
+            action = None
+        self._behavior_action = action
+        self.update()
 
     @staticmethod
     def _clock_palette(local_time: datetime, setting: str) -> tuple[QColor, QColor, QColor, QColor, bool]:
@@ -220,6 +255,23 @@ class PixelPetWidget(QWidget):
         scale = self._draw_scale(bounds)
         motion = self.motion.advance(
             dt, viewport_width=bounds.width(), sprite_scale=scale)
+        if self.mode == "pet" and self._world_travel_action is not None:
+            if self._world_travel_action == "away":
+                view = "back"
+            elif self._world_travel_action == "return":
+                view = "front"
+            else:
+                view = "back" if self._world_depth > 0.78 else "profile"
+            minimum = 20 if self.depth_min_scale <= (20 / 48) + 0.01 else 32
+            far_threshold = 1.0 - self.depth_far_fraction
+            lod = (minimum if self._world_depth >= far_threshold else
+                   32 if self._world_depth > 0.43 else 48)
+            motion = replace(motion, action=self._world_travel_action,
+                             view=view, depth=self._world_depth,
+                             lod_size=lod, facing=self._world_direction,
+                             stride_phase=self._world_stride_phase)
+        elif self._behavior_action is not None:
+            motion = replace(motion, action=self._behavior_action)
         scene_depth = motion.depth
         if (self.mode != "pet" and not self._motion_blocked
                 and not self.motion.moving and now >= self._next_idle_action):

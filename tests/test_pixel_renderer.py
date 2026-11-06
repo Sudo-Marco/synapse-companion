@@ -138,6 +138,25 @@ def test_v03_view_routes_select_exact_native_lod_and_keep_panel_scale():
         widget.close()
 
 
+def test_world_travel_selects_back_lod_and_rest_uses_manifest_pose():
+    ensure_application()
+    widget = PixelPetWidget(compact=True, depth_in_pet_mode=True)
+    try:
+        widget.resize(320, 180)
+        widget.set_mode("pet")
+        widget.set_world_travel("away", depth=0.9)
+        widget.render_frame(8.0, datetime(2026, 11, 5, 12))
+        assert widget._current_frame_entry["view"] == "costas"
+        assert widget._current_frame_entry["native_size"] == 20
+        widget.set_world_travel(None)
+        widget.set_behavior_action("rest")
+        widget.render_frame(8.2, datetime(2026, 11, 5, 12))
+        assert widget._current_frame_entry["view"] == "frente"
+        assert widget._current_frame_entry["native_size"] == 48
+    finally:
+        widget.close()
+
+
 def test_floating_panel_can_use_pixel_sprite_mask_and_return_to_pixel_pet(tmp_path, monkeypatch):
     QSettings.setDefaultFormat(QSettings.Format.IniFormat)
     QSettings.setPath(QSettings.Format.IniFormat, QSettings.Scope.UserScope,

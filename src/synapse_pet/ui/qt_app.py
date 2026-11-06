@@ -25,6 +25,10 @@ from PySide6.QtWidgets import (QApplication, QDialog, QFileDialog, QFrame,
 
 from ..runtime.visual_state import VisualState
 from ..runtime.autonomy import AutonomyController, PostItStore, StoredPostIt
+from ..sensors.window_geometry import WindowGeometryObserver
+from .desktop_motion import (DesktopBehaviorSelector, WorkArea,
+                             choose_work_area_target, clamp_window_top_left,
+                             desktop_depth)
 from .teleport import STYLES as TELEPORT_STYLES, TeleportTrail, teleport_geometry
 from .gl_renderer import EyeCanvas
 from .postit import PostItWindow
@@ -364,6 +368,26 @@ class PetWindow(QMainWindow):
         self.pet_config = self.config.get("pet", {})
         self.teleport_config = self.config.get("teleport", {})
         self.pet_motion_config = self.config.get("pet_motion", {})
+        self.desktop_motion_config = self.pet_motion_config.get("desktop", {})
+        behavior_config = self.pet_motion_config.get("behaviors", {})
+        self.desktop_behavior_selector = DesktopBehaviorSelector(
+            behavior_config, seed=int(self.config.get("seed", 41)))
+        self._desktop_animation: QPropertyAnimation | None = None
+        self._desktop_animation_style: str | None = None
+        self._desktop_last_position: QPoint | None = None
+        self._desktop_behavior: str | None = None
+        self._desktop_behavior_until = 0.0
+        self._desktop_rng = random.Random(int(self.config.get("seed", 41)) ^ 0x44534B54)
+        self._desktop_next_action_at = time.monotonic() + self._desktop_rng.uniform(
+            float(self.pet_motion_config.get("interval_min_s", 6.0)),
+            float(self.pet_motion_config.get("interval_max_s", 12.0)))
+        self._pet_stamina = 1.0
+        self._pet_stamina_updated_at = time.monotonic()
+        self._active_window_geometry = None
+        self._active_window_fullscreen = False
+        self._window_geometry_observer = WindowGeometryObserver()
+        self._window_geometry_enabled = bool(self.config.get("privacy", {}).get(
+            "sensors", {}).get("window_geometry", False))
         self._pixel_theme = str(self.pet_config.get("render_style", "pixel")).lower() == "pixel"
         self._window_stylesheet = PIXEL_STYLESHEET if self._pixel_theme else STYLESHEET
         self.autonomy_config = self.config.get("autonomy", {})
@@ -461,7 +485,9 @@ class PetWindow(QMainWindow):
             render_style=str(pet_config.get("render_style", "pixel")),
             spectral_config=pet_config.get("spectral", {}),
             seed=int(self.config.get("seed", 41)),
-            depth_in_pet_mode=bool(pet_config.get("depth_in_pet_mode", False)))
+            depth_in_pet_mode=bool(pet_config.get("depth", {}).get(
+                "enabled", pet_config.get("depth_in_pet_mode", False))),
+            depth_config=pet_config.get("depth", {}))
         layout.addWidget(self.canvas, 1)
         self.canvas.petRequested.connect(self._give_affection)
         self.canvas.panelRequested.connect(self._show_panel)
@@ -570,6 +596,14 @@ class PetWindow(QMainWindow):
         layout.addWidget(self.status_label)
 
         self._build_sensor_menu()
+        self._window_geometry_timer = QTimer(self)
+        self._window_geometry_timer.setInterval(max(250, int(
+            self.desktop_motion_config.get("geometry_poll_ms", 500))))
+        self._window_geometry_timer.timeout.connect(self._poll_window_geometry)
+        if self._pet_mode_enabled:
+            # This minimal rectangle-only read is also the fullscreen safety
+            # guard. Window landing/peeking remains separately opt-in.
+            self._window_geometry_timer.start()
         self._build_shortcuts()
         self.panelHotkeyPressed.connect(self._show_panel)
         self._panel_only_widgets = [
@@ -628,6 +662,7 @@ class PetWindow(QMainWindow):
         self._autonomy_action.setChecked(bool(self.engine.autonomy_enabled))
         self._autonomy_action.toggled.connect(self._toggle_autonomy)
         menu.addAction(self._autonomy_action)
+        menu.addMenu(self.sensor_menu)
         self._autostart_action = QAction("Iniciar com o Windows", self)
         self._autostart_action.setCheckable(True)
         self._autostart_action.setChecked(self._read_windows_startup())
@@ -650,6 +685,12 @@ class PetWindow(QMainWindow):
         self.engine.set_autonomy_enabled(enabled)
         self._autonomy_action.setText("Silenciar autonomia" if enabled else
                                       "Ativar autonomia")
+
+    def _set_window_geometry_enabled(self, enabled: bool) -> None:
+        self._window_geometry_enabled = bool(enabled)
+        if not self._window_geometry_enabled:
+            self._active_window_geometry = None
+        self._poll_window_geometry()
 
     def _start_global_panel_hotkey(self) -> None:
         if not self._pet_mode_enabled:
@@ -710,6 +751,7 @@ class PetWindow(QMainWindow):
             self.raise_()
             self.activateWindow()
             return
+        self._stop_desktop_motion()
         self._stop_pet_animation(restore_start=True)
         self._stop_jump(restore_start=True)
         self._pet_last_click_at = 0.0
@@ -720,6 +762,8 @@ class PetWindow(QMainWindow):
         self._settings.sync()
         self.hide()
         self._is_floating = False
+        if hasattr(self, "_window_geometry_timer"):
+            self._window_geometry_timer.stop()
         self.clearMask()
         self.removeEventFilter(self)
         for child in self.canvas.findChildren(QWidget):
@@ -749,6 +793,7 @@ class PetWindow(QMainWindow):
             self.showNormal()
             self.raise_()
             return
+        self._stop_desktop_motion()
         self._stop_pet_animation(restore_start=True)
         self._stop_jump(restore_start=True)
         for panel in (self._debug_panel, self._learning_panel):
@@ -757,6 +802,8 @@ class PetWindow(QMainWindow):
         self._panel_size = (max(700, self.width()), max(390, self.height()))
         self.hide()
         self._is_floating = True
+        if hasattr(self, "_window_geometry_timer"):
+            self._window_geometry_timer.start()
         for widget in self._panel_only_widgets:
             widget.hide()
         self._root_layout.setContentsMargins(0, 0, 0, 0)
@@ -829,9 +876,248 @@ class PetWindow(QMainWindow):
         elif anchor == "bottom_right" or saved_x is None:
             point = QPoint(area.right() - self.width() - margin,
                            area.bottom() - self.height() - margin)
-        point.setX(max(area.left(), min(point.x(), area.right() - self.width())))
-        point.setY(max(area.top(), min(point.y(), area.bottom() - self.height())))
+        work = WorkArea(area.left(), area.top(), area.width(), area.height())
+        x, y = clamp_window_top_left(point.x(), point.y(), self.width(),
+                                     self.height(), work)
+        point = QPoint(x, y)
         self.move(point)
+
+    @staticmethod
+    def _screen_work_areas() -> list[WorkArea]:
+        return [WorkArea(screen.availableGeometry().left(),
+                         screen.availableGeometry().top(),
+                         screen.availableGeometry().width(),
+                         screen.availableGeometry().height())
+                for screen in QGuiApplication.screens()]
+
+    def _work_area_at(self, point: QPoint) -> WorkArea | None:
+        screen = QGuiApplication.screenAt(point) or QGuiApplication.primaryScreen()
+        if screen is None:
+            return None
+        area = screen.availableGeometry()
+        return WorkArea(area.left(), area.top(), area.width(), area.height())
+
+    def _clamp_pet_position(self, point: QPoint) -> QPoint:
+        center = point + QPoint(self.width() // 2, self.height() // 2)
+        area = self._work_area_at(center)
+        if area is None:
+            return QPoint(point)
+        x, y = clamp_window_top_left(point.x(), point.y(), self.width(),
+                                     self.height(), area)
+        return QPoint(x, y)
+
+    def _sync_world_travel_pose(self) -> None:
+        if self._desktop_animation is None:
+            return
+        center = self.frameGeometry().center()
+        area = self._work_area_at(center)
+        if area is None:
+            return
+        depth = desktop_depth(center.y(), area)
+        dx = self._desktop_animation.endValue().x() - self._desktop_animation.startValue().x()
+        direction = -1 if dx < 0 else 1
+        position = self.pos()
+        previous = self._desktop_last_position or position
+        stride_delta = math.hypot(position.x() - previous.x(),
+                                  position.y() - previous.y())
+        self._desktop_last_position = QPoint(position)
+        self.canvas.set_world_travel(
+            self._desktop_animation_style, depth=depth, direction=direction,
+            stride_delta_px=stride_delta)
+
+    def _start_desktop_travel(self, x: int, y: int, style: str,
+                              *, behavior: str, duration_s: float) -> bool:
+        if self._desktop_animation is not None:
+            return False
+        end = self._clamp_pet_position(QPoint(int(x), int(y)))
+        start = self.pos()
+        distance = math.hypot(end.x() - start.x(), end.y() - start.y())
+        if distance < 30:
+            return False
+        stamina = max(0.0, min(1.0, self._pet_stamina))
+        speed = max(40.0, float(self.desktop_motion_config.get(
+            "speed_px_s", 185)) * (0.42 + 0.58 * stamina))
+        limits = self.desktop_motion_config
+        travel_s = max(float(limits.get("travel_min_s", 1.0)), distance / speed)
+        travel_s = min(float(limits.get("travel_max_s", 18.0)), travel_s)
+        self._desktop_behavior = behavior
+        self._desktop_behavior_until = time.monotonic() + max(
+            travel_s, float(duration_s))
+        self._desktop_animation_style = style
+        self._desktop_last_position = QPoint(start)
+        animation = QPropertyAnimation(self, b"pos", self)
+        animation.setDuration(max(250, round(travel_s * 1000)))
+        animation.setStartValue(start)
+        animation.setEndValue(end)
+        animation.setEasingCurve(QEasingCurve.Type.InOutSine)
+        animation.valueChanged.connect(lambda _value: self._sync_world_travel_pose())
+        animation.finished.connect(
+            lambda animation=animation: self._desktop_travel_finished(animation))
+        self._desktop_animation = animation
+        self._sync_world_travel_pose()
+        animation.start()
+        return True
+
+    def _desktop_travel_finished(self, animation: QPropertyAnimation) -> None:
+        if self._desktop_animation is not animation:
+            return
+        self._desktop_animation = None
+        self._desktop_animation_style = None
+        self._desktop_last_position = None
+        animation.deleteLater()
+        self.canvas.set_world_travel(None)
+        self._settings.setValue("pet/x", self.x())
+        self._settings.setValue("pet/y", self.y())
+        self._settings.sync()
+        if self._desktop_behavior == "window_perch":
+            self.canvas.set_behavior_action("peek")
+            self._desktop_behavior_until = time.monotonic() + float(
+                self.pet_motion_config.get("behaviors", {}).get("actions", {}).get(
+                    "window_perch", {}).get("duration_s", 3.5))
+
+    def _stop_desktop_motion(self) -> None:
+        animation = self._desktop_animation
+        self._desktop_animation = None
+        self._desktop_animation_style = None
+        self._desktop_last_position = None
+        if animation is not None:
+            animation.stop()
+            animation.deleteLater()
+        self.canvas.set_world_travel(None)
+        self._desktop_behavior = None
+        self._desktop_behavior_until = 0.0
+        self.canvas.set_behavior_action(None)
+
+    def _update_pet_stamina(self, now: float) -> None:
+        dt = max(0.0, min(1.0, now - self._pet_stamina_updated_at))
+        self._pet_stamina_updated_at = now
+        costs = self.desktop_motion_config.get("stamina", {})
+        if self._desktop_animation is not None:
+            rate = float(costs.get("run_cost_per_s", 0.025))
+        elif self._desktop_behavior == "dance":
+            rate = float(costs.get("dance_cost_per_s", 0.045))
+        elif self._desktop_behavior == "rest":
+            rate = -float(costs.get("rest_recovery_per_s", 0.12))
+        else:
+            rate = -float(costs.get("recovery_per_s", 0.018))
+        self._pet_stamina = max(0.0, min(1.0, self._pet_stamina - rate * dt))
+
+    def _consider_desktop_motion(self, state: VisualState,
+                                 health: dict[str, object], now: float) -> None:
+        if (not self._is_floating or not self.isVisible()
+                or not bool(self.desktop_motion_config.get("enabled", True))
+                or not bool(self.pet_motion_config.get("enabled", True))
+                or not self.engine.autonomy_enabled
+                or health.get("status") != "running"
+                or int(health.get("pending_proposals", 0))
+                or int(health.get("proposal_queue", 0))
+                or self._pet_drag_offset is not None or self._pet_hovering
+                or self._pet_animation is not None or self._jump_animation is not None
+                or self._teleport_animation is not None
+                or self._is_fullscreen_foreground()):
+            self._stop_desktop_motion()
+            return
+        if self._desktop_animation is not None:
+            self._sync_world_travel_pose()
+            return
+        if self._desktop_behavior is not None:
+            if now < self._desktop_behavior_until:
+                return
+            self._desktop_behavior = None
+            self.canvas.set_behavior_action(None)
+        if now < self._desktop_next_action_at:
+            return
+        minimum = max(2.0, float(self.pet_motion_config.get("interval_min_s", 6.0)))
+        maximum = max(minimum, float(self.pet_motion_config.get("interval_max_s", 12.0)))
+        self._desktop_next_action_at = now + self._desktop_rng.uniform(minimum, maximum)
+        behavior_cfg = self.pet_motion_config.get("behaviors", {})
+        action_defs = behavior_cfg.get("actions", {})
+        if self._pet_stamina < 0.20:
+            action = "rest"
+        else:
+            action = self.desktop_behavior_selector.choose(
+                state.emotion, self._pet_stamina, now,
+                window_available=(self._window_geometry_enabled
+                                  and self._active_window_geometry is not None))
+        if action is None:
+            return
+        action_cfg = action_defs.get(action, {})
+        duration = max(0.5, float(action_cfg.get("duration_s", 2.5)))
+        if action in {"rest", "think"}:
+            self._desktop_behavior = action
+            self._desktop_behavior_until = now + duration
+            self.canvas.set_behavior_action("rest" if action == "rest" else "think")
+            return
+        if action == "dance":
+            dance = self._desktop_rng.choice(
+                ("dance_sway", "dance_hop", "dance_head"))
+            self._desktop_behavior = action
+            self._desktop_behavior_until = now + duration
+            self.canvas.set_behavior_action(dance)
+            return
+
+        areas = self._screen_work_areas()
+        if not areas:
+            return
+        current = self.frameGeometry().center()
+        current_screen = QGuiApplication.screenAt(current)
+        if action == "window_perch":
+            rect = self._active_window_rect()
+            if rect is None:
+                return
+            screen = QGuiApplication.screenAt(rect.center()) or current_screen
+            if screen is None:
+                return
+            area = screen.availableGeometry()
+            target_x = rect.center().x() - self.width() // 2
+            target_y = rect.top() - self.height() + 4
+            target = self._clamp_pet_position(QPoint(target_x, target_y))
+            style = ("away" if target.y() < self.y() - 70 else
+                     "return" if target.y() > self.y() + 70 else "walk")
+            self._start_desktop_travel(target.x(), target.y(), style,
+                                       behavior=action, duration_s=duration)
+            return
+        if action in {"follow_cursor", "flee_cursor"}:
+            cursor = QCursor.pos()
+            screen = QGuiApplication.screenAt(cursor)
+            if screen is None:
+                return
+            area_qt = screen.availableGeometry()
+            area = WorkArea(area_qt.left(), area_qt.top(),
+                            area_qt.width(), area_qt.height())
+            if action == "follow_cursor":
+                if state.curiosity < float(self.config.get("learning", {}).get(
+                        "curiosity_threshold", 0.72)):
+                    return
+                target_x = cursor.x() - self.width() // 2
+                target_y = cursor.y() - self.height() - 24
+            else:
+                if math.hypot(cursor.x() - current.x(), cursor.y() - current.y()) > 300:
+                    return
+                target_x = self.x() + (self.width() if current.x() < cursor.x()
+                                       else -self.width())
+                target_y = self.y()
+            target_x, target_y = clamp_window_top_left(
+                target_x, target_y, self.width(), self.height(), area)
+            style = "run" if action == "flee_cursor" else "walk"
+            self._start_desktop_travel(target_x, target_y, style,
+                                       behavior=action, duration_s=duration)
+            return
+
+        if action == "wander":
+            far = (True if self._desktop_rng.random() < 0.18 else
+                   False if self._desktop_rng.random() < 0.22 else None)
+            index, x, y = choose_work_area_target(
+                areas, (self.x(), self.y()), (self.width(), self.height()),
+                self._desktop_rng, far=far)
+            target_area = areas[index]
+            current_depth = desktop_depth(current.y(), self._work_area_at(current) or target_area)
+            target_depth = desktop_depth(y + self.height() // 2, target_area)
+            style = ("away" if target_depth > current_depth + 0.14 else
+                     "return" if target_depth < current_depth - 0.14 else "walk")
+            self._start_desktop_travel(x, y, style, behavior=action,
+                                       duration_s=duration)
+
 
     def eventFilter(self, watched, event) -> bool:
         if not self._is_floating:
@@ -858,6 +1144,7 @@ class PetWindow(QMainWindow):
                     self._pet_last_click_position = None
                     self._show_panel()
                     return True
+                self._stop_desktop_motion()
                 self._stop_jump(restore_start=False)
                 self._stop_pet_animation(restore_start=True)
                 self._pet_drag_offset = point - self.frameGeometry().topLeft()
@@ -872,7 +1159,7 @@ class PetWindow(QMainWindow):
                     self._pet_drag_moved |= (
                         (point - self._pet_drag_origin).manhattanLength()
                         >= QApplication.startDragDistance())
-                self.move(point - self._pet_drag_offset)
+                self.move(self._clamp_pet_position(point - self._pet_drag_offset))
                 if (self._pet_drag_moved and not self._pet_drag_rewarded
                         and time.monotonic() - self._pet_drag_started >= float(
                             self.interaction_config.get("affection_drag_min_s", 1.0))):
@@ -960,11 +1247,12 @@ class PetWindow(QMainWindow):
                 or health["status"] != "running"
                 or int(health["pending_proposals"]) > 0
                 or int(health["proposal_queue"]) > 0
+                or self._desktop_animation is not None
                 or self._teleport_animation is not None
                 or self._jump_animation is not None
                 or self._pet_animation is not None
                 or self._pet_drag_offset is not None
-                or self._pet_hovering):
+                or self._pet_hovering or self._pet_stamina < 0.20):
             return
         if now < self._next_jump_at:
             return
@@ -1010,8 +1298,11 @@ class PetWindow(QMainWindow):
         self._begin_jump(style, amplitude, duration_ms)
 
     def _begin_jump(self, style: str, amplitude: int, duration_ms: int) -> None:
-        if self._jump_animation is not None or not self._is_floating:
+        if (self._jump_animation is not None or not self._is_floating
+                or self._pet_stamina < 0.20):
             return
+        self._pet_stamina = max(0.0, self._pet_stamina - float(
+            self.desktop_motion_config.get("stamina", {}).get("jump_cost", 0.12)))
         start = QRect(self.geometry())
         self._jump_start_geometry = start
         animation = QVariantAnimation(self)
@@ -1050,7 +1341,8 @@ class PetWindow(QMainWindow):
         else:
             x_offset = 0
             y_offset = -round(arc * amplitude)
-        self.setGeometry(start.translated(x_offset, y_offset))
+        moved = self._clamp_pet_position(start.topLeft() + QPoint(x_offset, y_offset))
+        self.move(moved)
 
     def _jump_finished(self, animation: QVariantAnimation) -> None:
         if self._jump_animation is not animation:
@@ -1080,6 +1372,7 @@ class PetWindow(QMainWindow):
                             now: float) -> None:
         if (not self._is_floating or not self._teleport_enabled()
                 or not self.engine.autonomy_enabled or self._teleport_animation is not None
+                or self._desktop_animation is not None
                 or self._pet_drag_offset is not None or self._pet_hovering
                 or health["status"] != "running"
                 or int(health["pending_proposals"]) > 0
@@ -1184,28 +1477,9 @@ class PetWindow(QMainWindow):
         return QPoint(x, y)
 
     def _active_window_rect(self) -> QRect | None:
-        if sys.platform != "win32":
+        if not self._window_geometry_enabled or self._active_window_geometry is None:
             return None
-        try:
-            import ctypes
-            from ctypes import wintypes
-            class RECT(ctypes.Structure):
-                _fields_ = [("left", wintypes.LONG), ("top", wintypes.LONG),
-                            ("right", wintypes.LONG), ("bottom", wintypes.LONG)]
-            user32 = ctypes.windll.user32
-            hwnd = user32.GetForegroundWindow()
-            if (not hwnd or int(hwnd) == int(self.winId())
-                    or not user32.IsWindowVisible(hwnd)):
-                return None
-            rect = RECT()
-            if not user32.GetWindowRect(hwnd, ctypes.byref(rect)):
-                return None
-            if rect.right <= rect.left or rect.bottom <= rect.top:
-                return None
-            return QRect(rect.left, rect.top, rect.right - rect.left,
-                         rect.bottom - rect.top)
-        except Exception:
-            return None
+        return QRect(self._active_window_geometry)
 
     def _begin_teleport(self, style_name: str, destination_center: QPoint,
                         now: float | None = None) -> None:
@@ -1397,15 +1671,7 @@ class PetWindow(QMainWindow):
             self.engine.submit_feedback(-0.10, context="postit_quick_dismiss")
 
     def _is_fullscreen_foreground(self) -> bool:
-        rect = self._active_window_rect()
-        if rect is None:
-            return False
-        screen = QGuiApplication.screenAt(rect.center())
-        if screen is None:
-            return False
-        bounds = screen.geometry()
-        return (rect.width() >= bounds.width() * 0.94
-                and rect.height() >= bounds.height() * 0.94)
+        return self._active_window_fullscreen
 
     def _quit_from_tray(self) -> None:
         self._requested_exit = True
@@ -1426,6 +1692,24 @@ class PetWindow(QMainWindow):
             action.setChecked(sensor.enabled)
             action.toggled.connect(lambda enabled, n=name: self._toggle_sensor(n, enabled))
             self.sensor_actions[name] = action
+        self.window_geometry_action = self.sensor_menu.addAction(
+            "Pousar em janelas (somente posição e tamanho)")
+        self.window_geometry_action.setCheckable(True)
+        self.window_geometry_action.setChecked(self._window_geometry_enabled)
+        self.window_geometry_action.setToolTip(
+            "Usa somente o retângulo da janela em foco; nunca lê título, texto ou conteúdo.")
+        self.window_geometry_action.toggled.connect(
+            self._set_window_geometry_enabled)
+
+    def _poll_window_geometry(self) -> None:
+        snapshot = self._window_geometry_observer.poll()
+        self._active_window_fullscreen = bool(snapshot and snapshot.fullscreen)
+        if (snapshot is not None and not snapshot.fullscreen
+                and self._window_geometry_enabled):
+            self._active_window_geometry = QRect(
+                snapshot.left, snapshot.top, snapshot.width, snapshot.height)
+        else:
+            self._active_window_geometry = None
 
     def _show_sensor_menu(self) -> None:
         self.sensor_menu.exec(self.sensor_button.mapToGlobal(self.sensor_button.rect().bottomLeft()))
@@ -1599,6 +1883,8 @@ class PetWindow(QMainWindow):
         self.canvas.set_motion_blocked(
             dragging=self._pet_drag_offset is not None,
             proposal_pending=proposal_pending)
+        if proposal_pending or self._pet_drag_offset is not None:
+            self._stop_desktop_motion()
         while True:
             try:
                 result = self.engine.action_results.get_nowait()
@@ -1656,6 +1942,8 @@ class PetWindow(QMainWindow):
         health = self.engine.health_snapshot()
         self._consider_teleport(render_state, health, now)
         self._consider_jump(render_state, health, now)
+        self._update_pet_stamina(now)
+        self._consider_desktop_motion(render_state, health, now)
         self._consider_autonomy(render_state, health, now)
         stopped = health["status"] in {"stalled", "stopped"}
         paused = health["status"] == "paused"
@@ -1675,6 +1963,8 @@ class PetWindow(QMainWindow):
         self.energy_card.set_value(self.last_state.energy)
         self.stress_card.set_value(self.last_state.stress)
         enabled = [name for name, action in self.sensor_actions.items() if action.isChecked()]
+        if self._window_geometry_enabled:
+            enabled.append("janela-geometria")
         sensor_text = "SENSORES: " + " · ".join(enabled) if enabled else "SENSORES DESLIGADOS"
         if paused:
             self.status_label.setText(f"SIMULAÇÃO PAUSADA · TICK {health['tick']}")
@@ -1686,9 +1976,14 @@ class PetWindow(QMainWindow):
         elif self._notice and now < self._notice_until:
             self.status_label.setText(self._notice)
         else:
-            self.status_label.setText(f"{sensor_text.upper()} · {self._fps:02d} FPS · M / F11 / T")
+            stamina_text = (f" · FÔLEGO {round(self._pet_stamina * 100):02d}%"
+                            if self._is_floating else "")
+            self.status_label.setText(
+                f"{sensor_text.upper()}{stamina_text} · {self._fps:02d} FPS · M / F11 / T")
         active = (self.last_state.active or now - self.last_interaction < 3.0
-                  or (not self._is_floating and self.canvas.attention_animating))
+                  or (not self._is_floating and self.canvas.attention_animating)
+                  or self._desktop_animation is not None
+                  or self._desktop_behavior in {"think", "rest", "dance", "window_perch"})
         fps = int(self.visual_config.get("fps_active", 30) if active
                   else self.visual_config.get("fps_idle", 5))
         interval = max(1, round(1000 / max(1, fps)))
@@ -1734,6 +2029,9 @@ class PetWindow(QMainWindow):
             return
         self._closing = True
         self.frame_timer.stop()
+        if hasattr(self, "_window_geometry_timer"):
+            self._window_geometry_timer.stop()
+        self._stop_desktop_motion()
         self._tray_icon.hide()
         self.hide()
         self._shutdown_thread = threading.Thread(target=self.engine.stop,

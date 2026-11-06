@@ -4,6 +4,10 @@ pet:
   mode: floating          # floating (somente o olho) ou window (painel ao iniciar)
   render_style: pixel     # pixel (Piu), spectral, ascii ou vector
   depth_in_pet_mode: false
+  depth:
+    enabled: true
+    far_fraction: 0.18
+    min_scale: 0.42
   spectral:
     glow_strength: 0.82   # 0..1
     rune_count: 10        # 0..12; reduz automaticamente em tamanhos pequenos
@@ -18,6 +22,61 @@ pet_motion:
   enabled: true
   interval_min_s: 6.0
   interval_max_s: 12.0
+  desktop:
+    enabled: true
+    speed_px_s: 185
+    travel_min_s: 1.0
+    travel_max_s: 18.0
+    window_geometry_enabled: false
+    geometry_poll_ms: 500
+    stamina:
+      run_cost_per_s: 0.025
+      dance_cost_per_s: 0.045
+      jump_cost: 0.12
+      recovery_per_s: 0.018
+      rest_recovery_per_s: 0.12
+  behaviors:
+    enabled: true
+    max_actions_per_hour: 24
+    cooldowns_s:
+      wander: 4
+      think: 18
+      rest: 12
+      dance: 45
+      follow_cursor: 12
+      flee_cursor: 18
+      window_perch: 30
+    actions:
+      wander:
+        weight: 0.50
+        min_stamina: 0.18
+        duration_s: 3.0
+      think:
+        weight: 0.12
+        emotions: [curioso]
+        duration_s: 4.0
+      rest:
+        weight: 0.10
+        max_stamina: 0.22
+        duration_s: 9.0
+      dance:
+        weight: 0.12
+        min_stamina: 0.55
+        emotions: [alegre]
+        duration_s: 4.0
+      follow_cursor:
+        weight: 0.08
+        emotions: [curioso]
+        duration_s: 2.0
+      flee_cursor:
+        weight: 0.04
+        emotions: [estressado]
+        duration_s: 2.2
+      window_perch:
+        weight: 0.04
+        min_stamina: 0.2
+        requires_window: true
+        duration_s: 3.5
   amplitude_px:
     alegre: 26
     curioso: 18
@@ -148,6 +207,7 @@ privacy:
     file_events: false
     clipboard: false
     system_stats: false
+    window_geometry: false
 tools:
   max_automatic_per_hour: 6
   failure_cooldown_s: 300

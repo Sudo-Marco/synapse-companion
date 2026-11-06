@@ -305,7 +305,8 @@ class EyeCanvas(QWidget):
                  render_style: str = "spectral",
                  spectral_config: dict | None = None,
                  seed: int = 41,
-                 depth_in_pet_mode: bool = False) -> None:
+                 depth_in_pet_mode: bool = False,
+                 depth_config: dict[str, object] | None = None) -> None:
         super().__init__(parent)
         self.renderer_config = renderer.lower()
         self.render_style = (render_style if render_style in {"pixel", "spectral", "ascii", "vector"}
@@ -328,6 +329,7 @@ class EyeCanvas(QWidget):
                 scene_time=scene_time, compact=compact,
                 affection_drag_min_s=affection_drag_min_s,
                 seed=seed, depth_in_pet_mode=depth_in_pet_mode,
+                depth_config=depth_config,
                 parent=self._stack)
             self._cpu = self._pixel
             self._pixel.petRequested.connect(self.petRequested.emit)
@@ -425,6 +427,18 @@ class EyeCanvas(QWidget):
         if self._pixel is not None:
             self._pixel.set_motion_blocked(
                 dragging=dragging, proposal_pending=proposal_pending)
+
+    def set_world_travel(self, action: str | None, *, depth: float = 0.0,
+                         direction: int = 1,
+                         stride_delta_px: float = 0.0) -> None:
+        if self._pixel is not None:
+            self._pixel.set_world_travel(action, depth=depth,
+                                         direction=direction,
+                                         stride_delta_px=stride_delta_px)
+
+    def set_behavior_action(self, action: str | None) -> None:
+        if self._pixel is not None:
+            self._pixel.set_behavior_action(action)
 
     def _check_gl(self) -> None:
         if self._gl is not None and not self._gl.isValid():
