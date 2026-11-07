@@ -45,7 +45,13 @@ def test_eye_canvas_selects_each_render_style_without_changing_pet_mode():
             frame = canvas._ascii_eye.render_frame(
                 now=4.0, local_time=datetime(2026, 11, 5, 12).astimezone())
             assert frame.format().name == "Format_RGBA8888"
-            assert frame.pixelColor(frame.width() // 2, frame.height() // 2).alpha() > 0
+            # Font rasterization and grid-cell alignment vary by platform; the
+            # geometric center may be a transparent glyph cell. Verify the
+            # whole transparent frame contains rendered pixels instead.
+            pixels = np.frombuffer(
+                frame.constBits().tobytes(), dtype=np.uint8
+            ).reshape(frame.height(), frame.width(), 4)
+            assert pixels[:, :, 3].max() > 0
         finally:
             canvas.close()
 
