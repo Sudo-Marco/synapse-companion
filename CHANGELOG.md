@@ -32,8 +32,8 @@ Notable changes are recorded here. This project follows a simple Keep a Changelo
 
 ### Validation limits
 
-- The local headless Windows suite passed all 136 tests; GitHub Actions still
-  needs to pass on Windows and Linux after the release commits reach main.
+- The headless suite passed all 136 tests locally and on GitHub Actions for
+  Windows and Linux after a font-independent renderer assertion fix.
 - Automated tests and renderer benchmarks are headless/offscreen. Physical
   Windows desktop behavior, GPU composition, monitor/DPI edge cases, and real
   audio devices were not validated.
