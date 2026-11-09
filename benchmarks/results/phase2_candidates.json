@@ -1,0 +1,496 @@
+{
+  "schema": 1,
+  "measurement_kind": "phase2_action_credit_and_csr_alternatives",
+  "timestamp_local": "2026-11-08 22:20:02 -0300",
+  "python": "3.14.10 (tags/v3.14.10:b703b2c, Oct 25 2026, 17:36:52) [MSC v.1944 64 bit (AMD64)]",
+  "numpy": "2.5.4",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "seed": 20261102,
+  "configuration": {
+    "requested_neurons": 600,
+    "tool_group_size": 8,
+    "hidden_to_output_edges": 4912,
+    "selected_output_count": 8,
+    "samples": 30,
+    "iterations_per_sample": 100
+  },
+  "action_credit": {
+    "mask_methods": {
+      "isin": {
+        "wall_ms": {
+          "mean": 0.15204343333333334,
+          "stddev": 0.02423260842842874,
+          "p50": 0.143936,
+          "p95": 0.20492034999999997,
+          "p99": 0.21376214000000002
+        },
+        "thread_cpu_ms": {
+          "mean": 0.14583333333333334,
+          "stddev": 0.08001193487363134,
+          "p50": 0.15625,
+          "p95": 0.3125,
+          "p99": 0.3125
+        },
+        "samples": 30,
+        "iterations_per_sample": 100
+      },
+      "lookup": {
+        "wall_ms": {
+          "mean": 0.11870236666666666,
+          "stddev": 0.012996580000095745,
+          "p50": 0.1159225,
+          "p95": 0.14631814999999998,
+          "p99": 0.15487778
+        },
+        "thread_cpu_ms": {
+          "mean": 0.11979166666666667,
+          "stddev": 0.06608634135650793,
+          "p50": 0.15625,
+          "p95": 0.15625,
+          "p99": 0.15625
+        },
+        "samples": 30,
+        "iterations_per_sample": 100
+      },
+      "sorted_runs": {
+        "wall_ms": {
+          "mean": 0.09929036666666666,
+          "stddev": 0.006873359510861886,
+          "p50": 0.0973045,
+          "p95": 0.10935079999999998,
+          "p99": 0.12104541
+        },
+        "thread_cpu_ms": {
+          "mean": 0.09895833333333333,
+          "stddev": 0.07529600153542167,
+          "p50": 0.15625,
+          "p95": 0.15625,
+          "p99": 0.15625
+        },
+        "samples": 30,
+        "iterations_per_sample": 100
+      },
+      "production": {
+        "wall_ms": {
+          "mean": 0.11592783333333334,
+          "stddev": 0.020414314404494597,
+          "p50": 0.106706,
+          "p95": 0.15212404999999998,
+          "p99": 0.18249385000000004
+        },
+        "thread_cpu_ms": {
+          "mean": 0.11979166666666667,
+          "stddev": 0.06608634135650793,
+          "p50": 0.15625,
+          "p95": 0.15625,
+          "p99": 0.15625
+        },
+        "samples": 30,
+        "iterations_per_sample": 100
+      }
+    },
+    "mask_exact_against_isin": {
+      "isin": true,
+      "lookup": true,
+      "sorted_runs": true,
+      "production": true
+    },
+    "weights_exact_after_50_updates": {
+      "isin": true,
+      "lookup": true,
+      "sorted_runs": true,
+      "production": true
+    }
+  },
+  "propagation": {
+    "sensor_hidden_spike_rate_0.01": {
+      "scipy_csr": {
+        "wall_ms": {
+          "mean": 0.010006466666666667,
+          "stddev": 0.0004653501716151205,
+          "p50": 0.009829,
+          "p95": 0.0109277,
+          "p99": 0.0113255
+        },
+        "thread_cpu_ms": {
+          "mean": 0.010416666666666666,
+          "stddev": 0.038975597778895234,
+          "p50": 0.0,
+          "p95": 0.08593749999999956,
+          "p99": 0.15625
+        },
+        "samples": 30,
+        "iterations_per_sample": 100
+      },
+      "numpy_bincount": {
+        "wall_ms": {
+          "mean": 0.03755273333333333,
+          "stddev": 0.0020862958552313607,
+          "p50": 0.036920499999999995,
+          "p95": 0.04173705,
+          "p99": 0.043896120000000004
+        },
+        "thread_cpu_ms": {
+          "mean": 0.036458333333333336,
+          "stddev": 0.06608634135650791,
+          "p50": 0.0,
+          "p95": 0.15625,
+          "p99": 0.15625
+        },
+        "samples": 30,
+        "iterations_per_sample": 100
+      }
+    },
+    "sensor_hidden_spike_rate_0.05": {
+      "scipy_csr": {
+        "wall_ms": {
+          "mean": 0.010223033333333334,
+          "stddev": 0.0009330655383674231,
+          "p50": 0.009881000000000001,
+          "p95": 0.01198395,
+          "p99": 0.013568540000000002
+        },
+        "thread_cpu_ms": {
+          "mean": 0.010416666666666666,
+          "stddev": 0.038975597778895234,
+          "p50": 0.0,
+          "p95": 0.08593749999999956,
+          "p99": 0.15625
+        },
+        "samples": 30,
+        "iterations_per_sample": 100
+      },
+      "numpy_bincount": {
+        "wall_ms": {
+          "mean": 0.037133566666666666,
+          "stddev": 0.002510840943898191,
+          "p50": 0.0363045,
+          "p95": 0.04145795,
+          "p99": 0.04546353000000001
+        },
+        "thread_cpu_ms": {
+          "mean": 0.036458333333333336,
+          "stddev": 0.06608634135650793,
+          "p50": 0.0,
+          "p95": 0.15625,
+          "p99": 0.15625
+        },
+        "samples": 30,
+        "iterations_per_sample": 100
+      }
+    },
+    "sensor_hidden_spike_rate_0.20": {
+      "scipy_csr": {
+        "wall_ms": {
+          "mean": 0.01099736666666667,
+          "stddev": 0.002295705693729539,
+          "p50": 0.009711000000000001,
+          "p95": 0.016096549999999994,
+          "p99": 0.01756927
+        },
+        "thread_cpu_ms": {
+          "mean": 0.015625,
+          "stddev": 0.046875,
+          "p50": 0.0,
+          "p95": 0.15625,
+          "p99": 0.15625
+        },
+        "samples": 30,
+        "iterations_per_sample": 100
+      },
+      "numpy_bincount": {
+        "wall_ms": {
+          "mean": 0.0408704,
+          "stddev": 0.005806772750274746,
+          "p50": 0.038853,
+          "p95": 0.0541182,
+          "p99": 0.055493490000000006
+        },
+        "thread_cpu_ms": {
+          "mean": 0.041666666666666664,
+          "stddev": 0.06909634979907084,
+          "p50": 0.0,
+          "p95": 0.15625,
+          "p99": 0.15625
+        },
+        "samples": 30,
+        "iterations_per_sample": 100
+      }
+    },
+    "recurrent_spike_rate_0.01": {
+      "scipy_csr": {
+        "wall_ms": {
+          "mean": 0.026328299999999992,
+          "stddev": 0.005567388155739338,
+          "p50": 0.0241325,
+          "p95": 0.03918695,
+          "p99": 0.04091416
+        },
+        "thread_cpu_ms": {
+          "mean": 0.026041666666666668,
+          "stddev": 0.05823093691405702,
+          "p50": 0.0,
+          "p95": 0.15625,
+          "p99": 0.15625
+        },
+        "samples": 30,
+        "iterations_per_sample": 100
+      },
+      "numpy_bincount": {
+        "wall_ms": {
+          "mean": 0.15727006666666668,
+          "stddev": 0.01428127622899609,
+          "p50": 0.1510975,
+          "p95": 0.18449705,
+          "p99": 0.18496387
+        },
+        "thread_cpu_ms": {
+          "mean": 0.15625,
+          "stddev": 0.0,
+          "p50": 0.15625,
+          "p95": 0.15625,
+          "p99": 0.15625
+        },
+        "samples": 30,
+        "iterations_per_sample": 100
+      }
+    },
+    "recurrent_spike_rate_0.05": {
+      "scipy_csr": {
+        "wall_ms": {
+          "mean": 0.02462323333333333,
+          "stddev": 0.004371196523328087,
+          "p50": 0.022476500000000003,
+          "p95": 0.03404744999999999,
+          "p99": 0.03478213
+        },
+        "thread_cpu_ms": {
+          "mean": 0.020833333333333332,
+          "stddev": 0.053114786599924836,
+          "p50": 0.0,
+          "p95": 0.15625,
+          "p99": 0.15625
+        },
+        "samples": 30,
+        "iterations_per_sample": 100
+      },
+      "numpy_bincount": {
+        "wall_ms": {
+          "mean": 0.15782583333333336,
+          "stddev": 0.021645557792278967,
+          "p50": 0.15007500000000001,
+          "p95": 0.21444025,
+          "p99": 0.21666508
+        },
+        "thread_cpu_ms": {
+          "mean": 0.15625,
+          "stddev": 0.06987712429686843,
+          "p50": 0.15625,
+          "p95": 0.3125,
+          "p99": 0.3125
+        },
+        "samples": 30,
+        "iterations_per_sample": 100
+      }
+    },
+    "recurrent_spike_rate_0.20": {
+      "scipy_csr": {
+        "wall_ms": {
+          "mean": 0.02377193333333333,
+          "stddev": 0.0036663310628231903,
+          "p50": 0.0224465,
+          "p95": 0.032046700000000004,
+          "p99": 0.03501781
+        },
+        "thread_cpu_ms": {
+          "mean": 0.020833333333333332,
+          "stddev": 0.05311478659992483,
+          "p50": 0.0,
+          "p95": 0.15625,
+          "p99": 0.15625
+        },
+        "samples": 30,
+        "iterations_per_sample": 100
+      },
+      "numpy_bincount": {
+        "wall_ms": {
+          "mean": 0.1486906,
+          "stddev": 0.008365421876590172,
+          "p50": 0.1459025,
+          "p95": 0.1662341,
+          "p99": 0.17384939000000002
+        },
+        "thread_cpu_ms": {
+          "mean": 0.14583333333333334,
+          "stddev": 0.038975597778895234,
+          "p50": 0.15625,
+          "p95": 0.15625,
+          "p99": 0.15625
+        },
+        "samples": 30,
+        "iterations_per_sample": 100
+      }
+    },
+    "hidden_output_spike_rate_0.01": {
+      "scipy_csr": {
+        "wall_ms": {
+          "mean": 0.01269126666666667,
+          "stddev": 0.001602532036774582,
+          "p50": 0.011915,
+          "p95": 0.016758049999999997,
+          "p99": 0.01709836
+        },
+        "thread_cpu_ms": {
+          "mean": 0.015625,
+          "stddev": 0.046875,
+          "p50": 0.0,
+          "p95": 0.15625,
+          "p99": 0.15625
+        },
+        "samples": 30,
+        "iterations_per_sample": 100
+      },
+      "numpy_bincount": {
+        "wall_ms": {
+          "mean": 0.05703250000000001,
+          "stddev": 0.006123938959798123,
+          "p50": 0.054883,
+          "p95": 0.0679051,
+          "p99": 0.07534906
+        },
+        "thread_cpu_ms": {
+          "mean": 0.057291666666666664,
+          "stddev": 0.07529600153542167,
+          "p50": 0.0,
+          "p95": 0.15625,
+          "p99": 0.15625
+        },
+        "samples": 30,
+        "iterations_per_sample": 100
+      }
+    },
+    "hidden_output_spike_rate_0.05": {
+      "scipy_csr": {
+        "wall_ms": {
+          "mean": 0.012607766666666666,
+          "stddev": 0.001601583126853621,
+          "p50": 0.011876000000000001,
+          "p95": 0.015097399999999997,
+          "p99": 0.01823931
+        },
+        "thread_cpu_ms": {
+          "mean": 0.005208333333333333,
+          "stddev": 0.028047733370492208,
+          "p50": 0.0,
+          "p95": 0.0,
+          "p99": 0.11093750000000013
+        },
+        "samples": 30,
+        "iterations_per_sample": 100
+      },
+      "numpy_bincount": {
+        "wall_ms": {
+          "mean": 0.05612716666666665,
+          "stddev": 0.0045235563891207935,
+          "p50": 0.054571999999999996,
+          "p95": 0.06730054999999999,
+          "p99": 0.06782838
+        },
+        "thread_cpu_ms": {
+          "mean": 0.052083333333333336,
+          "stddev": 0.07365695637359869,
+          "p50": 0.0,
+          "p95": 0.15625,
+          "p99": 0.15625
+        },
+        "samples": 30,
+        "iterations_per_sample": 100
+      }
+    },
+    "hidden_output_spike_rate_0.20": {
+      "scipy_csr": {
+        "wall_ms": {
+          "mean": 0.016080499999999998,
+          "stddev": 0.004602312627002501,
+          "p50": 0.014287999999999999,
+          "p95": 0.020776549999999998,
+          "p99": 0.03207594000000001
+        },
+        "thread_cpu_ms": {
+          "mean": 0.020833333333333332,
+          "stddev": 0.053114786599924836,
+          "p50": 0.0,
+          "p95": 0.15625,
+          "p99": 0.15625
+        },
+        "samples": 30,
+        "iterations_per_sample": 100
+      },
+      "numpy_bincount": {
+        "wall_ms": {
+          "mean": 0.06477766666666666,
+          "stddev": 0.010045691578427485,
+          "p50": 0.061482,
+          "p95": 0.0822286,
+          "p99": 0.08933164
+        },
+        "thread_cpu_ms": {
+          "mean": 0.0625,
+          "stddev": 0.07654655446197431,
+          "p50": 0.0,
+          "p95": 0.15625,
+          "p99": 0.15625
+        },
+        "samples": 30,
+        "iterations_per_sample": 100
+      }
+    }
+  },
+  "propagation_equivalence": {
+    "sensor_hidden_spike_rate_0.01": {
+      "array_equal": true,
+      "allclose_1e-6": true,
+      "max_abs_difference": 0.0
+    },
+    "sensor_hidden_spike_rate_0.05": {
+      "array_equal": false,
+      "allclose_1e-6": true,
+      "max_abs_difference": 1.4901161193847656e-08
+    },
+    "sensor_hidden_spike_rate_0.20": {
+      "array_equal": false,
+      "allclose_1e-6": true,
+      "max_abs_difference": 5.960464477539063e-08
+    },
+    "recurrent_spike_rate_0.01": {
+      "array_equal": true,
+      "allclose_1e-6": true,
+      "max_abs_difference": 0.0
+    },
+    "recurrent_spike_rate_0.05": {
+      "array_equal": false,
+      "allclose_1e-6": true,
+      "max_abs_difference": 1.4901161193847656e-08
+    },
+    "recurrent_spike_rate_0.20": {
+      "array_equal": false,
+      "allclose_1e-6": true,
+      "max_abs_difference": 5.960464477539063e-08
+    },
+    "hidden_output_spike_rate_0.01": {
+      "array_equal": true,
+      "allclose_1e-6": true,
+      "max_abs_difference": 0.0
+    },
+    "hidden_output_spike_rate_0.05": {
+      "array_equal": false,
+      "allclose_1e-6": true,
+      "max_abs_difference": 2.9802322387695312e-08
+    },
+    "hidden_output_spike_rate_0.20": {
+      "array_equal": false,
+      "allclose_1e-6": true,
+      "max_abs_difference": 5.960464477539063e-08
+    }
+  }
+}

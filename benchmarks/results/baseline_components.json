@@ -1,0 +1,695 @@
+{
+  "schema": 1,
+  "measurement_kind": "phase1_components_before_optimization",
+  "timestamp_local": "2026-11-08 21:39:41 -0300",
+  "python": "3.14.10 (tags/v3.14.10:b703b2c, Oct 25 2026, 17:36:52) [MSC v.1944 64 bit (AMD64)]",
+  "python_executable": "C:\\Users\\marco\\Documents\\VScode\\python\\synapse_pet\\.venv\\Scripts\\python.exe",
+  "platform": {
+    "platform": "Windows-11-10.0.26300-SP0",
+    "system": "Windows",
+    "release": "11",
+    "machine": "AMD64",
+    "processor": "AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",
+    "logical_cpus": 16,
+    "physical_cpus": 8,
+    "cpu_frequency_mhz": 1802.0,
+    "ram_total_mib": 5996.06640625
+  },
+  "libraries": {
+    "numpy": "2.5.4",
+    "psutil": "7.2.2",
+    "scipy": "1.18.1",
+    "PyYAML": "6.0.3",
+    "PySide6_Essentials": "6.12.0",
+    "Pillow": "13.0.0"
+  },
+  "configuration": {
+    "seed": 20261102,
+    "requested_neurons": 600,
+    "connectivity": 0.1,
+    "dt_ms": 2.0,
+    "background_noise": 0.015,
+    "active_tick_ms": 50.0,
+    "rest_tick_ms": 250.0,
+    "active_substeps": 25,
+    "rest_substeps": 1,
+    "samples": 100
+  },
+  "timing_units": "milliseconds; perf_counter wall and thread_time CPU are separate",
+  "results": {
+    "network_initialization_600_warm": {
+      "wall_ms": {
+        "mean": 3.6295199999999994,
+        "stddev": 0.22669032753957546,
+        "p50": 3.58275,
+        "p95": 4.10744,
+        "p99": 4.211408
+      },
+      "cpu_ms": {
+        "mean": 3.906250000000001,
+        "stddev": 0.6602767615066537,
+        "p50": 3.3482142857142856,
+        "p95": 4.5200892857142865,
+        "p99": 5.36830357142857
+      },
+      "allocation_probe": {
+        "operations": 4,
+        "net_live_blocks_per_operation": 17.75,
+        "net_live_bytes_per_operation": 1264.0,
+        "peak_traced_bytes_delta_per_operation": 347466.0,
+        "note": "Net live deltas omit short-lived allocations that are freed within an operation."
+      },
+      "samples": 20,
+      "warmup": 2,
+      "cpu_batch_operations": 14
+    },
+    "lif_update_600_runtime_population": {
+      "wall_ms": {
+        "mean": 0.04561,
+        "stddev": 0.025791046896161466,
+        "p50": 0.0351,
+        "p95": 0.07235,
+        "p99": 0.1632990000000003
+      },
+      "cpu_ms": {
+        "mean": 0.037744986326344564,
+        "stddev": 0.006793664549744655,
+        "p50": 0.04273017319963537,
+        "p95": 0.04273017319963537,
+        "p99": 0.04273017319963537
+      },
+      "allocation_probe": {
+        "operations": 20,
+        "net_live_blocks_per_operation": 0.65,
+        "net_live_bytes_per_operation": 56.8,
+        "peak_traced_bytes_delta_per_operation": 309.4,
+        "note": "Net live deltas omit short-lived allocations that are freed within an operation."
+      },
+      "samples": 100,
+      "warmup": 10,
+      "cpu_batch_operations": 1097
+    },
+    "sparse_propagation_all_three_projections": {
+      "wall_ms": {
+        "mean": 0.053766999999999995,
+        "stddev": 0.015297111197870007,
+        "p50": 0.0439,
+        "p95": 0.08258,
+        "p99": 0.08693500000000007
+      },
+      "cpu_ms": {
+        "mean": 0.05040322580645161,
+        "stddev": 0.005312966498938809,
+        "p50": 0.05040322580645161,
+        "p95": 0.05124327956989248,
+        "p99": 0.06401209677419352
+      },
+      "allocation_probe": {
+        "operations": 20,
+        "net_live_blocks_per_operation": 0.85,
+        "net_live_bytes_per_operation": 69.4,
+        "peak_traced_bytes_delta_per_operation": 319.0,
+        "note": "Net live deltas omit short-lived allocations that are freed within an operation."
+      },
+      "samples": 100,
+      "warmup": 10,
+      "cpu_batch_operations": 930
+    },
+    "stdp_mark_all_three_projections": {
+      "wall_ms": {
+        "mean": 0.383558,
+        "stddev": 0.04653217420237314,
+        "p50": 0.3673,
+        "p95": 0.479275,
+        "p99": 0.5653270000000002
+      },
+      "cpu_ms": {
+        "mean": 0.4234255725190839,
+        "stddev": 0.07031146304002622,
+        "p50": 0.4770992366412214,
+        "p95": 0.4770992366412214,
+        "p99": 0.4770992366412214
+      },
+      "allocation_probe": {
+        "operations": 20,
+        "net_live_blocks_per_operation": 0.7,
+        "net_live_bytes_per_operation": 51.2,
+        "peak_traced_bytes_delta_per_operation": 9502.4,
+        "note": "Net live deltas omit short-lived allocations that are freed within an operation."
+      },
+      "samples": 100,
+      "warmup": 10,
+      "cpu_batch_operations": 131
+    },
+    "reward_application_all_three_projections": {
+      "wall_ms": {
+        "mean": 0.156537,
+        "stddev": 0.021153295984314122,
+        "p50": 0.14834999999999998,
+        "p95": 0.193655,
+        "p99": 0.24004400000000023
+      },
+      "cpu_ms": {
+        "mean": 0.166015625,
+        "stddev": 0.023920798269366973,
+        "p50": 0.146484375,
+        "p95": 0.1953125,
+        "p99": 0.1953125
+      },
+      "allocation_probe": {
+        "operations": 20,
+        "net_live_blocks_per_operation": 4.2,
+        "net_live_bytes_per_operation": 455.6,
+        "peak_traced_bytes_delta_per_operation": 9739.6,
+        "note": "Net live deltas omit short-lived allocations that are freed within an operation."
+      },
+      "samples": 100,
+      "warmup": 10,
+      "cpu_batch_operations": 320
+    },
+    "homeostasis_update_250ms": {
+      "wall_ms": {
+        "mean": 0.011646999999999998,
+        "stddev": 0.032065434520679746,
+        "p50": 0.0042,
+        "p95": 0.014064999999999633,
+        "p99": 0.15944000000000008
+      },
+      "cpu_ms": {
+        "mean": 0.01146488469601677,
+        "stddev": 0.001299613547588889,
+        "p50": 0.010918937805730259,
+        "p95": 0.014558583740973678,
+        "p99": 0.014558583740973678
+      },
+      "allocation_probe": {
+        "operations": 20,
+        "net_live_blocks_per_operation": 1.4,
+        "net_live_bytes_per_operation": 113.2,
+        "peak_traced_bytes_delta_per_operation": 9398.8,
+        "note": "Net live deltas omit short-lived allocations that are freed within an operation."
+      },
+      "samples": 100,
+      "warmup": 10,
+      "cpu_batch_operations": 4293
+    },
+    "decoder_update": {
+      "wall_ms": {
+        "mean": 0.08342199999999997,
+        "stddev": 0.03161154086722126,
+        "p50": 0.07405,
+        "p95": 0.12243,
+        "p99": 0.158582000000001
+      },
+      "cpu_ms": {
+        "mean": 0.08072916666666667,
+        "stddev": 0.007812500000000002,
+        "p50": 0.078125,
+        "p95": 0.10416666666666667,
+        "p99": 0.10416666666666667
+      },
+      "allocation_probe": {
+        "operations": 20,
+        "net_live_blocks_per_operation": 2.05,
+        "net_live_bytes_per_operation": 120.4,
+        "peak_traced_bytes_delta_per_operation": 366.2,
+        "note": "Net live deltas omit short-lived allocations that are freed within an operation."
+      },
+      "samples": 100,
+      "warmup": 10,
+      "cpu_batch_operations": 600
+    },
+    "full_tick_active_50ms_25_substeps": {
+      "wall_ms": {
+        "mean": 12.406549,
+        "stddev": 1.5582366348854078,
+        "p50": 12.10065,
+        "p95": 16.050364999999996,
+        "p99": 18.276678000000008
+      },
+      "cpu_ms": {
+        "mean": 11.875,
+        "stddev": 1.25,
+        "p50": 12.5,
+        "p95": 12.5,
+        "p99": 12.5
+      },
+      "allocation_probe": {
+        "operations": 20,
+        "net_live_blocks_per_operation": 19.6,
+        "net_live_bytes_per_operation": 1280.85,
+        "peak_traced_bytes_delta_per_operation": 10862.55,
+        "note": "Net live deltas omit short-lived allocations that are freed within an operation."
+      },
+      "samples": 100,
+      "warmup": 10,
+      "cpu_batch_operations": 5
+    },
+    "full_tick_rest_250ms_one_substep": {
+      "wall_ms": {
+        "mean": 0.7051199999999999,
+        "stddev": 0.10063560205016911,
+        "p50": 0.66945,
+        "p95": 0.9944099999999999,
+        "p99": 1.0361300000000004
+      },
+      "cpu_ms": {
+        "mean": 0.7042253521126761,
+        "stddev": 0.11221433788716519,
+        "p50": 0.6602112676056338,
+        "p95": 0.8802816901408451,
+        "p99": 0.8802816901408451
+      },
+      "allocation_probe": {
+        "operations": 20,
+        "net_live_blocks_per_operation": 8.15,
+        "net_live_bytes_per_operation": 495.05,
+        "peak_traced_bytes_delta_per_operation": 10046.0,
+        "note": "Net live deltas omit short-lived allocations that are freed within an operation."
+      },
+      "samples": 100,
+      "warmup": 10,
+      "cpu_batch_operations": 71
+    },
+    "stimulus_encoding_rates_and_poisson_spikes": {
+      "wall_ms": {
+        "mean": 0.085096,
+        "stddev": 0.024672616075317184,
+        "p50": 0.07385,
+        "p95": 0.144895,
+        "p99": 0.17938800000000002
+      },
+      "cpu_ms": {
+        "mean": 0.09300595238095237,
+        "stddev": 0.019707160095386006,
+        "p50": 0.07971938775510204,
+        "p95": 0.1328656462585034,
+        "p99": 0.1328656462585034
+      },
+      "allocation_probe": {
+        "operations": 20,
+        "net_live_blocks_per_operation": 5.3,
+        "net_live_bytes_per_operation": 566.8,
+        "peak_traced_bytes_delta_per_operation": 664.4,
+        "note": "Net live deltas omit short-lived allocations that are freed within an operation."
+      },
+      "samples": 100,
+      "warmup": 10,
+      "cpu_batch_operations": 588
+    },
+    "network_growth_600_to_800_excludes_template_copy": {
+      "wall_ms": {
+        "mean": 4.9552700000000005,
+        "stddev": 0.9212453153747919,
+        "p50": 4.9885,
+        "p95": 6.151495000000001,
+        "p99": 6.768538999999999
+      },
+      "cpu_ms": {
+        "mean": 3.977272727272728,
+        "stddev": 0.8522727272727273,
+        "p50": 4.261363636363637,
+        "p95": 5.681818181818182,
+        "p99": 5.681818181818182
+      },
+      "allocation_probe": {
+        "operations": 4,
+        "net_live_blocks_per_operation": 34.5,
+        "net_live_bytes_per_operation": 2364.0,
+        "peak_traced_bytes_delta_per_operation": 514077.25,
+        "note": "Net live deltas omit short-lived allocations that are freed within an operation."
+      },
+      "samples": 20,
+      "warmup": 2,
+      "cpu_batch_operations": 11
+    },
+    "snapshot_save_capture_compress_atomic_write": {
+      "wall_ms": {
+        "mean": 13.64301,
+        "stddev": 0.45965638024506955,
+        "p50": 13.62415,
+        "p95": 14.383930000000001,
+        "p99": 14.513586
+      },
+      "cpu_ms": {
+        "mean": 14.0625,
+        "stddev": 1.913663861549358,
+        "p50": 15.625,
+        "p95": 15.625,
+        "p99": 15.625
+      },
+      "allocation_probe": {
+        "operations": 4,
+        "net_live_blocks_per_operation": 63.75,
+        "net_live_bytes_per_operation": 2941.0,
+        "peak_traced_bytes_delta_per_operation": 272433.25,
+        "note": "Net live deltas omit short-lived allocations that are freed within an operation."
+      },
+      "samples": 20,
+      "warmup": 2,
+      "cpu_batch_operations": 4
+    },
+    "snapshot_load_checksum_rebuild": {
+      "wall_ms": {
+        "mean": 12.824995000000001,
+        "stddev": 1.639880878745465,
+        "p50": 12.324850000000001,
+        "p95": 15.056975,
+        "p99": 15.848514999999997
+      },
+      "cpu_ms": {
+        "mean": 13.28125,
+        "stddev": 5.579240959799102,
+        "p50": 15.625,
+        "p95": 15.625,
+        "p99": 15.625
+      },
+      "samples": 20,
+      "warmup": 0
+    },
+    "network_initialization_600_first_instance": {
+      "wall_ms": {
+        "mean": 322.7599,
+        "stddev": 0.0,
+        "p50": 322.7599,
+        "p95": 322.7599,
+        "p99": 322.7599
+      },
+      "cpu_ms": {
+        "mean": 265.625,
+        "stddev": 0.0,
+        "p50": 265.625,
+        "p95": 265.625,
+        "p99": 265.625
+      },
+      "samples": 1,
+      "note": "single cold construction measurement; import time excluded"
+    },
+    "memory": {
+      "rss_before_mib": 44.48046875,
+      "rss_after_initial_network_mib": 61.27734375,
+      "network_array_bytes_unique": 309864,
+      "network_structure": {
+        "requested_neurons": 600,
+        "sensor_neurons": 96,
+        "hidden_neurons": 384,
+        "output_neurons": 120,
+        "connection_counts": {
+          "sensor_hidden": 3614,
+          "recurrent": 14728,
+          "hidden_output": 4586
+        },
+        "connections_total": 22928,
+        "numpy_array_bytes_unique": 309864
+      },
+      "runtime_engine": {
+        "network": {
+          "requested_neurons": 712,
+          "sensor_neurons": 96,
+          "hidden_neurons": 384,
+          "output_neurons": 232,
+          "connection_counts": {
+            "sensor_hidden": 3614,
+            "recurrent": 14728,
+            "hidden_output": 8793
+          },
+          "connections_total": 27135,
+          "numpy_array_bytes_unique": 380360
+        },
+        "memory_rss_after_engine_mib": 61.26171875,
+        "profile_top_30_cumulative": [
+          {
+            "function": "tick",
+            "file": "engine.py",
+            "line": 371,
+            "calls": 100,
+            "primitive_calls": 100,
+            "self_seconds": 0.0333839,
+            "cumulative_seconds": 1.3998298
+          },
+          {
+            "function": "mark",
+            "file": "plasticity.py",
+            "line": 24,
+            "calls": 7500,
+            "primitive_calls": 7500,
+            "self_seconds": 0.9018993000000001,
+            "cumulative_seconds": 0.9201756000000001
+          },
+          {
+            "function": "step",
+            "file": "network.py",
+            "line": 236,
+            "calls": 2500,
+            "primitive_calls": 2500,
+            "self_seconds": 0.05037150000000001,
+            "cumulative_seconds": 0.3641497
+          },
+          {
+            "function": "currents",
+            "file": "synapses.py",
+            "line": 56,
+            "calls": 7500,
+            "primitive_calls": 7500,
+            "self_seconds": 0.0130299,
+            "cumulative_seconds": 0.1957962
+          },
+          {
+            "function": "__matmul__",
+            "file": "_base.py",
+            "line": 1006,
+            "calls": 7500,
+            "primitive_calls": 7500,
+            "self_seconds": 0.005828000000000001,
+            "cumulative_seconds": 0.1737314
+          },
+          {
+            "function": "_matmul_dispatch",
+            "file": "_base.py",
+            "line": 875,
+            "calls": 7500,
+            "primitive_calls": 7500,
+            "self_seconds": 0.0088158,
+            "cumulative_seconds": 0.1353354
+          },
+          {
+            "function": "_matmul_vector",
+            "file": "_compressed.py",
+            "line": 387,
+            "calls": 7500,
+            "primitive_calls": 7500,
+            "self_seconds": 0.021557200000000002,
+            "cumulative_seconds": 0.1228525
+          },
+          {
+            "function": "step",
+            "file": "neurons.py",
+            "line": 27,
+            "calls": 2500,
+            "primitive_calls": 2500,
+            "self_seconds": 0.11090720000000001,
+            "cumulative_seconds": 0.1133297
+          },
+          {
+            "function": "<built-in method scipy.sparse._sparsetools.csr_matvec>",
+            "file": "~",
+            "line": 0,
+            "calls": 7500,
+            "primitive_calls": 7500,
+            "self_seconds": 0.0786821,
+            "cumulative_seconds": 0.0786821
+          },
+          {
+            "function": "isscalarlike",
+            "file": "_sputils.py",
+            "line": 344,
+            "calls": 7500,
+            "primitive_calls": 7500,
+            "self_seconds": 0.0081741,
+            "cumulative_seconds": 0.032568
+          },
+          {
+            "function": "update",
+            "file": "decoding.py",
+            "line": 16,
+            "calls": 100,
+            "primitive_calls": 100,
+            "self_seconds": 0.0074573,
+            "cumulative_seconds": 0.0299874
+          },
+          {
+            "function": "<method 'mean' of 'numpy.ndarray' objects>",
+            "file": "~",
+            "line": 0,
+            "calls": 2200,
+            "primitive_calls": 2200,
+            "self_seconds": 0.0013692,
+            "cumulative_seconds": 0.0233738
+          },
+          {
+            "function": "_mean",
+            "file": "_methods.py",
+            "line": 115,
+            "calls": 2200,
+            "primitive_calls": 2200,
+            "self_seconds": 0.0124966,
+            "cumulative_seconds": 0.022004600000000003
+          },
+          {
+            "function": "isscalar",
+            "file": "numeric.py",
+            "line": 1911,
+            "calls": 7800,
+            "primitive_calls": 7800,
+            "self_seconds": 0.0087005,
+            "cumulative_seconds": 0.020915000000000003
+          },
+          {
+            "function": "update",
+            "file": "homeostasis.py",
+            "line": 16,
+            "calls": 2500,
+            "primitive_calls": 2500,
+            "self_seconds": 0.0037354000000000003,
+            "cumulative_seconds": 0.0192915
+          },
+          {
+            "function": "encode",
+            "file": "encoding.py",
+            "line": 45,
+            "calls": 100,
+            "primitive_calls": 100,
+            "self_seconds": 0.0014245,
+            "cumulative_seconds": 0.019284000000000003
+          },
+          {
+            "function": "rates",
+            "file": "encoding.py",
+            "line": 22,
+            "calls": 100,
+            "primitive_calls": 100,
+            "self_seconds": 0.0058386,
+            "cumulative_seconds": 0.0171572
+          },
+          {
+            "function": "<method 'astype' of 'numpy.ndarray' objects>",
+            "file": "~",
+            "line": 0,
+            "calls": 15500,
+            "primitive_calls": 15500,
+            "self_seconds": 0.016183100000000002,
+            "cumulative_seconds": 0.016183100000000002
+          },
+          {
+            "function": "<method 'sum' of 'numpy.ndarray' objects>",
+            "file": "~",
+            "line": 0,
+            "calls": 2500,
+            "primitive_calls": 2500,
+            "self_seconds": 0.0025404,
+            "cumulative_seconds": 0.015423200000000001
+          },
+          {
+            "function": "<method 'reduce' of 'numpy.ufunc' objects>",
+            "file": "~",
+            "line": 0,
+            "calls": 4800,
+            "primitive_calls": 4800,
+            "self_seconds": 0.0146151,
+            "cumulative_seconds": 0.0146151
+          },
+          {
+            "function": "<built-in method builtins.isinstance>",
+            "file": "~",
+            "line": 0,
+            "calls": 25600,
+            "primitive_calls": 25600,
+            "self_seconds": 0.0081327,
+            "cumulative_seconds": 0.013888000000000001
+          },
+          {
+            "function": "_sum",
+            "file": "_methods.py",
+            "line": 47,
+            "calls": 2500,
+            "primitive_calls": 2500,
+            "self_seconds": 0.0011952,
+            "cumulative_seconds": 0.012882800000000002
+          },
+          {
+            "function": "<built-in method numpy.zeros>",
+            "file": "~",
+            "line": 0,
+            "calls": 10000,
+            "primitive_calls": 10000,
+            "self_seconds": 0.0080994,
+            "cumulative_seconds": 0.0080994
+          },
+          {
+            "function": "<built-in method builtins.len>",
+            "file": "~",
+            "line": 0,
+            "calls": 50000,
+            "primitive_calls": 50000,
+            "self_seconds": 0.0078802,
+            "cumulative_seconds": 0.0078802
+          },
+          {
+            "function": "_shape_as_2d",
+            "file": "_base.py",
+            "line": 98,
+            "calls": 15000,
+            "primitive_calls": 15000,
+            "self_seconds": 0.0044745,
+            "cumulative_seconds": 0.006556
+          },
+          {
+            "function": "__instancecheck__",
+            "file": "<frozen abc>",
+            "line": 117,
+            "calls": 7500,
+            "primitive_calls": 7500,
+            "self_seconds": 0.0024796,
+            "cumulative_seconds": 0.0057553000000000005
+          },
+          {
+            "function": "from_engine",
+            "file": "visual_state.py",
+            "line": 49,
+            "calls": 100,
+            "primitive_calls": 100,
+            "self_seconds": 0.0018917,
+            "cumulative_seconds": 0.0056702
+          },
+          {
+            "function": "linspace",
+            "file": "function_base.py",
+            "line": 27,
+            "calls": 300,
+            "primitive_calls": 300,
+            "self_seconds": 0.0038075,
+            "cumulative_seconds": 0.0055804
+          },
+          {
+            "function": "upcast_char",
+            "file": "_sputils.py",
+            "line": 58,
+            "calls": 7500,
+            "primitive_calls": 7500,
+            "self_seconds": 0.0029904000000000003,
+            "cumulative_seconds": 0.005283
+          },
+          {
+            "function": "<method 'reshape' of 'numpy.ndarray' objects>",
+            "file": "~",
+            "line": 0,
+            "calls": 7800,
+            "primitive_calls": 7800,
+            "self_seconds": 0.005224100000000001,
+            "cumulative_seconds": 0.005224100000000001
+          }
+        ]
+      }
+    }
+  }
+}

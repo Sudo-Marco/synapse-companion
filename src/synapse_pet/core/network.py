@@ -36,6 +36,9 @@ class SpikingNetwork:
         self.output_start = self.hidden_start + self.n_hidden
         self.n_output = total_neurons - self.n_sensor - self.n_hidden
         self.population = LIFPopulation(total_neurons)
+        # Scratch storage owned by the single thread that advances this network.
+        # It is resized lazily after dynamic tool groups or population growth.
+        self._current_buffer = np.zeros(total_neurons, dtype=np.float32)
         self.hidden_sign = np.where(self.rng.random(self.n_hidden) < 0.8, 1.0, -1.0).astype(np.float32)
         self.sensor_to_hidden = SparseProjection.random(self.n_sensor, self.n_hidden, connectivity,
                                                        self.rng, scale=0.12, name="sensor_hidden")
@@ -235,7 +238,12 @@ class SpikingNetwork:
 
     def step(self, sensor_current: NDArray[np.float32] | None = None) -> NDArray[np.bool_]:
         n = self.population.size
-        current = np.zeros(n, dtype=np.float32)
+        current = self._current_buffer
+        if current.shape != (n,):
+            current = np.zeros(n, dtype=np.float32)
+            self._current_buffer = current
+        else:
+            current.fill(0.0)
         if sensor_current is not None:
             if len(sensor_current) != self.n_sensor:
                 raise ValueError("sensor_current length does not match sensory population")

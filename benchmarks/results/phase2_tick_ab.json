@@ -1,0 +1,178 @@
+{
+  "schema": 1,
+  "measurement_kind": "phase2_same_process_full_tick_ab",
+  "timestamp_local": "2026-11-08 22:32:16 -0300",
+  "python": "3.14.10 (tags/v3.14.10:b703b2c, Oct 25 2026, 17:36:52) [MSC v.1944 64 bit (AMD64)]",
+  "numpy": "2.5.4",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "cpu": "AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",
+  "seed": 20261102,
+  "simulated_context": {
+    "input_rate": 0.72,
+    "window_category": "editor",
+    "activity": 0.35,
+    "hour": 0.62
+  },
+  "configuration": {
+    "samples": 40,
+    "ticks_per_sample": 20,
+    "warmup_ticks": 40,
+    "order": "alternating per sample to reduce clock/load bias"
+  },
+  "sizes": [
+    {
+      "requested_neurons": 600,
+      "actual_neurons_with_tools": 712,
+      "connections": 27135,
+      "exact_state_equivalence": true,
+      "final_state_sha256": "d26ada0037addac30d1c2a0a06ded4cc02270e0a473bec751a3aa21dc58ed5ee",
+      "timings": {
+        "active": {
+          "legacy_reference": {
+            "wall_ms": {
+              "mean": 13.020884999999998,
+              "stddev": 1.7684696310496826,
+              "p50": 12.037962499999999,
+              "p95": 16.82765725,
+              "p99": 17.00585015
+            },
+            "thread_cpu_ms": {
+              "mean": 12.7734375,
+              "stddev": 1.8367684289857418,
+              "p50": 11.71875,
+              "p95": 16.40625,
+              "p99": 16.8828125
+            }
+          },
+          "production": {
+            "wall_ms": {
+              "mean": 13.220150749999998,
+              "stddev": 1.839954491225445,
+              "p50": 12.23981,
+              "p95": 16.718340499999996,
+              "p99": 17.58336
+            },
+            "thread_cpu_ms": {
+              "mean": 13.0859375,
+              "stddev": 1.951170897459715,
+              "p50": 12.5,
+              "p95": 17.1875,
+              "p99": 17.6640625
+            }
+          }
+        },
+        "rest": {
+          "legacy_reference": {
+            "wall_ms": {
+              "mean": 0.775507125,
+              "stddev": 0.09503375864585897,
+              "p50": 0.7313700000000001,
+              "p95": 0.9469482499999999,
+              "p99": 0.9893696499999999
+            },
+            "thread_cpu_ms": {
+              "mean": 0.7421875,
+              "stddev": 0.17026948998205757,
+              "p50": 0.78125,
+              "p95": 0.78125,
+              "p99": 0.78125
+            }
+          },
+          "production": {
+            "wall_ms": {
+              "mean": 0.7868713749999999,
+              "stddev": 0.10756861225508291,
+              "p50": 0.7397674999999999,
+              "p95": 0.9663559999999999,
+              "p99": 1.0182836
+            },
+            "thread_cpu_ms": {
+              "mean": 0.8203125,
+              "stddev": 0.3000447557761175,
+              "p50": 0.78125,
+              "p95": 1.5625,
+              "p99": 1.5625
+            }
+          }
+        }
+      }
+    },
+    {
+      "requested_neurons": 1000,
+      "actual_neurons_with_tools": 1112,
+      "connections": 70863,
+      "exact_state_equivalence": true,
+      "final_state_sha256": "f80aaa73ebf8ca91d07583e4d620ed3a95c419fe397c3fab12ecb5557c85bb63",
+      "timings": {
+        "active": {
+          "legacy_reference": {
+            "wall_ms": {
+              "mean": 25.498178000000003,
+              "stddev": 1.519929633953411,
+              "p50": 25.018495,
+              "p95": 28.35521449999999,
+              "p99": 30.024861
+            },
+            "thread_cpu_ms": {
+              "mean": 25.01953125,
+              "stddev": 1.1910860225382285,
+              "p50": 25.0,
+              "p95": 28.125,
+              "p99": 28.125
+            }
+          },
+          "production": {
+            "wall_ms": {
+              "mean": 25.33598725,
+              "stddev": 1.559193027693312,
+              "p50": 24.737045000000002,
+              "p95": 28.90584775,
+              "p99": 30.64551805
+            },
+            "thread_cpu_ms": {
+              "mean": 24.62890625,
+              "stddev": 1.3416987887184058,
+              "p50": 24.21875,
+              "p95": 26.601562499999996,
+              "p99": 28.7734375
+            }
+          }
+        },
+        "rest": {
+          "legacy_reference": {
+            "wall_ms": {
+              "mean": 1.2380955,
+              "stddev": 0.07729295085743589,
+              "p50": 1.2177425,
+              "p95": 1.3410654999999998,
+              "p99": 1.5114352
+            },
+            "thread_cpu_ms": {
+              "mean": 1.2109375,
+              "stddev": 0.38866696761977343,
+              "p50": 1.5625,
+              "p95": 1.5625,
+              "p99": 1.5625
+            }
+          },
+          "production": {
+            "wall_ms": {
+              "mean": 1.2447244999999998,
+              "stddev": 0.06966953164583498,
+              "p50": 1.2322075,
+              "p95": 1.3631302499999998,
+              "p99": 1.4427911
+            },
+            "thread_cpu_ms": {
+              "mean": 1.26953125,
+              "stddev": 0.37822102990306805,
+              "p50": 1.5625,
+              "p95": 1.5625,
+              "p99": 1.5625
+            }
+          }
+        }
+      }
+    }
+  ]
+}

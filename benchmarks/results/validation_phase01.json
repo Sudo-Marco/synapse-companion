@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "phase": "phase0_phase1",
+  "command": ".\\.venv\\Scripts\\python.exe -m pytest -q",
+  "timestamp_local": "2026-11-08T21:55:27.0522114-03:00",
+  "python_version": "3.14.10",
+  "qt_platform": "offscreen",
+  "collected": 142,
+  "passed": 141,
+  "failed": 1,
+  "skipped": 0,
+  "duration_s": 24.49,
+  "failure_nodeid": "tests/test_pet_renderer.py::test_floating_pet_switches_to_panel_and_back",
+  "failure_summary": "A expectativa de mover o pet para baixo no salto triste foi bloqueada pelo limite inferior da tela virtual offscreen: y ficou em 628, igual à geometria inicial. Reprodução consistente; nenhum código ou asserção foi alterado.",
+  "core_snn_modified": false,
+  "phase2_started": false
+}

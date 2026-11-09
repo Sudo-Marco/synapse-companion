@@ -1,0 +1,46 @@
+{
+  "schema": 1,
+  "phase": 2,
+  "timestamp_local": "2026-11-08T22:48:22-03:00",
+  "environment": {
+    "platform": "Windows 11",
+    "python": "3.14.10",
+    "qt_platform": "offscreen"
+  },
+  "command": ".\\.venv\\Scripts\\python.exe -m pytest -q -ra --tb=no",
+  "collected": 148,
+  "passed": 147,
+  "failed": 1,
+  "exit_code": 1,
+  "failures": [
+    {
+      "nodeid": "tests/test_pet_renderer.py::test_floating_pet_switches_to_panel_and_back",
+      "category": "headless UI geometry",
+      "summary": "The sad jump expects the pet window to move 4 px down, but the virtual screen bottom clamp prevents movement at the chosen position. No Phase 2 code or assertion in this test was changed."
+    }
+  ],
+  "determinism": {
+    "seed": 20261102,
+    "steps": 4096,
+    "spike_sha256": "45c47b8e06e2f7dfff2a61832f9d07d5cc4197c8ee35c82df65e3260bbcc92b7",
+    "state_sha256": "d34fec09870ee66aa118d91bfc1293c44e9b2fddb14ab6990eb742d330978279",
+    "matches_reference": true
+  },
+  "benchmarks": {
+    "before": "phase2_before.json",
+    "after": "phase2_after_final.json",
+    "paired_ab": "phase2_tick_ab.json",
+    "cost_delta_wall_mean_pct": {
+      "600": 0.75,
+      "1000": 2.42
+    },
+    "cost_delta_cpu_mean_pct": {
+      "600": 0.0,
+      "1000": 1.76
+    }
+  },
+  "notes": [
+    "Desktop GUI was not validated interactively.",
+    "Phase 3 was not started."
+  ]
+}

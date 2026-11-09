@@ -40,6 +40,43 @@ def test_action_credit_updates_only_the_selected_output_and_active_inputs():
     np.testing.assert_array_equal(projection.weights[[0, 2]], before[[0, 2]])
 
 
+def test_action_credit_mask_matches_isin_for_duplicate_unsorted_and_invalid_ids():
+    base = SparseProjection(
+        3, 4,
+        np.array([0, 1, 2, 0, 2], dtype=np.int32),
+        np.array([0, 1, 1, 2, 3], dtype=np.int32),
+        np.array([0.2, 0.3, 0.4, 0.5, 0.6], dtype=np.float32),
+        np.ones(3, dtype=np.float32),
+    )
+    pre_activity = np.array([1.0, 0.5, 0.0], dtype=np.float32)
+
+    for post_indices in (
+        np.array([2, 1, 1], dtype=np.int32),
+        np.array([-1, 3, 99], dtype=np.int32),
+    ):
+        expected = SparseProjection(
+            base.n_pre, base.n_post, base.pre.copy(), base.post.copy(),
+            base.weights.copy(), base.source_sign.copy())
+        actual = SparseProjection(
+            base.n_pre, base.n_post, base.pre.copy(), base.post.copy(),
+            base.weights.copy(), base.source_sign.copy())
+        post_mask = np.isin(expected.post, post_indices, assume_unique=False)
+        active_pre = np.clip(pre_activity[expected.pre], 0.0, 1.0)
+        delta = (0.1 * 0.7 * active_pre
+                 * post_mask.astype(np.float32)).astype(np.float32)
+        expected.weights += delta
+        expected.weights[:] = np.clip(expected.weights, -1.0, 1.0)
+        expected.enforce_dale()
+
+        learner = RewardSTDP()
+        learner.apply_action_credit(actual, dopamine=0.7,
+                                    post_indices=post_indices,
+                                    pre_activity=pre_activity,
+                                    learning_rate=0.1)
+
+        np.testing.assert_array_equal(actual.weights, expected.weights)
+
+
 def test_categorical_encoder_uses_two_hash_features_for_small_groups():
     encoder = PopulationEncoder({"window_category": 24}, seed=3)
     codes = []
