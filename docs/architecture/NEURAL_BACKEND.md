@@ -7,7 +7,7 @@ SNN. A Fase 4 adiciona kernels Cython opcionais para STDP: atualização de
 traços/elegibilidade e aplicação da recompensa. A Fase 5 adiciona um kernel
 Cython opcional para o passo LIF. O backend padrão continua NumPy; propagação
 CSR, crédito por ação e homeostase permanecem no caminho NumPy existente.
-A equivalência compilada e o custo da Fase 5 aguardam CI Windows/Ubuntu.
+Equivalência bit a bit, build nativo Windows/Ubuntu e custo dentro do orçamento estão documentados em `docs/performance/PHASE5_LIF_REPORT.md`.
 
 ## Configuração
 

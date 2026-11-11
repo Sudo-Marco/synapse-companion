@@ -9,9 +9,9 @@ Atualizado em **11 de novembro de 2026**.
 | 0 — Auditoria da arquitetura real | Concluída no checkout atual | `docs/architecture/CURRENT_ARCHITECTURE.md`, `TECHNICAL_DEBT.md`, `REPOSITORY_INVENTORY.json` |
 | 1 — Baseline e profiling | Concluída no checkout atual | `benchmarks/results/baseline.json`, `baseline_components.json`, `baseline_report.md`, `benchmarks/profile/` |
 | 2 — Otimização Python | Concluída com ressalva de validação UI headless | `docs/performance/PHASE2_OPTIMIZATION_REPORT.md`; alterações locais no buffer de tick/STDP e crédito de ação |
-| 3 — Infraestrutura híbrida | Concluída com limites medidos | `docs/performance/PHASE3_BACKEND_REPORT.md`, testes e benchmark; NumPy padrão, Cython ainda faz fallback |
+| 3 — Infraestrutura híbrida | Concluída com limites medidos | `docs/performance/PHASE3_BACKEND_REPORT.md`, testes e benchmark; NumPy padrão, kernels Cython opcionais para STDP/LIF |
 | 4 — STDP compilada | Concluída; equivalência e benchmark no CI Windows/Ubuntu | `docs/performance/PHASE4_STDP_REPORT.md`, artefatos `cython_stdp_ci_*`, workflow e testes |
-| 5 — LIF compilado | Implementação local; validação nativa pendente | Testes condicionais, benchmark e CI Windows/Ubuntu nesta branch |
+| 5 — LIF compilado | Concluída; equivalência e benchmark aprovados em CI | `docs/performance/PHASE5_LIF_REPORT.md`, testes, benchmark e CI Windows/Ubuntu |
 | 6+ — CSR e evolução | Não iniciadas | Fora do escopo autorizado nesta etapa |
 
 ## Linha de base atual
@@ -32,4 +32,4 @@ O bloco de desempenho foi registrado no commit local `3f1bd4e` (`perf: complete 
 
 **Checkpoint da Fase 4:** kernels Cython para marcação STDP e aplicação de recompensa com clipping/Lei de Dale, fallback NumPy para ausência/layout incompatível e build opt-in. CI compilou e passou a suíte em Windows/Ubuntu; equivalência bit a bit foi confirmada. Marcação acelerou 5,21× no Ubuntu e 6,81× no Windows; aplicação da recompensa, 3,40× e 1,44×. Resultados brutos e ressalvas estão no relatório. A falha local headless preexistente foi mantida e a GUI real não foi validada.
 
-**Trabalho local da Fase 5 (CI pendente):** kernel Cython para LIF, fallback em layouts incompatíveis/alias, testes bit a bit em populações e rede completa, benchmark de ticks em 600/1.000 neurônios e build opt-in atualizado. Cython traduziu os dois `.pyx` localmente, mas este ambiente Windows não tem MSVC nem extensões nativas; equivalência compilada e custo ainda não estão validados. A suíte local repetiu a mesma falha headless de GUI observada antes da Fase 5.
+**Checkpoint da Fase 5:** kernel LIF Cython opcional com NumPy como padrão, fallback para layouts incompatíveis/alias, testes bit a bit da população e da rede completa, e benchmark Windows/Ubuntu em 600/1.000 neurônios. CI compilou os módulos, passou a suíte completa e confirmou hashes idênticos; CPU melhorou 6,52% a 9,41% no Ubuntu e 7,22% a 9,13% no Windows. A medição detalhada, memória e atividade por população estão em `docs/performance/PHASE5_LIF_REPORT.md`. A falha local headless anterior permaneceu fora do escopo. Fase 6 não iniciada.

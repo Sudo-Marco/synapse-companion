@@ -61,6 +61,5 @@ de parede também é registrado. CI não valida a GUI no desktop físico.
 
 Não há OpenMP nem alteração da topologia, parâmetros ou fórmulas da SNN. O kernel
 recebe memoryviews dos arrays NumPy contíguos existentes; arrays não contíguos
-ou com alias usam a referência NumPy. O backend Cython não é o padrão e deve
-permanecer assim até equivalência e custo serem revisados no CI das plataformas
-suportadas.
+ou com alias usam a referência NumPy. O backend Cython permanece opt-in e NumPy segue como padrão. A equivalência
+e o custo medidos por plataforma estão documentados no relatório da Fase 5.

@@ -64,8 +64,9 @@ Legenda: ✅ concluído com evidência; ⚠️ ressalva registrada; ⏳ aguardan
 - [x] Adicionar testes condicionais bit a bit para LIF, retorno independente, fallback e trajetórias de rede em 600/1.000 neurônios.
 - [x] Adicionar benchmark do tick completo com CPU, parede, tracemalloc, RSS e hash da sequência de spikes.
 - [x] Expandir CI para compilar os dois kernels e executar testes/benchmarks em Windows e Ubuntu.
-- [ ] Confirmar build, equivalência compilada, hashes e suíte integral nos jobs CI; registrar custo medido antes/depois e artefatos.
-- [ ] Atualizar o relatório final depois dos resultados de CI.
+- [x] Confirmar build, equivalência compilada, hashes e suíte integral nos jobs CI Windows/Ubuntu.
+- [x] Medir custo por tick, CPU/parede, memória e disparos por população; confirmar o limite de regressão de 3%.
+- [x] Registrar resultados e limites em `docs/performance/PHASE5_LIF_REPORT.md`.
 
 ## Próximas fases — não iniciadas
 
