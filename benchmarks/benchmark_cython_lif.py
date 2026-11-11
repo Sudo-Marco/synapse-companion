@@ -45,7 +45,9 @@ def _validated_run(network: SpikingNetwork, inputs: np.ndarray):
     return spike_count, output_hash.hexdigest()
 
 
-def _measure(factory, inputs: np.ndarray, warmup: int, repeats: int):
+def _measure(
+    factory, inputs: np.ndarray, warmup: int, repeats: int, loops_per_sample: int
+):
     wall_samples: list[float] = []
     cpu_samples: list[float] = []
     spikes = 0
@@ -54,7 +56,7 @@ def _measure(factory, inputs: np.ndarray, warmup: int, repeats: int):
         _run(network, inputs[:warmup])
         cpu_start = time.process_time()
         wall_start = time.perf_counter()
-        spikes = _run(network, inputs)
+        spikes = sum(_run(network, inputs) for _ in range(loops_per_sample))
         wall_samples.append(time.perf_counter() - wall_start)
         cpu_samples.append(time.process_time() - cpu_start)
 
@@ -62,7 +64,8 @@ def _measure(factory, inputs: np.ndarray, warmup: int, repeats: int):
     _run(network, inputs[:warmup])
     tracemalloc.start()
     tracemalloc.reset_peak()
-    _run(network, inputs)
+    for _ in range(loops_per_sample):
+        _run(network, inputs)
     _, peak_bytes = tracemalloc.get_traced_memory()
     tracemalloc.stop()
     return {
@@ -70,15 +73,29 @@ def _measure(factory, inputs: np.ndarray, warmup: int, repeats: int):
         "wall_seconds_median": statistics.median(wall_samples),
         "wall_seconds_p95": float(np.percentile(wall_samples, 95)),
         "cpu_seconds_mean": statistics.mean(cpu_samples),
-        "wall_ms_per_tick_mean": statistics.mean(wall_samples) * 1000 / len(inputs),
-        "cpu_ms_per_tick_mean": statistics.mean(cpu_samples) * 1000 / len(inputs),
+        "wall_ms_per_tick_mean": (
+            statistics.mean(wall_samples) * 1000
+            / (len(inputs) * loops_per_sample)
+        ),
+        "cpu_ms_per_tick_mean": (
+            statistics.mean(cpu_samples) * 1000
+            / (len(inputs) * loops_per_sample)
+        ),
         "python_traced_peak_bytes": int(peak_bytes),
         "output_spikes_last_sample": spikes,
         "wall_samples_seconds": wall_samples,
+        "timed_ticks_per_sample": len(inputs) * loops_per_sample,
     }
 
 
-def _measure_size(size: int, steps: int, warmup: int, repeats: int, seed: int):
+def _measure_size(
+    size: int,
+    steps: int,
+    warmup: int,
+    repeats: int,
+    loops_per_sample: int,
+    seed: int,
+):
     input_rng = np.random.default_rng(seed + 10)
     inputs = input_rng.normal(
         0.0, 0.22, size=(steps, int(size * 0.16))
@@ -97,8 +114,12 @@ def _measure_size(size: int, steps: int, warmup: int, repeats: int, seed: int):
     assert cython_warmup == numpy_warmup
     _state_equal(cython_check, numpy_check)
 
-    numpy_result = _measure(numpy_factory, inputs, warmup, repeats)
-    cython_result = _measure(cython_factory, inputs, warmup, repeats)
+    numpy_result = _measure(
+        numpy_factory, inputs, warmup, repeats, loops_per_sample
+    )
+    cython_result = _measure(
+        cython_factory, inputs, warmup, repeats, loops_per_sample
+    )
 
     # Re-run the entire sequence and compare end states, output count and RNG.
     numpy_check, cython_check = numpy_factory(), cython_factory()
@@ -113,6 +134,7 @@ def _measure_size(size: int, steps: int, warmup: int, repeats: int, seed: int):
         "sensor_neurons": int(size * 0.16),
         "ticks_per_sample": steps,
         "warmup_ticks": min(warmup, steps),
+        "loops_per_timed_sample": loops_per_sample,
         "repeats": repeats,
         "seed": seed,
         "output_spikes_over_validation_sequence": numpy_spikes,
@@ -143,7 +165,7 @@ def run(args):
     process = psutil.Process()
     rss_before = process.memory_info().rss
     sizes = [_measure_size(size, args.steps, args.warmup, args.repeats,
-                           args.seed + index * 1009)
+                           args.loops_per_sample, args.seed + index * 1009)
              for index, size in enumerate(args.neurons)]
     rss_after = process.memory_info().rss
     budget_met = all(
@@ -182,6 +204,7 @@ def main():
     parser.add_argument("--steps", type=int, default=600)
     parser.add_argument("--warmup", type=int, default=100)
     parser.add_argument("--repeats", type=int, default=5)
+    parser.add_argument("--loops-per-sample", type=int, default=30)
     parser.add_argument("--seed", type=int, default=20261111)
     parser.add_argument("--max-regression", type=float, default=0.03)
     parser.add_argument("--output", type=Path)

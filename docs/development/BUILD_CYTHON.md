@@ -53,7 +53,9 @@ extensões opcionais não estão compiladas. O workflow
 Ubuntu, executa os testes e publica os benchmarks STDP e LIF. O benchmark LIF
 compara ticks completos da rede em 600 e 1.000 neurônios, verifica o hash da
 sequência de saídas e mede tempo CPU/parede, memória Python e RSS do processo.
-CI não valida a GUI no desktop físico.
+Cada amostra repete a mesma sequência para amortizar a resolução do relógio de
+CPU do Windows; o limite de regressão de 3% é aplicado ao tempo CPU, e o tempo
+de parede também é registrado. CI não valida a GUI no desktop físico.
 
 ## Escopo e limites
 
