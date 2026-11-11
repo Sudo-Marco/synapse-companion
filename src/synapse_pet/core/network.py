@@ -2,6 +2,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 import numpy as np
 from numpy.typing import NDArray
+from ..neural_backend.interface import NeuralBackend
+from ..neural_backend.numpy_backend import NumpyBackend
 from .neurons import LIFPopulation
 from .synapses import SparseProjection
 
@@ -19,12 +21,14 @@ class SpikingNetwork:
     """Small CPU-only SNN with sparse vectorized projections and Dale signs."""
     def __init__(self, total_neurons: int = 600, connectivity: float = 0.10,
                  dt_ms: float = 2.0, seed: int = 41, noise: float = 0.015,
-                 tool_group_size: int = 8, synaptic_gain: float = 1.0) -> None:
+                 tool_group_size: int = 8, synaptic_gain: float = 1.0,
+                 backend: NeuralBackend | None = None) -> None:
         if total_neurons < 50:
             raise ValueError("network requires at least 50 neurons")
         self.rng = np.random.default_rng(seed)
         self.dt_ms, self.noise, self.connectivity = dt_ms, noise, connectivity
         self.synaptic_gain = max(0.0, float(synaptic_gain))
+        self.backend: NeuralBackend = backend or NumpyBackend()
         # Optional output competition. It changes only currents when explicitly
         # enabled; the shipped configuration keeps the historical path intact.
         self.tool_output_inhibition_enabled = False
@@ -75,6 +79,12 @@ class SpikingNetwork:
                                  dtype=np.int32).reshape(-1, self.tool_group_size)
             if np.array_equal(self._tool_output_local_indices, expected):
                 self._tool_output_slice = (first, len(groups))
+
+    def set_backend(self, backend: NeuralBackend) -> None:
+        """Attach a selected numerical backend without changing network state."""
+        if not isinstance(backend, NeuralBackend):
+            raise TypeError("backend must implement NeuralBackend")
+        self.backend = backend
 
     def add_tool_group(self, name: str) -> NDArray[np.int32]:
         key = f"tool:{name}"
@@ -250,18 +260,22 @@ class SpikingNetwork:
             current[:self.n_sensor] += sensor_current
         spikes = self.population.spikes
         h = slice(self.hidden_start, self.output_start)
-        current[h] += (self.sensor_to_hidden.currents(spikes[:self.n_sensor])
+        current[h] += (self.backend.propagate(
+            self.sensor_to_hidden, spikes[:self.n_sensor])
                        * np.float32(self.synaptic_gain))
-        current[h] += self.recurrent.currents(spikes[h]) * np.float32(self.synaptic_gain)
-        output_current = self.hidden_to_output.currents(spikes[h]) * np.float32(
+        current[h] += self.backend.propagate(
+            self.recurrent, spikes[h]) * np.float32(self.synaptic_gain)
+        output_current = self.backend.propagate(
+            self.hidden_to_output, spikes[h]) * np.float32(
             self.synaptic_gain)
         if (self.tool_output_inhibition_enabled
                 and self.tick_count % max(1, int(
                     self.tool_output_inhibition_interval_steps)) == 0):
             self._apply_tool_output_inhibition(output_current)
         current[self.output_start:self.output_start + self.hidden_to_output.n_post] += output_current
-        out = self.population.step(current, self.dt_ms, self.rng, self.noise,
-                                   gain=1.0 + 0.5 * getattr(self, "stress", 0.0))
+        out = self.backend.step_neurons(
+            self.population, current, self.dt_ms, self.rng, self.noise,
+            gain=1.0 + 0.5 * getattr(self, "stress", 0.0))
         self.tick_count += 1
         return out
 

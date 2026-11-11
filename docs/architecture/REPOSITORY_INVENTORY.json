@@ -1,0 +1,2814 @@
+{
+  "schema": 1,
+  "generated_at": "2026-11-08T22:42:04.4349589-03:00",
+  "root": ".",
+  "exclusions": [
+    ".git",
+    ".venv",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".cache",
+    ".nox",
+    ".tox",
+    "build",
+    "dist",
+    "node_modules",
+    "work/ (gitignored local dependency/probe staging)"
+  ],
+  "file_count": 543,
+  "directory_count": 53,
+  "extension_counts": {
+    ".csv": 30,
+    ".frag": 1,
+    ".gif": 1,
+    ".gitignore": 1,
+    ".jpg": 1,
+    ".json": 53,
+    ".md": 53,
+    ".png": 250,
+    ".prof": 10,
+    ".ps1": 2,
+    ".py": 122,
+    ".toml": 1,
+    ".ttf": 2,
+    ".txt": 7,
+    ".yaml": 4,
+    ".yml": 3,
+    "[no extension]": 2
+  },
+  "directories": [
+    ".github",
+    ".github/ISSUE_TEMPLATE",
+    ".github/workflows",
+    "benchmarks",
+    "benchmarks/profile",
+    "benchmarks/profile/phase2_after",
+    "benchmarks/profile/phase2_after_final",
+    "benchmarks/profile/phase2_after_stdp",
+    "benchmarks/profile/phase2_after_stdp_reuse",
+    "benchmarks/profile/phase2_before",
+    "benchmarks/results",
+    "configs",
+    "docs",
+    "docs/architecture",
+    "docs/learning",
+    "docs/learning/context_projection_stage",
+    "docs/learning/piu-snn-baseline",
+    "docs/learning/piu-snn-enabled",
+    "docs/learning/rate_stage1",
+    "docs/mockups",
+    "docs/mockups/piu",
+    "docs/mockups/piu/v03_stage1",
+    "docs/mockups/piu/v03_stage1/sprites",
+    "docs/mockups/piu/vistas_etapa1",
+    "docs/performance",
+    "docs/screenshots",
+    "docs/screenshots/ascii",
+    "docs/screenshots/cpu",
+    "docs/screenshots/legibility",
+    "docs/screenshots/legibility/cell_background_stage1",
+    "docs/screenshots/piu",
+    "docs/screenshots/spectral_eye_stage1",
+    "scripts",
+    "src",
+    "src/synapse_pet",
+    "src/synapse_pet.egg-info",
+    "src/synapse_pet/assets",
+    "src/synapse_pet/assets/fonts",
+    "src/synapse_pet/assets/fonts/silkscreen",
+    "src/synapse_pet/assets/pet",
+    "src/synapse_pet/assets/pixel",
+    "src/synapse_pet/core",
+    "src/synapse_pet/mind",
+    "src/synapse_pet/runtime",
+    "src/synapse_pet/sensors",
+    "src/synapse_pet/sim",
+    "src/synapse_pet/tools",
+    "src/synapse_pet/tools/builtin",
+    "src/synapse_pet/tools/user_tools",
+    "src/synapse_pet/ui",
+    "src/synapse_pet/ui/shaders",
+    "tests",
+    "tools"
+  ],
+  "files": [
+    {
+      "path": ".gitignore",
+      "extension": ".gitignore",
+      "bytes": 5762
+    },
+    {
+      "path": "docs/screenshots/cpu/sonolento_shader.png",
+      "extension": ".png",
+      "bytes": 145474
+    },
+    {
+      "path": "docs/screenshots/cpu/sonolento_ascii.png",
+      "extension": ".png",
+      "bytes": 66554
+    },
+    {
+      "path": "docs/screenshots/cpu/semicerrado_shader.png",
+      "extension": ".png",
+      "bytes": 147359
+    },
+    {
+      "path": "docs/screenshots/cpu/semicerrado_ascii.png",
+      "extension": ".png",
+      "bytes": 68985
+    },
+    {
+      "path": "docs/screenshots/cpu/piscar_shader.png",
+      "extension": ".png",
+      "bytes": 145011
+    },
+    {
+      "path": "docs/screenshots/cpu/piscar_ascii.png",
+      "extension": ".png",
+      "bytes": 64945
+    },
+    {
+      "path": "docs/screenshots/cpu/observando_shader.png",
+      "extension": ".png",
+      "bytes": 144837
+    },
+    {
+      "path": "docs/screenshots/cpu/observando_hud.png",
+      "extension": ".png",
+      "bytes": 149471
+    },
+    {
+      "path": "docs/screenshots/cpu/observando_ascii.png",
+      "extension": ".png",
+      "bytes": 64722
+    },
+    {
+      "path": "docs/screenshots/cpu/estressado_shader.png",
+      "extension": ".png",
+      "bytes": 149494
+    },
+    {
+      "path": "docs/screenshots/cpu/estressado_ascii.png",
+      "extension": ".png",
+      "bytes": 69612
+    },
+    {
+      "path": "docs/screenshots/cpu/curioso_shader.png",
+      "extension": ".png",
+      "bytes": 119212
+    },
+    {
+      "path": "docs/screenshots/cpu/curioso_ascii.png",
+      "extension": ".png",
+      "bytes": 64837
+    },
+    {
+      "path": "docs/screenshots/cpu/arregalado_shader.png",
+      "extension": ".png",
+      "bytes": 144535
+    },
+    {
+      "path": "docs/screenshots/cpu/triste_ascii.png",
+      "extension": ".png",
+      "bytes": 69485
+    },
+    {
+      "path": "docs/screenshots/cpu/arregalado_ascii.png",
+      "extension": ".png",
+      "bytes": 59869
+    },
+    {
+      "path": "docs/screenshots/cpu/alegre_ascii.png",
+      "extension": ".png",
+      "bytes": 65527
+    },
+    {
+      "path": "docs/screenshots/cpu/aberto_shader.png",
+      "extension": ".png",
+      "bytes": 144939
+    },
+    {
+      "path": "docs/screenshots/cpu/aberto_ascii.png",
+      "extension": ".png",
+      "bytes": 64413
+    },
+    {
+      "path": "docs/screenshots/ascii/triste_hud.png",
+      "extension": ".png",
+      "bytes": 10501
+    },
+    {
+      "path": "docs/screenshots/ascii/triste_ascii.png",
+      "extension": ".png",
+      "bytes": 10176
+    },
+    {
+      "path": "docs/screenshots/ascii/sonolento_hud.png",
+      "extension": ".png",
+      "bytes": 9730
+    },
+    {
+      "path": "docs/screenshots/ascii/sonolento_ascii.png",
+      "extension": ".png",
+      "bytes": 10359
+    },
+    {
+      "path": "docs/screenshots/ascii/semicerrado_hud.png",
+      "extension": ".png",
+      "bytes": 10077
+    },
+    {
+      "path": "docs/screenshots/ascii/semicerrado_ascii.png",
+      "extension": ".png",
+      "bytes": 9860
+    },
+    {
+      "path": "docs/screenshots/ascii/piscar_hud.png",
+      "extension": ".png",
+      "bytes": 6970
+    },
+    {
+      "path": "docs/screenshots/ascii/piscar_ascii.png",
+      "extension": ".png",
+      "bytes": 6735
+    },
+    {
+      "path": "docs/screenshots/ascii/observando_hud.png",
+      "extension": ".png",
+      "bytes": 11060
+    },
+    {
+      "path": "docs/screenshots/ascii/observando_ascii.png",
+      "extension": ".png",
+      "bytes": 10616
+    },
+    {
+      "path": "docs/screenshots/ascii/estressado_hud.png",
+      "extension": ".png",
+      "bytes": 10603
+    },
+    {
+      "path": "docs/screenshots/cpu/alegre_shader.png",
+      "extension": ".png",
+      "bytes": 143388
+    },
+    {
+      "path": "docs/screenshots/ascii/estressado_ascii.png",
+      "extension": ".png",
+      "bytes": 10330
+    },
+    {
+      "path": "docs/screenshots/cpu/triste_shader.png",
+      "extension": ".png",
+      "bytes": 143384
+    },
+    {
+      "path": "docs/screenshots/legibility/cell_background_stage1/contato_ampliado_3x.png",
+      "extension": ".png",
+      "bytes": 332896
+    },
+    {
+      "path": "src/synapse_pet/assets/pixel/corrida_perfil.png",
+      "extension": ".png",
+      "bytes": 4678
+    },
+    {
+      "path": "src/synapse_pet/assets/pixel/corrida_para_fundo.png",
+      "extension": ".png",
+      "bytes": 1769
+    },
+    {
+      "path": "src/synapse_pet/assets/pixel/corrida_lateral.png",
+      "extension": ".png",
+      "bytes": 1836
+    },
+    {
+      "path": "src/synapse_pet/assets/pixel/corrida_frente.png",
+      "extension": ".png",
+      "bytes": 4678
+    },
+    {
+      "path": "src/synapse_pet/assets/pixel/corrida_costas.png",
+      "extension": ".png",
+      "bytes": 4145
+    },
+    {
+      "path": "src/synapse_pet/assets/pixel/cansado_perfil.png",
+      "extension": ".png",
+      "bytes": 1413
+    },
+    {
+      "path": "src/synapse_pet/assets/pixel/cansado_frente.png",
+      "extension": ".png",
+      "bytes": 1243
+    },
+    {
+      "path": "src/synapse_pet/assets/pixel/animations.json",
+      "extension": ".json",
+      "bytes": 64051
+    },
+    {
+      "path": "src/synapse_pet/assets/pet/sprite_mapping.json",
+      "extension": ".json",
+      "bytes": 2009
+    },
+    {
+      "path": "src/synapse_pet/assets/pet/README.md",
+      "extension": ".md",
+      "bytes": 1646
+    },
+    {
+      "path": "src/synapse_pet/assets/pet/pet_spritesheet.png",
+      "extension": ".png",
+      "bytes": 35303
+    },
+    {
+      "path": "src/synapse_pet/assets/pet/pet_atlas.json",
+      "extension": ".json",
+      "bytes": 4587
+    },
+    {
+      "path": "src/synapse_pet/assets/fonts/silkscreen/Silkscreen-Regular.ttf",
+      "extension": ".ttf",
+      "bytes": 32220
+    },
+    {
+      "path": "src/synapse_pet/assets/fonts/silkscreen/Silkscreen-Bold.ttf",
+      "extension": ".ttf",
+      "bytes": 30632
+    },
+    {
+      "path": "docs/screenshots/legibility/cell_background_stage1/contato_1x.png",
+      "extension": ".png",
+      "bytes": 192324
+    },
+    {
+      "path": "src/synapse_pet/assets/fonts/silkscreen/OFL.txt",
+      "extension": ".txt",
+      "bytes": 4487
+    },
+    {
+      "path": "src/synapse_pet/__init__.py",
+      "extension": ".py",
+      "bytes": 92
+    },
+    {
+      "path": "scripts/run.ps1",
+      "extension": ".ps1",
+      "bytes": 254
+    },
+    {
+      "path": "scripts/install.ps1",
+      "extension": ".ps1",
+      "bytes": 699
+    },
+    {
+      "path": "docs/screenshots/spectral_eye_stage1/RELATORIO_CONTRASTE.md",
+      "extension": ".md",
+      "bytes": 2653
+    },
+    {
+      "path": "docs/screenshots/spectral_eye_stage1/contraste.csv",
+      "extension": ".csv",
+      "bytes": 6348
+    },
+    {
+      "path": "docs/screenshots/spectral_eye_stage1/contato_ampliado_2x.png",
+      "extension": ".png",
+      "bytes": 21717555
+    },
+    {
+      "path": "docs/screenshots/spectral_eye_stage1/contato_1x.png",
+      "extension": ".png",
+      "bytes": 7017109
+    },
+    {
+      "path": "docs/screenshots/piu/piu-flutuante.png",
+      "extension": ".png",
+      "bytes": 1379
+    },
+    {
+      "path": "docs/screenshots/piu/piu-cenario-sono.png",
+      "extension": ".png",
+      "bytes": 5936
+    },
+    {
+      "path": "docs/screenshots/piu/piu-cenario-feliz.png",
+      "extension": ".png",
+      "bytes": 5591
+    },
+    {
+      "path": "docs/screenshots/piu/piu-cenario-dia.png",
+      "extension": ".png",
+      "bytes": 5464
+    },
+    {
+      "path": "docs/screenshots/piu/piu-animacao.gif",
+      "extension": ".gif",
+      "bytes": 72820
+    },
+    {
+      "path": "docs/screenshots/legibility/cell_background_stage1/RELATORIO_CONTRASTE.md",
+      "extension": ".md",
+      "bytes": 5751
+    },
+    {
+      "path": "docs/screenshots/legibility/cell_background_stage1/contraste.csv",
+      "extension": ".csv",
+      "bytes": 5409
+    },
+    {
+      "path": "src/synapse_pet/main.py",
+      "extension": ".py",
+      "bytes": 1735
+    },
+    {
+      "path": "src/synapse_pet/assets/pixel/costas.png",
+      "extension": ".png",
+      "bytes": 1425
+    },
+    {
+      "path": "docs/screenshots/ascii/dormindo_hud.png",
+      "extension": ".png",
+      "bytes": 6994
+    },
+    {
+      "path": "docs/screenshots/ascii/curioso_hud.png",
+      "extension": ".png",
+      "bytes": 11130
+    },
+    {
+      "path": "docs/mockups/piu/vistas_etapa1/volta_para_camera_1x.png",
+      "extension": ".png",
+      "bytes": 2592
+    },
+    {
+      "path": "docs/mockups/piu/vistas_etapa1/virada_vistas_4x.png",
+      "extension": ".png",
+      "bytes": 6321
+    },
+    {
+      "path": "docs/mockups/piu/vistas_etapa1/virada_vistas_1x.png",
+      "extension": ".png",
+      "bytes": 3100
+    },
+    {
+      "path": "docs/mockups/piu/vistas_etapa1/README.md",
+      "extension": ".md",
+      "bytes": 2607
+    },
+    {
+      "path": "docs/mockups/piu/vistas_etapa1/pulo_4x.png",
+      "extension": ".png",
+      "bytes": 8332
+    },
+    {
+      "path": "docs/mockups/piu/vistas_etapa1/pulo_1x.png",
+      "extension": ".png",
+      "bytes": 4137
+    },
+    {
+      "path": "docs/mockups/piu/vistas_etapa1/niveis_profundidade_4x.png",
+      "extension": ".png",
+      "bytes": 16200
+    },
+    {
+      "path": "docs/mockups/piu/vistas_etapa1/niveis_profundidade_1x.png",
+      "extension": ".png",
+      "bytes": 7744
+    },
+    {
+      "path": "docs/mockups/piu/vistas_etapa1/inventario_frames.json",
+      "extension": ".json",
+      "bytes": 24666
+    },
+    {
+      "path": "docs/mockups/piu/vistas_etapa1/frente_4x.png",
+      "extension": ".png",
+      "bytes": 6758
+    },
+    {
+      "path": "docs/mockups/piu/vistas_etapa1/frente_1x.png",
+      "extension": ".png",
+      "bytes": 3323
+    },
+    {
+      "path": "docs/mockups/piu/vistas_etapa1/costas_4x.png",
+      "extension": ".png",
+      "bytes": 5522
+    },
+    {
+      "path": "docs/mockups/piu/vistas_etapa1/costas_1x.png",
+      "extension": ".png",
+      "bytes": 2389
+    },
+    {
+      "path": "docs/mockups/piu/vistas_etapa1/corrida_para_fundo_4x.png",
+      "extension": ".png",
+      "bytes": 5054
+    },
+    {
+      "path": "docs/mockups/piu/vistas_etapa1/volta_para_camera_4x.png",
+      "extension": ".png",
+      "bytes": 5441
+    },
+    {
+      "path": "docs/mockups/piu/vistas_etapa1/corrida_para_fundo_1x.png",
+      "extension": ".png",
+      "bytes": 2424
+    },
+    {
+      "path": "docs/mockups/piu/vistas_etapa1/corrida_lateral_1x.png",
+      "extension": ".png",
+      "bytes": 3022
+    },
+    {
+      "path": "docs/mockups/piu/vistas_etapa1/corrida_bilateral_4x.png",
+      "extension": ".png",
+      "bytes": 9358
+    },
+    {
+      "path": "docs/mockups/piu/vistas_etapa1/corrida_bilateral_1x.png",
+      "extension": ".png",
+      "bytes": 4281
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/pose_queda_pancada_00.png",
+      "extension": ".png",
+      "bytes": 1074
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/pose_pensando_00.png",
+      "extension": ".png",
+      "bytes": 1195
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/pose_pego_no_alto_00.png",
+      "extension": ".png",
+      "bytes": 1281
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/pose_ouvindo_00.png",
+      "extension": ".png",
+      "bytes": 1186
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/pose_espiando_00.png",
+      "extension": ".png",
+      "bytes": 1109
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/pose_descansando_00.png",
+      "extension": ".png",
+      "bytes": 1018
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/pose_danca_pulinho_03.png",
+      "extension": ".png",
+      "bytes": 1148
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/pose_danca_pulinho_02.png",
+      "extension": ".png",
+      "bytes": 1103
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/pose_danca_pulinho_01.png",
+      "extension": ".png",
+      "bytes": 1124
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/pose_danca_pulinho_00.png",
+      "extension": ".png",
+      "bytes": 1147
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/pose_danca_cabecada_02.png",
+      "extension": ".png",
+      "bytes": 1186
+    },
+    {
+      "path": "docs/mockups/piu/vistas_etapa1/corrida_lateral_4x.png",
+      "extension": ".png",
+      "bytes": 6182
+    },
+    {
+      "path": "docs/screenshots/ascii/dormindo_ascii.png",
+      "extension": ".png",
+      "bytes": 6723
+    },
+    {
+      "path": "docs/performance/PYTHON_OPTIMIZATION.md",
+      "extension": ".md",
+      "bytes": 4756
+    },
+    {
+      "path": "docs/screenshots/aberto_shader.png",
+      "extension": ".png",
+      "bytes": 398472
+    },
+    {
+      "path": "docs/screenshots/ascii/curioso_ascii.png",
+      "extension": ".png",
+      "bytes": 10592
+    },
+    {
+      "path": "docs/screenshots/ascii/carinho_hud.png",
+      "extension": ".png",
+      "bytes": 10830
+    },
+    {
+      "path": "docs/screenshots/ascii/carinho_ascii.png",
+      "extension": ".png",
+      "bytes": 10623
+    },
+    {
+      "path": "docs/screenshots/ascii/arregalado_hud.png",
+      "extension": ".png",
+      "bytes": 11363
+    },
+    {
+      "path": "docs/screenshots/ascii/arregalado_ascii.png",
+      "extension": ".png",
+      "bytes": 10867
+    },
+    {
+      "path": "docs/screenshots/ascii/alegre_hud.png",
+      "extension": ".png",
+      "bytes": 10848
+    },
+    {
+      "path": "docs/screenshots/ascii/alegre_ascii.png",
+      "extension": ".png",
+      "bytes": 10467
+    },
+    {
+      "path": "docs/screenshots/ascii/aberto_hud.png",
+      "extension": ".png",
+      "bytes": 11094
+    },
+    {
+      "path": "docs/screenshots/ascii/aberto_ascii.png",
+      "extension": ".png",
+      "bytes": 10753
+    },
+    {
+      "path": "docs/screenshots/triste_shader.png",
+      "extension": ".png",
+      "bytes": 335291
+    },
+    {
+      "path": "docs/screenshots/triste_ascii.png",
+      "extension": ".png",
+      "bytes": 265388
+    },
+    {
+      "path": "docs/screenshots/sonolento_shader.png",
+      "extension": ".png",
+      "bytes": 288634
+    },
+    {
+      "path": "docs/screenshots/sonolento_ascii.png",
+      "extension": ".png",
+      "bytes": 202660
+    },
+    {
+      "path": "docs/screenshots/semicerrado_shader.png",
+      "extension": ".png",
+      "bytes": 316726
+    },
+    {
+      "path": "docs/screenshots/aberto_ascii.png",
+      "extension": ".png",
+      "bytes": 335711
+    },
+    {
+      "path": "docs/screenshots/semicerrado_ascii.png",
+      "extension": ".png",
+      "bytes": 241574
+    },
+    {
+      "path": "docs/screenshots/piscar_shader.png",
+      "extension": ".png",
+      "bytes": 297332
+    },
+    {
+      "path": "docs/screenshots/piscar_ascii.png",
+      "extension": ".png",
+      "bytes": 120451
+    },
+    {
+      "path": "docs/screenshots/observando_shader.png",
+      "extension": ".png",
+      "bytes": 403001
+    },
+    {
+      "path": "docs/screenshots/observando_hud.png",
+      "extension": ".png",
+      "bytes": 419441
+    },
+    {
+      "path": "docs/screenshots/observando_ascii.png",
+      "extension": ".png",
+      "bytes": 330108
+    },
+    {
+      "path": "docs/screenshots/floating_pet_offscreen.png",
+      "extension": ".png",
+      "bytes": 1489
+    },
+    {
+      "path": "docs/screenshots/estressado_shader.png",
+      "extension": ".png",
+      "bytes": 353868
+    },
+    {
+      "path": "docs/screenshots/estressado_ascii.png",
+      "extension": ".png",
+      "bytes": 273871
+    },
+    {
+      "path": "docs/screenshots/curioso_shader.png",
+      "extension": ".png",
+      "bytes": 429829
+    },
+    {
+      "path": "docs/screenshots/curioso_ascii.png",
+      "extension": ".png",
+      "bytes": 361205
+    },
+    {
+      "path": "docs/screenshots/arregalado_shader.png",
+      "extension": ".png",
+      "bytes": 443011
+    },
+    {
+      "path": "docs/screenshots/arregalado_ascii.png",
+      "extension": ".png",
+      "bytes": 370134
+    },
+    {
+      "path": "docs/screenshots/alegre_shader.png",
+      "extension": ".png",
+      "bytes": 416402
+    },
+    {
+      "path": "docs/screenshots/alegre_ascii.png",
+      "extension": ".png",
+      "bytes": 340096
+    },
+    {
+      "path": "docs/screenshots/README.md",
+      "extension": ".md",
+      "bytes": 456
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/pose_danca_cabecada_01.png",
+      "extension": ".png",
+      "bytes": 1203
+    },
+    {
+      "path": "src/synapse_pet/assets/pixel/danca_balanco.png",
+      "extension": ".png",
+      "bytes": 1465
+    },
+    {
+      "path": "src/synapse_pet/assets/pixel/danca_pulinho.png",
+      "extension": ".png",
+      "bytes": 2289
+    },
+    {
+      "path": "tests/test_autonomy.py",
+      "extension": ".py",
+      "bytes": 2194
+    },
+    {
+      "path": "tests/test_audio_analysis.py",
+      "extension": ".py",
+      "bytes": 3121
+    },
+    {
+      "path": "src/synapse_pet.egg-info/top_level.txt",
+      "extension": ".txt",
+      "bytes": 12
+    },
+    {
+      "path": "src/synapse_pet.egg-info/SOURCES.txt",
+      "extension": ".txt",
+      "bytes": 2261
+    },
+    {
+      "path": "src/synapse_pet.egg-info/requires.txt",
+      "extension": ".txt",
+      "bytes": 115
+    },
+    {
+      "path": "src/synapse_pet.egg-info/PKG-INFO",
+      "extension": "[no extension]",
+      "bytes": 496
+    },
+    {
+      "path": "src/synapse_pet.egg-info/entry_points.txt",
+      "extension": ".txt",
+      "bytes": 54
+    },
+    {
+      "path": "src/synapse_pet.egg-info/dependency_links.txt",
+      "extension": ".txt",
+      "bytes": 1
+    },
+    {
+      "path": "src/synapse_pet/ui/shaders/eye.frag",
+      "extension": ".frag",
+      "bytes": 9898
+    },
+    {
+      "path": "src/synapse_pet/ui/tray.py",
+      "extension": ".py",
+      "bytes": 76
+    },
+    {
+      "path": "src/synapse_pet/ui/teleport.py",
+      "extension": ".py",
+      "bytes": 6897
+    },
+    {
+      "path": "src/synapse_pet/ui/sprite_adapter.py",
+      "extension": ".py",
+      "bytes": 8383
+    },
+    {
+      "path": "src/synapse_pet/ui/spectral_eye.py",
+      "extension": ".py",
+      "bytes": 26749
+    },
+    {
+      "path": "src/synapse_pet/ui/qt_app.py",
+      "extension": ".py",
+      "bytes": 118416
+    },
+    {
+      "path": "tests/test_context_projection.py",
+      "extension": ".py",
+      "bytes": 5849
+    },
+    {
+      "path": "src/synapse_pet/ui/postit.py",
+      "extension": ".py",
+      "bytes": 6780
+    },
+    {
+      "path": "src/synapse_pet/ui/pet_motion.py",
+      "extension": ".py",
+      "bytes": 5707
+    },
+    {
+      "path": "src/synapse_pet/ui/interaction.py",
+      "extension": ".py",
+      "bytes": 2475
+    },
+    {
+      "path": "src/synapse_pet/ui/gl_renderer.py",
+      "extension": ".py",
+      "bytes": 22764
+    },
+    {
+      "path": "src/synapse_pet/ui/desktop_surfaces.py",
+      "extension": ".py",
+      "bytes": 4563
+    },
+    {
+      "path": "src/synapse_pet/ui/desktop_motion.py",
+      "extension": ".py",
+      "bytes": 6497
+    },
+    {
+      "path": "src/synapse_pet/ui/debug_panel.py",
+      "extension": ".py",
+      "bytes": 5039
+    },
+    {
+      "path": "src/synapse_pet/ui/day_cycle.py",
+      "extension": ".py",
+      "bytes": 9303
+    },
+    {
+      "path": "src/synapse_pet/ui/cpu_renderer.py",
+      "extension": ".py",
+      "bytes": 18324
+    },
+    {
+      "path": "src/synapse_pet/ui/bubble.py",
+      "extension": ".py",
+      "bytes": 876
+    },
+    {
+      "path": "src/synapse_pet/ui/avatar.py",
+      "extension": ".py",
+      "bytes": 20898
+    },
+    {
+      "path": "src/synapse_pet/ui/ascii_runtime.py",
+      "extension": ".py",
+      "bytes": 43071
+    },
+    {
+      "path": "src/synapse_pet/ui/ascii_renderer.py",
+      "extension": ".py",
+      "bytes": 7693
+    },
+    {
+      "path": "src/synapse_pet/ui/ascii_eye_mockups.py",
+      "extension": ".py",
+      "bytes": 28743
+    },
+    {
+      "path": "src/synapse_pet/ui/app.py",
+      "extension": ".py",
+      "bytes": 19977
+    },
+    {
+      "path": "src/synapse_pet/ui/pixel_renderer.py",
+      "extension": ".py",
+      "bytes": 59550
+    },
+    {
+      "path": "src/synapse_pet/ui/__init__.py",
+      "extension": ".py",
+      "bytes": 60
+    },
+    {
+      "path": "tests/test_core.py",
+      "extension": ".py",
+      "bytes": 1789
+    },
+    {
+      "path": "tests/test_desktop_motion.py",
+      "extension": ".py",
+      "bytes": 4089
+    },
+    {
+      "path": "tools/capture_floating_pet.py",
+      "extension": ".py",
+      "bytes": 1702
+    },
+    {
+      "path": "tools/capture_eye_states.py",
+      "extension": ".py",
+      "bytes": 4772
+    },
+    {
+      "path": "tools/build_piu_assets.py",
+      "extension": ".py",
+      "bytes": 13405
+    },
+    {
+      "path": "tests/test_window_geometry_sensor.py",
+      "extension": ".py",
+      "bytes": 2171
+    },
+    {
+      "path": "tests/test_tool_schema.py",
+      "extension": ".py",
+      "bytes": 4808
+    },
+    {
+      "path": "tests/test_teleport.py",
+      "extension": ".py",
+      "bytes": 2147
+    },
+    {
+      "path": "tests/test_stdp_equivalence.py",
+      "extension": ".py",
+      "bytes": 3354
+    },
+    {
+      "path": "tests/test_sprite_adapter.py",
+      "extension": ".py",
+      "bytes": 3887
+    },
+    {
+      "path": "tests/test_snn_determinism.py",
+      "extension": ".py",
+      "bytes": 389
+    },
+    {
+      "path": "tests/test_sleep.py",
+      "extension": ".py",
+      "bytes": 5638
+    },
+    {
+      "path": "tests/test_sim.py",
+      "extension": ".py",
+      "bytes": 259
+    },
+    {
+      "path": "tests/test_runtime.py",
+      "extension": ".py",
+      "bytes": 1253
+    },
+    {
+      "path": "tests/test_runtime_resilience.py",
+      "extension": ".py",
+      "bytes": 6421
+    },
+    {
+      "path": "tests/test_reward_channels.py",
+      "extension": ".py",
+      "bytes": 4867
+    },
+    {
+      "path": "tests/test_day_cycle.py",
+      "extension": ".py",
+      "bytes": 2623
+    },
+    {
+      "path": "tests/test_privacy.py",
+      "extension": ".py",
+      "bytes": 1477
+    },
+    {
+      "path": "tests/test_pixel_renderer.py",
+      "extension": ".py",
+      "bytes": 12613
+    },
+    {
+      "path": "tests/test_piu_asset_packaging.py",
+      "extension": ".py",
+      "bytes": 5371
+    },
+    {
+      "path": "tests/test_pet_runtime.py",
+      "extension": ".py",
+      "bytes": 1328
+    },
+    {
+      "path": "tests/test_pet_renderer.py",
+      "extension": ".py",
+      "bytes": 8651
+    },
+    {
+      "path": "tests/test_pet_motion.py",
+      "extension": ".py",
+      "bytes": 2161
+    },
+    {
+      "path": "tests/test_personality_effects.py",
+      "extension": ".py",
+      "bytes": 2116
+    },
+    {
+      "path": "tests/test_persistence.py",
+      "extension": ".py",
+      "bytes": 2124
+    },
+    {
+      "path": "tests/test_permissions.py",
+      "extension": ".py",
+      "bytes": 1373
+    },
+    {
+      "path": "tests/test_neuron_growth_migration.py",
+      "extension": ".py",
+      "bytes": 14308
+    },
+    {
+      "path": "tests/test_network_scratch_buffer.py",
+      "extension": ".py",
+      "bytes": 1529
+    },
+    {
+      "path": "tests/test_mouse_affect.py",
+      "extension": ".py",
+      "bytes": 5205
+    },
+    {
+      "path": "tests/test_learning_eval.py",
+      "extension": ".py",
+      "bytes": 4175
+    },
+    {
+      "path": "tests/test_homeostasis.py",
+      "extension": ".py",
+      "bytes": 678
+    },
+    {
+      "path": "tests/test_habits.py",
+      "extension": ".py",
+      "bytes": 665
+    },
+    {
+      "path": "tests/test_postit_ui.py",
+      "extension": ".py",
+      "bytes": 1808
+    },
+    {
+      "path": "src/synapse_pet/assets/pixel/danca_cabecada.png",
+      "extension": ".png",
+      "bytes": 1925
+    },
+    {
+      "path": "src/synapse_pet/tools/user_tools/example_plugin.py",
+      "extension": ".py",
+      "bytes": 322
+    },
+    {
+      "path": "src/synapse_pet/tools/builtin/basic.py",
+      "extension": ".py",
+      "bytes": 11256
+    },
+    {
+      "path": "src/synapse_pet/mind/episodic_memory.py",
+      "extension": ".py",
+      "bytes": 6191
+    },
+    {
+      "path": "src/synapse_pet/mind/emotions.py",
+      "extension": ".py",
+      "bytes": 2271
+    },
+    {
+      "path": "src/synapse_pet/mind/drives.py",
+      "extension": ".py",
+      "bytes": 721
+    },
+    {
+      "path": "src/synapse_pet/mind/action_selection.py",
+      "extension": ".py",
+      "bytes": 1610
+    },
+    {
+      "path": "src/synapse_pet/mind/__init__.py",
+      "extension": ".py",
+      "bytes": 59
+    },
+    {
+      "path": "src/synapse_pet/core/synapses.py",
+      "extension": ".py",
+      "bytes": 3519
+    },
+    {
+      "path": "src/synapse_pet/core/plasticity.py",
+      "extension": ".py",
+      "bytes": 5065
+    },
+    {
+      "path": "src/synapse_pet/core/neurons.py",
+      "extension": ".py",
+      "bytes": 2256
+    },
+    {
+      "path": "src/synapse_pet/core/neuromodulators.py",
+      "extension": ".py",
+      "bytes": 4457
+    },
+    {
+      "path": "src/synapse_pet/core/network.py",
+      "extension": ".py",
+      "bytes": 28573
+    },
+    {
+      "path": "src/synapse_pet/core/homeostasis.py",
+      "extension": ".py",
+      "bytes": 1675
+    },
+    {
+      "path": "src/synapse_pet/core/encoding.py",
+      "extension": ".py",
+      "bytes": 2372
+    },
+    {
+      "path": "src/synapse_pet/core/decoding.py",
+      "extension": ".py",
+      "bytes": 912
+    },
+    {
+      "path": "src/synapse_pet/core/__init__.py",
+      "extension": ".py",
+      "bytes": 46
+    },
+    {
+      "path": "src/synapse_pet/mind/personality.py",
+      "extension": ".py",
+      "bytes": 1523
+    },
+    {
+      "path": "src/synapse_pet/assets/pixel/volta_para_camera.png",
+      "extension": ".png",
+      "bytes": 1918
+    },
+    {
+      "path": "src/synapse_pet/assets/pixel/ui_frame.png",
+      "extension": ".png",
+      "bytes": 174
+    },
+    {
+      "path": "src/synapse_pet/assets/pixel/README.md",
+      "extension": ".md",
+      "bytes": 1899
+    },
+    {
+      "path": "src/synapse_pet/assets/pixel/queda_pancada.png",
+      "extension": ".png",
+      "bytes": 1207
+    },
+    {
+      "path": "src/synapse_pet/assets/pixel/pulo.png",
+      "extension": ".png",
+      "bytes": 2768
+    },
+    {
+      "path": "src/synapse_pet/assets/pixel/pensando.png",
+      "extension": ".png",
+      "bytes": 1352
+    },
+    {
+      "path": "src/synapse_pet/assets/pixel/pego_no_alto.png",
+      "extension": ".png",
+      "bytes": 1444
+    },
+    {
+      "path": "src/synapse_pet/assets/pixel/ouvindo.png",
+      "extension": ".png",
+      "bytes": 1333
+    },
+    {
+      "path": "src/synapse_pet/assets/pixel/lod.png",
+      "extension": ".png",
+      "bytes": 5471
+    },
+    {
+      "path": "src/synapse_pet/assets/pixel/idle_perfil.png",
+      "extension": ".png",
+      "bytes": 2216
+    },
+    {
+      "path": "src/synapse_pet/assets/pixel/idle_frente.png",
+      "extension": ".png",
+      "bytes": 2190
+    },
+    {
+      "path": "src/synapse_pet/assets/pixel/idle_costas.png",
+      "extension": ".png",
+      "bytes": 1821
+    },
+    {
+      "path": "src/synapse_pet/assets/pixel/frente.png",
+      "extension": ".png",
+      "bytes": 2042
+    },
+    {
+      "path": "src/synapse_pet/assets/pixel/espiando.png",
+      "extension": ".png",
+      "bytes": 1241
+    },
+    {
+      "path": "src/synapse_pet/assets/pixel/descansando.png",
+      "extension": ".png",
+      "bytes": 1151
+    },
+    {
+      "path": "src/synapse_pet/assets/pixel/virada_vistas.png",
+      "extension": ".png",
+      "bytes": 2097
+    },
+    {
+      "path": "src/synapse_pet/tools/user_tools/__init__.py",
+      "extension": ".py",
+      "bytes": 76
+    },
+    {
+      "path": "src/synapse_pet/mind/sleep.py",
+      "extension": ".py",
+      "bytes": 6564
+    },
+    {
+      "path": "src/synapse_pet/runtime/autonomy.py",
+      "extension": ".py",
+      "bytes": 4985
+    },
+    {
+      "path": "src/synapse_pet/tools/builtin/__init__.py",
+      "extension": ".py",
+      "bytes": 63
+    },
+    {
+      "path": "src/synapse_pet/tools/sandbox.py",
+      "extension": ".py",
+      "bytes": 1626
+    },
+    {
+      "path": "src/synapse_pet/tools/registry.py",
+      "extension": ".py",
+      "bytes": 1389
+    },
+    {
+      "path": "src/synapse_pet/tools/permissions.py",
+      "extension": ".py",
+      "bytes": 1168
+    },
+    {
+      "path": "src/synapse_pet/tools/manifest.py",
+      "extension": ".py",
+      "bytes": 4072
+    },
+    {
+      "path": "src/synapse_pet/tools/__init__.py",
+      "extension": ".py",
+      "bytes": 43
+    },
+    {
+      "path": "src/synapse_pet/sim/sim_user.py",
+      "extension": ".py",
+      "bytes": 1032
+    },
+    {
+      "path": "src/synapse_pet/sim/learning_eval.py",
+      "extension": ".py",
+      "bytes": 36650
+    },
+    {
+      "path": "src/synapse_pet/sim/determinism.py",
+      "extension": ".py",
+      "bytes": 3818
+    },
+    {
+      "path": "src/synapse_pet/sim/__init__.py",
+      "extension": ".py",
+      "bytes": 73
+    },
+    {
+      "path": "src/synapse_pet/sensors/window_geometry.py",
+      "extension": ".py",
+      "bytes": 4314
+    },
+    {
+      "path": "src/synapse_pet/sensors/user_feedback.py",
+      "extension": ".py",
+      "bytes": 393
+    },
+    {
+      "path": "src/synapse_pet/sensors/system_stats.py",
+      "extension": ".py",
+      "bytes": 474
+    },
+    {
+      "path": "src/synapse_pet/sensors/manager.py",
+      "extension": ".py",
+      "bytes": 3600
+    },
+    {
+      "path": "src/synapse_pet/runtime/__init__.py",
+      "extension": ".py",
+      "bytes": 49
+    },
+    {
+      "path": "src/synapse_pet/sensors/input_activity.py",
+      "extension": ".py",
+      "bytes": 1393
+    },
+    {
+      "path": "src/synapse_pet/sensors/clock.py",
+      "extension": ".py",
+      "bytes": 343
+    },
+    {
+      "path": "src/synapse_pet/sensors/clipboard.py",
+      "extension": ".py",
+      "bytes": 915
+    },
+    {
+      "path": "src/synapse_pet/sensors/base.py",
+      "extension": ".py",
+      "bytes": 373
+    },
+    {
+      "path": "src/synapse_pet/sensors/audio_service.py",
+      "extension": ".py",
+      "bytes": 7382
+    },
+    {
+      "path": "src/synapse_pet/sensors/audio_analysis.py",
+      "extension": ".py",
+      "bytes": 5711
+    },
+    {
+      "path": "src/synapse_pet/sensors/active_window.py",
+      "extension": ".py",
+      "bytes": 1108
+    },
+    {
+      "path": "src/synapse_pet/sensors/__init__.py",
+      "extension": ".py",
+      "bytes": 81
+    },
+    {
+      "path": "src/synapse_pet/runtime/visual_state.py",
+      "extension": ".py",
+      "bytes": 3611
+    },
+    {
+      "path": "src/synapse_pet/runtime/scheduler.py",
+      "extension": ".py",
+      "bytes": 466
+    },
+    {
+      "path": "src/synapse_pet/runtime/persistence.py",
+      "extension": ".py",
+      "bytes": 20048
+    },
+    {
+      "path": "src/synapse_pet/runtime/narrator.py",
+      "extension": ".py",
+      "bytes": 744
+    },
+    {
+      "path": "src/synapse_pet/runtime/logging_db.py",
+      "extension": ".py",
+      "bytes": 852
+    },
+    {
+      "path": "src/synapse_pet/runtime/engine.py",
+      "extension": ".py",
+      "bytes": 58988
+    },
+    {
+      "path": "src/synapse_pet/runtime/config.py",
+      "extension": ".py",
+      "bytes": 2630
+    },
+    {
+      "path": "src/synapse_pet/sensors/file_events.py",
+      "extension": ".py",
+      "bytes": 684
+    },
+    {
+      "path": "tools/capture_pixel_previews.py",
+      "extension": ".py",
+      "bytes": 3326
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/pose_danca_cabecada_00.png",
+      "extension": ".png",
+      "bytes": 1195
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/pose_danca_balanco_01.png",
+      "extension": ".png",
+      "bytes": 1115
+    },
+    {
+      "path": "docs/ART.md",
+      "extension": ".md",
+      "bytes": 3967
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "extension": ".md",
+      "bytes": 6246
+    },
+    {
+      "path": "configs/window_rules.yaml",
+      "extension": ".yaml",
+      "bytes": 261
+    },
+    {
+      "path": "configs/personality_presets.yaml",
+      "extension": ".yaml",
+      "bytes": 349
+    },
+    {
+      "path": "configs/default.yaml",
+      "extension": ".yaml",
+      "bytes": 7729
+    },
+    {
+      "path": "benchmarks/results/validation_phase01.json",
+      "extension": ".json",
+      "bytes": 740
+    },
+    {
+      "path": "benchmarks/results/snn_runtime_resilience_after.md",
+      "extension": ".md",
+      "bytes": 930
+    },
+    {
+      "path": "benchmarks/results/snn_runtime_resilience_after.json",
+      "extension": ".json",
+      "bytes": 6296
+    },
+    {
+      "path": "benchmarks/results/snn_profile_v03.md",
+      "extension": ".md",
+      "bytes": 507
+    },
+    {
+      "path": "benchmarks/results/snn_profile_phase2.md",
+      "extension": ".md",
+      "bytes": 509
+    },
+    {
+      "path": "benchmarks/results/snn_profile_phase1.md",
+      "extension": ".md",
+      "bytes": 509
+    },
+    {
+      "path": "benchmarks/results/snn_profile_phase0.md",
+      "extension": ".md",
+      "bytes": 509
+    },
+    {
+      "path": "benchmarks/results/snn_profile_cleanup_smoke.md",
+      "extension": ".md",
+      "bytes": 511
+    },
+    {
+      "path": "benchmarks/results/snn_piu_wta.md",
+      "extension": ".md",
+      "bytes": 502
+    },
+    {
+      "path": "docs/AUTONOMY.md",
+      "extension": ".md",
+      "bytes": 5722
+    },
+    {
+      "path": "benchmarks/results/snn_piu_wta.json",
+      "extension": ".json",
+      "bytes": 6280
+    },
+    {
+      "path": "benchmarks/results/snn_piu_after.json",
+      "extension": ".json",
+      "bytes": 6236
+    },
+    {
+      "path": "benchmarks/results/snn_mouse_affect_optimized.md",
+      "extension": ".md",
+      "bytes": 518
+    },
+    {
+      "path": "benchmarks/results/snn_mouse_affect_optimized.json",
+      "extension": ".json",
+      "bytes": 5551
+    },
+    {
+      "path": "benchmarks/results/snn_mouse_affect_matched.md",
+      "extension": ".md",
+      "bytes": 516
+    },
+    {
+      "path": "benchmarks/results/snn_mouse_affect_matched.json",
+      "extension": ".json",
+      "bytes": 5540
+    },
+    {
+      "path": "benchmarks/results/snn_mouse_affect_final.md",
+      "extension": ".md",
+      "bytes": 514
+    },
+    {
+      "path": "benchmarks/results/snn_mouse_affect_final.json",
+      "extension": ".json",
+      "bytes": 5457
+    },
+    {
+      "path": "benchmarks/results/snn_mouse_affect_final_matched.md",
+      "extension": ".md",
+      "bytes": 880
+    },
+    {
+      "path": "benchmarks/results/snn_mouse_affect_final_matched.json",
+      "extension": ".json",
+      "bytes": 6153
+    },
+    {
+      "path": "benchmarks/results/snn_mouse_affect_after.md",
+      "extension": ".md",
+      "bytes": 514
+    },
+    {
+      "path": "benchmarks/results/snn_mouse_affect_after.json",
+      "extension": ".json",
+      "bytes": 5462
+    },
+    {
+      "path": "benchmarks/results/snn_launch_comparison.md",
+      "extension": ".md",
+      "bytes": 512
+    },
+    {
+      "path": "benchmarks/results/snn_launch_comparison.json",
+      "extension": ".json",
+      "bytes": 6306
+    },
+    {
+      "path": "benchmarks/results/snn_determinism_reference.json",
+      "extension": ".json",
+      "bytes": 850
+    },
+    {
+      "path": "benchmarks/results/snn_piu_after.md",
+      "extension": ".md",
+      "bytes": 504
+    },
+    {
+      "path": "benchmarks/results/snn_context_projection_before.md",
+      "extension": ".md",
+      "bytes": 520
+    },
+    {
+      "path": "docs/IMPLEMENTATION_CHECKLIST.md",
+      "extension": ".md",
+      "bytes": 2206
+    },
+    {
+      "path": "docs/PERFORMANCE.md",
+      "extension": ".md",
+      "bytes": 4651
+    },
+    {
+      "path": "docs/learning/context_projection_stage/scenario_d.png",
+      "extension": ".png",
+      "bytes": 24927
+    },
+    {
+      "path": "docs/learning/context_projection_stage/scenario_d.csv",
+      "extension": ".csv",
+      "bytes": 177325
+    },
+    {
+      "path": "docs/learning/context_projection_stage/scenario_c.png",
+      "extension": ".png",
+      "bytes": 30306
+    },
+    {
+      "path": "docs/learning/context_projection_stage/scenario_c.csv",
+      "extension": ".csv",
+      "bytes": 125363
+    },
+    {
+      "path": "docs/learning/context_projection_stage/scenario_b.png",
+      "extension": ".png",
+      "bytes": 26175
+    },
+    {
+      "path": "docs/learning/context_projection_stage/scenario_b.csv",
+      "extension": ".csv",
+      "bytes": 107464
+    },
+    {
+      "path": "docs/learning/context_projection_stage/scenario_a.png",
+      "extension": ".png",
+      "bytes": 23903
+    },
+    {
+      "path": "docs/learning/context_projection_stage/scenario_a.csv",
+      "extension": ".csv",
+      "bytes": 75647
+    },
+    {
+      "path": "docs/learning/context_projection_stage/results.json",
+      "extension": ".json",
+      "bytes": 5492
+    },
+    {
+      "path": "docs/learning/context_projection_stage/rate_grid.csv",
+      "extension": ".csv",
+      "bytes": 460
+    },
+    {
+      "path": "docs/learning/scenario_e.png",
+      "extension": ".png",
+      "bytes": 23212
+    },
+    {
+      "path": "docs/learning/scenario_e.csv",
+      "extension": ".csv",
+      "bytes": 373019
+    },
+    {
+      "path": "docs/learning/scenario_d.png",
+      "extension": ".png",
+      "bytes": 23135
+    },
+    {
+      "path": "docs/learning/scenario_d.csv",
+      "extension": ".csv",
+      "bytes": 175551
+    },
+    {
+      "path": "docs/LEARNING.md",
+      "extension": ".md",
+      "bytes": 6129
+    },
+    {
+      "path": "docs/learning/scenario_c.png",
+      "extension": ".png",
+      "bytes": 26710
+    },
+    {
+      "path": "docs/learning/scenario_b.png",
+      "extension": ".png",
+      "bytes": 25079
+    },
+    {
+      "path": "docs/learning/scenario_b.csv",
+      "extension": ".csv",
+      "bytes": 105963
+    },
+    {
+      "path": "docs/learning/scenario_a.png",
+      "extension": ".png",
+      "bytes": 25179
+    },
+    {
+      "path": "docs/learning/scenario_a.csv",
+      "extension": ".csv",
+      "bytes": 75095
+    },
+    {
+      "path": "docs/learning/results.json",
+      "extension": ".json",
+      "bytes": 5113
+    },
+    {
+      "path": "docs/learning/README.md",
+      "extension": ".md",
+      "bytes": 1813
+    },
+    {
+      "path": "docs/architecture/TECHNICAL_DEBT.md",
+      "extension": ".md",
+      "bytes": 7431
+    },
+    {
+      "path": "docs/architecture/CURRENT_ARCHITECTURE.md",
+      "extension": ".md",
+      "bytes": 11199
+    },
+    {
+      "path": "docs/spectral_eye_performance.md",
+      "extension": ".md",
+      "bytes": 1370
+    },
+    {
+      "path": "docs/render_benchmark.json",
+      "extension": ".json",
+      "bytes": 2217
+    },
+    {
+      "path": "docs/render_benchmark_fullscreen.json",
+      "extension": ".json",
+      "bytes": 1637
+    },
+    {
+      "path": "docs/render_benchmark_cpu.json",
+      "extension": ".json",
+      "bytes": 2153
+    },
+    {
+      "path": "docs/PROJECT_PROGRESS.md",
+      "extension": ".md",
+      "bytes": 1912
+    },
+    {
+      "path": "docs/PRIVACY.md",
+      "extension": ".md",
+      "bytes": 5735
+    },
+    {
+      "path": "docs/learning/scenario_c.csv",
+      "extension": ".csv",
+      "bytes": 123361
+    },
+    {
+      "path": "docs/learning/context_projection_stage/scenario_e.csv",
+      "extension": ".csv",
+      "bytes": 376295
+    },
+    {
+      "path": "benchmarks/results/snn_context_projection_before.json",
+      "extension": ".json",
+      "bytes": 5519
+    },
+    {
+      "path": "benchmarks/results/snn_context_projection_after.json",
+      "extension": ".json",
+      "bytes": 5861
+    },
+    {
+      "path": "benchmarks/profile/phase2_after_stdp/baseline_active.prof",
+      "extension": ".prof",
+      "bytes": 15493
+    },
+    {
+      "path": "benchmarks/profile/phase2_after_final/legacy_active.prof",
+      "extension": ".prof",
+      "bytes": 15528
+    },
+    {
+      "path": "benchmarks/profile/phase2_after_final/baseline_profile.md",
+      "extension": ".md",
+      "bytes": 510
+    },
+    {
+      "path": "benchmarks/profile/phase2_after_final/baseline_active.prof",
+      "extension": ".prof",
+      "bytes": 15528
+    },
+    {
+      "path": "benchmarks/profile/phase2_after/legacy_active.prof",
+      "extension": ".prof",
+      "bytes": 15528
+    },
+    {
+      "path": "benchmarks/profile/phase2_after/baseline_profile.md",
+      "extension": ".md",
+      "bytes": 504
+    },
+    {
+      "path": "benchmarks/profile/phase2_after/baseline_active.prof",
+      "extension": ".prof",
+      "bytes": 15528
+    },
+    {
+      "path": "benchmarks/profile/legacy_active.prof",
+      "extension": ".prof",
+      "bytes": 15528
+    },
+    {
+      "path": "benchmarks/profile/baseline_profile.md",
+      "extension": ".md",
+      "bytes": 500
+    },
+    {
+      "path": "benchmarks/profile/baseline_active.prof",
+      "extension": ".prof",
+      "bytes": 15528
+    },
+    {
+      "path": "benchmarks/snn_baseline.py",
+      "extension": ".py",
+      "bytes": 22027
+    },
+    {
+      "path": "benchmarks/render_benchmark.py",
+      "extension": ".py",
+      "bytes": 10007
+    },
+    {
+      "path": "benchmarks/render_baseline_report.py",
+      "extension": ".py",
+      "bytes": 11789
+    },
+    {
+      "path": "benchmarks/phase2_candidate_benchmarks.py",
+      "extension": ".py",
+      "bytes": 10107
+    },
+    {
+      "path": "benchmarks/profile/phase2_after_stdp_reuse/baseline_active.prof",
+      "extension": ".prof",
+      "bytes": 15528
+    },
+    {
+      "path": "benchmarks/component_baseline.py",
+      "extension": ".py",
+      "bytes": 16053
+    },
+    {
+      "path": "benchmarks/compare_phase2_tick.py",
+      "extension": ".py",
+      "bytes": 9867
+    },
+    {
+      "path": "benchmarks/benchmark.py",
+      "extension": ".py",
+      "bytes": 3196
+    },
+    {
+      "path": ".github/workflows/tests.yml",
+      "extension": ".yml",
+      "bytes": 1180
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/feature_request.yml",
+      "extension": ".yml",
+      "bytes": 879
+    },
+    {
+      "path": ".github/ISSUE_TEMPLATE/bug_report.yml",
+      "extension": ".yml",
+      "bytes": 1449
+    },
+    {
+      "path": "ROADMAP.md",
+      "extension": ".md",
+      "bytes": 4316
+    },
+    {
+      "path": "requirements.txt",
+      "extension": ".txt",
+      "bytes": 112
+    },
+    {
+      "path": "README.pt-BR.md",
+      "extension": ".md",
+      "bytes": 15852
+    },
+    {
+      "path": "README.md",
+      "extension": ".md",
+      "bytes": 15417
+    },
+    {
+      "path": "pyproject.toml",
+      "extension": ".toml",
+      "bytes": 2041
+    },
+    {
+      "path": "LICENSE",
+      "extension": "[no extension]",
+      "bytes": 1105
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "extension": ".md",
+      "bytes": 3272
+    },
+    {
+      "path": "CODE_OF_CONDUCT.md",
+      "extension": ".md",
+      "bytes": 1343
+    },
+    {
+      "path": "CHANGELOG.md",
+      "extension": ".md",
+      "bytes": 6873
+    },
+    {
+      "path": "benchmarks/compare_stdp_mark.py",
+      "extension": ".py",
+      "bytes": 6287
+    },
+    {
+      "path": "benchmarks/results/snn_context_projection_after.md",
+      "extension": ".md",
+      "bytes": 520
+    },
+    {
+      "path": "benchmarks/profile/phase2_before/baseline_active.prof",
+      "extension": ".prof",
+      "bytes": 15528
+    },
+    {
+      "path": "benchmarks/profile/phase2_before/legacy_active.prof",
+      "extension": ".prof",
+      "bytes": 15528
+    },
+    {
+      "path": "benchmarks/results/snn_baseline_v03.json",
+      "extension": ".json",
+      "bytes": 6203
+    },
+    {
+      "path": "benchmarks/results/snn_baseline_v02_1000tick_matched.json",
+      "extension": ".json",
+      "bytes": 5444
+    },
+    {
+      "path": "benchmarks/results/snn_baseline_phase2.json",
+      "extension": ".json",
+      "bytes": 6101
+    },
+    {
+      "path": "benchmarks/results/snn_baseline_phase1.json",
+      "extension": ".json",
+      "bytes": 6021
+    },
+    {
+      "path": "benchmarks/results/snn_baseline_phase0.json",
+      "extension": ".json",
+      "bytes": 5382
+    },
+    {
+      "path": "benchmarks/results/snn_baseline_cleanup_smoke.json",
+      "extension": ".json",
+      "bytes": 5279
+    },
+    {
+      "path": "benchmarks/results/snn_b4_personality_after.md",
+      "extension": ".md",
+      "bytes": 516
+    },
+    {
+      "path": "benchmarks/results/snn_b4_personality_after.json",
+      "extension": ".json",
+      "bytes": 6068
+    },
+    {
+      "path": "benchmarks/results/snn_b1_after.md",
+      "extension": ".md",
+      "bytes": 503
+    },
+    {
+      "path": "benchmarks/results/snn_b1_after.json",
+      "extension": ".json",
+      "bytes": 6052
+    },
+    {
+      "path": "benchmarks/results/profile.md",
+      "extension": ".md",
+      "bytes": 500
+    },
+    {
+      "path": "benchmarks/results/piu_render_v03_after.json",
+      "extension": ".json",
+      "bytes": 1674
+    },
+    {
+      "path": "benchmarks/results/piu_render_before.json",
+      "extension": ".json",
+      "bytes": 1676
+    },
+    {
+      "path": "benchmarks/results/piu_render_before_after.json",
+      "extension": ".json",
+      "bytes": 2838
+    },
+    {
+      "path": "benchmarks/profile/phase2_before/baseline_profile.md",
+      "extension": ".md",
+      "bytes": 505
+    },
+    {
+      "path": "benchmarks/results/piu_render_after.json",
+      "extension": ".json",
+      "bytes": 1673
+    },
+    {
+      "path": "benchmarks/results/phase2_stdp_comparison.json",
+      "extension": ".json",
+      "bytes": 1464
+    },
+    {
+      "path": "benchmarks/results/phase2_stdp_comparison_long.json",
+      "extension": ".json",
+      "bytes": 1480
+    },
+    {
+      "path": "benchmarks/results/phase2_candidates.json",
+      "extension": ".json",
+      "bytes": 13899
+    },
+    {
+      "path": "benchmarks/results/phase2_before.json",
+      "extension": ".json",
+      "bytes": 11974
+    },
+    {
+      "path": "benchmarks/results/phase2_before_components.json",
+      "extension": ".json",
+      "bytes": 22299
+    },
+    {
+      "path": "benchmarks/results/phase2_after.json",
+      "extension": ".json",
+      "bytes": 12700
+    },
+    {
+      "path": "benchmarks/results/phase2_after_stdp_reuse_components.json",
+      "extension": ".json",
+      "bytes": 22205
+    },
+    {
+      "path": "benchmarks/results/phase2_after_stdp_components.json",
+      "extension": ".json",
+      "bytes": 22333
+    },
+    {
+      "path": "benchmarks/results/phase2_after_final.json",
+      "extension": ".json",
+      "bytes": 12998
+    },
+    {
+      "path": "benchmarks/results/phase2_after_components.json",
+      "extension": ".json",
+      "bytes": 22281
+    },
+    {
+      "path": "benchmarks/results/phase2_after_components_final.json",
+      "extension": ".json",
+      "bytes": 22254
+    },
+    {
+      "path": "benchmarks/results/baseline.json",
+      "extension": ".json",
+      "bytes": 11591
+    },
+    {
+      "path": "benchmarks/results/baseline_report.md",
+      "extension": ".md",
+      "bytes": 8755
+    },
+    {
+      "path": "benchmarks/results/baseline_components.json",
+      "extension": ".json",
+      "bytes": 22117
+    },
+    {
+      "path": "benchmarks/results/phase2_tick_ab.json",
+      "extension": ".json",
+      "bytes": 5405
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/pose_danca_balanco_02.png",
+      "extension": ".png",
+      "bytes": 1094
+    },
+    {
+      "path": "docs/learning/context_projection_stage/scenario_e.png",
+      "extension": ".png",
+      "bytes": 24714
+    },
+    {
+      "path": "docs/learning/piu-snn-baseline/results.json",
+      "extension": ".json",
+      "bytes": 7158
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/costas_48_run_02.png",
+      "extension": ".png",
+      "bytes": 980
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/costas_48_run_01.png",
+      "extension": ".png",
+      "bytes": 973
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/costas_48_run_00.png",
+      "extension": ".png",
+      "bytes": 961
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/costas_48_idle.png",
+      "extension": ".png",
+      "bytes": 998
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/costas_32_run_03.png",
+      "extension": ".png",
+      "bytes": 715
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/costas_32_run_02.png",
+      "extension": ".png",
+      "bytes": 719
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/costas_32_run_01.png",
+      "extension": ".png",
+      "bytes": 768
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/costas_32_run_00.png",
+      "extension": ".png",
+      "bytes": 719
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/costas_32_idle.png",
+      "extension": ".png",
+      "bytes": 665
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/costas_20_run_03.png",
+      "extension": ".png",
+      "bytes": 448
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/costas_20_run_02.png",
+      "extension": ".png",
+      "bytes": 438
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/costas_20_run_01.png",
+      "extension": ".png",
+      "bytes": 467
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/costas_20_run_00.png",
+      "extension": ".png",
+      "bytes": 457
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/costas_20_idle.png",
+      "extension": ".png",
+      "bytes": 460
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/costas_48_run_03.png",
+      "extension": ".png",
+      "bytes": 988
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/vistas_lod_4x.png",
+      "extension": ".png",
+      "bytes": 14058
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/README.md",
+      "extension": ".md",
+      "bytes": 3497
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/poses_novas_4x.png",
+      "extension": ".png",
+      "bytes": 23851
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/poses_novas_1x.png",
+      "extension": ".png",
+      "bytes": 19658
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/legibilidade_4x.png",
+      "extension": ".png",
+      "bytes": 200032
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/legibilidade_3x.png",
+      "extension": ".png",
+      "bytes": 172704
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/legibilidade_2x.png",
+      "extension": ".png",
+      "bytes": 141130
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/inventario_v03_stage1.json",
+      "extension": ".json",
+      "bytes": 5319
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/generate_mockups.py",
+      "extension": ".py",
+      "bytes": 34824
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/contraste_legibilidade.csv",
+      "extension": ".csv",
+      "bytes": 232
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/ambientes_5_periodos_3x.png",
+      "extension": ".png",
+      "bytes": 82064
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/ambientes_5_periodos_1x.png",
+      "extension": ".png",
+      "bytes": 34749
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/ambiente_tarde_3x.png",
+      "extension": ".png",
+      "bytes": 13498
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/ambiente_tarde_1x.png",
+      "extension": ".png",
+      "bytes": 6867
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/ambiente_noite_3x.png",
+      "extension": ".png",
+      "bytes": 14144
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/vistas_lod_1x.png",
+      "extension": ".png",
+      "bytes": 10461
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/ambiente_noite_1x.png",
+      "extension": ".png",
+      "bytes": 7174
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/frente_20_idle.png",
+      "extension": ".png",
+      "bytes": 570
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/frente_20_run_01.png",
+      "extension": ".png",
+      "bytes": 561
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/pose_danca_balanco_00.png",
+      "extension": ".png",
+      "bytes": 1118
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/pose_cansado_perfil_00.png",
+      "extension": ".png",
+      "bytes": 1273
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/pose_cansado_frente_00.png",
+      "extension": ".png",
+      "bytes": 1095
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/perfil_48_run_03.png",
+      "extension": ".png",
+      "bytes": 1177
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/perfil_48_run_02.png",
+      "extension": ".png",
+      "bytes": 1185
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/perfil_48_run_01.png",
+      "extension": ".png",
+      "bytes": 1174
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/perfil_48_run_00.png",
+      "extension": ".png",
+      "bytes": 1175
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/perfil_48_idle.png",
+      "extension": ".png",
+      "bytes": 1181
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/perfil_32_run_03.png",
+      "extension": ".png",
+      "bytes": 853
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/perfil_32_run_02.png",
+      "extension": ".png",
+      "bytes": 851
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/perfil_32_run_01.png",
+      "extension": ".png",
+      "bytes": 858
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/perfil_32_run_00.png",
+      "extension": ".png",
+      "bytes": 857
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/perfil_32_idle.png",
+      "extension": ".png",
+      "bytes": 864
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/perfil_20_run_03.png",
+      "extension": ".png",
+      "bytes": 508
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/frente_20_run_00.png",
+      "extension": ".png",
+      "bytes": 541
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/perfil_20_run_02.png",
+      "extension": ".png",
+      "bytes": 588
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/perfil_20_run_00.png",
+      "extension": ".png",
+      "bytes": 591
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/perfil_20_idle.png",
+      "extension": ".png",
+      "bytes": 531
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/frente_48_run_03.png",
+      "extension": ".png",
+      "bytes": 1123
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/frente_48_run_02.png",
+      "extension": ".png",
+      "bytes": 1137
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/frente_48_run_01.png",
+      "extension": ".png",
+      "bytes": 1119
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/frente_48_run_00.png",
+      "extension": ".png",
+      "bytes": 1151
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/frente_48_idle.png",
+      "extension": ".png",
+      "bytes": 1109
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/frente_32_run_03.png",
+      "extension": ".png",
+      "bytes": 867
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/frente_32_run_02.png",
+      "extension": ".png",
+      "bytes": 824
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/frente_32_run_01.png",
+      "extension": ".png",
+      "bytes": 813
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/frente_32_run_00.png",
+      "extension": ".png",
+      "bytes": 833
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/frente_32_idle.png",
+      "extension": ".png",
+      "bytes": 844
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/frente_20_run_03.png",
+      "extension": ".png",
+      "bytes": 558
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/frente_20_run_02.png",
+      "extension": ".png",
+      "bytes": 540
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/sprites/perfil_20_run_01.png",
+      "extension": ".png",
+      "bytes": 539
+    },
+    {
+      "path": "docs/learning/context_projection_stage/summary.md",
+      "extension": ".md",
+      "bytes": 4585
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/ambiente_manha_3x.png",
+      "extension": ".png",
+      "bytes": 13354
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/ambiente_madrugada_3x.png",
+      "extension": ".png",
+      "bytes": 13988
+    },
+    {
+      "path": "docs/learning/rate_stage1/scenario_d.png",
+      "extension": ".png",
+      "bytes": 24927
+    },
+    {
+      "path": "docs/learning/rate_stage1/scenario_d.csv",
+      "extension": ".csv",
+      "bytes": 177325
+    },
+    {
+      "path": "docs/learning/rate_stage1/scenario_c.png",
+      "extension": ".png",
+      "bytes": 29122
+    },
+    {
+      "path": "docs/learning/rate_stage1/scenario_c.csv",
+      "extension": ".csv",
+      "bytes": 125345
+    },
+    {
+      "path": "docs/learning/rate_stage1/scenario_b.png",
+      "extension": ".png",
+      "bytes": 26175
+    },
+    {
+      "path": "docs/learning/rate_stage1/scenario_b.csv",
+      "extension": ".csv",
+      "bytes": 107464
+    },
+    {
+      "path": "docs/learning/rate_stage1/scenario_a.png",
+      "extension": ".png",
+      "bytes": 23903
+    },
+    {
+      "path": "docs/learning/rate_stage1/scenario_a.csv",
+      "extension": ".csv",
+      "bytes": 75647
+    },
+    {
+      "path": "docs/learning/rate_stage1/results.json",
+      "extension": ".json",
+      "bytes": 5101
+    },
+    {
+      "path": "docs/learning/piu-snn-enabled/scenario_e.png",
+      "extension": ".png",
+      "bytes": 24729
+    },
+    {
+      "path": "docs/learning/piu-snn-enabled/scenario_e.csv",
+      "extension": ".csv",
+      "bytes": 380913
+    },
+    {
+      "path": "docs/learning/piu-snn-enabled/scenario_d.png",
+      "extension": ".png",
+      "bytes": 24927
+    },
+    {
+      "path": "docs/learning/piu-snn-enabled/scenario_d.csv",
+      "extension": ".csv",
+      "bytes": 183507
+    },
+    {
+      "path": "docs/learning/piu-snn-enabled/scenario_c.png",
+      "extension": ".png",
+      "bytes": 30338
+    },
+    {
+      "path": "docs/learning/rate_stage1/scenario_e.csv",
+      "extension": ".csv",
+      "bytes": 376117
+    },
+    {
+      "path": "docs/learning/piu-snn-enabled/scenario_c.csv",
+      "extension": ".csv",
+      "bytes": 136590
+    },
+    {
+      "path": "docs/learning/piu-snn-enabled/scenario_b.csv",
+      "extension": ".csv",
+      "bytes": 113124
+    },
+    {
+      "path": "docs/learning/piu-snn-enabled/scenario_a.png",
+      "extension": ".png",
+      "bytes": 23908
+    },
+    {
+      "path": "docs/learning/piu-snn-enabled/scenario_a.csv",
+      "extension": ".csv",
+      "bytes": 78472
+    },
+    {
+      "path": "docs/learning/piu-snn-enabled/results.json",
+      "extension": ".json",
+      "bytes": 7163
+    },
+    {
+      "path": "docs/learning/piu-snn-baseline/scenario_e.png",
+      "extension": ".png",
+      "bytes": 24729
+    },
+    {
+      "path": "docs/learning/piu-snn-baseline/scenario_e.csv",
+      "extension": ".csv",
+      "bytes": 380914
+    },
+    {
+      "path": "docs/learning/piu-snn-baseline/scenario_d.png",
+      "extension": ".png",
+      "bytes": 24927
+    },
+    {
+      "path": "docs/learning/piu-snn-baseline/scenario_d.csv",
+      "extension": ".csv",
+      "bytes": 183507
+    },
+    {
+      "path": "docs/learning/piu-snn-baseline/scenario_c.png",
+      "extension": ".png",
+      "bytes": 30338
+    },
+    {
+      "path": "docs/learning/piu-snn-baseline/scenario_c.csv",
+      "extension": ".csv",
+      "bytes": 136590
+    },
+    {
+      "path": "docs/learning/piu-snn-baseline/scenario_b.png",
+      "extension": ".png",
+      "bytes": 26139
+    },
+    {
+      "path": "docs/learning/piu-snn-baseline/scenario_b.csv",
+      "extension": ".csv",
+      "bytes": 113124
+    },
+    {
+      "path": "docs/learning/piu-snn-baseline/scenario_a.png",
+      "extension": ".png",
+      "bytes": 23908
+    },
+    {
+      "path": "docs/learning/piu-snn-baseline/scenario_a.csv",
+      "extension": ".csv",
+      "bytes": 78472
+    },
+    {
+      "path": "docs/learning/piu-snn-enabled/scenario_b.png",
+      "extension": ".png",
+      "bytes": 26139
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/ambiente_manha_1x.png",
+      "extension": ".png",
+      "bytes": 6777
+    },
+    {
+      "path": "docs/learning/rate_stage1/scenario_e.png",
+      "extension": ".png",
+      "bytes": 24797
+    },
+    {
+      "path": "docs/mockups/carinho.png",
+      "extension": ".png",
+      "bytes": 43317
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/ambiente_madrugada_1x.png",
+      "extension": ".png",
+      "bytes": 7285
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/ambiente_entardecer_3x.png",
+      "extension": ".png",
+      "bytes": 13516
+    },
+    {
+      "path": "docs/mockups/piu/v03_stage1/ambiente_entardecer_1x.png",
+      "extension": ".png",
+      "bytes": 6879
+    },
+    {
+      "path": "docs/mockups/piu/tela_cheia_3x.png",
+      "extension": ".png",
+      "bytes": 5924
+    },
+    {
+      "path": "docs/mockups/piu/tela_cheia_1x.png",
+      "extension": ".png",
+      "bytes": 3051
+    },
+    {
+      "path": "docs/mockups/piu/spritesheet_piu_preview_6x.png",
+      "extension": ".png",
+      "bytes": 5769
+    },
+    {
+      "path": "docs/mockups/piu/spritesheet_piu_4x.png",
+      "extension": ".png",
+      "bytes": 3794
+    },
+    {
+      "path": "docs/mockups/piu/spritesheet_piu_1x.png",
+      "extension": ".png",
+      "bytes": 1975
+    },
+    {
+      "path": "docs/mockups/piu/README.md",
+      "extension": ".md",
+      "bytes": 1610
+    },
+    {
+      "path": "docs/mockups/piu/poses_piu_4x.png",
+      "extension": ".png",
+      "bytes": 7671
+    },
+    {
+      "path": "docs/mockups/piu/poses_piu_1x.png",
+      "extension": ".png",
+      "bytes": 3249
+    },
+    {
+      "path": "docs/mockups/piu/paleta_piu.yaml",
+      "extension": ".yaml",
+      "bytes": 882
+    },
+    {
+      "path": "docs/mockups/piu/painel_2x.png",
+      "extension": ".png",
+      "bytes": 9307
+    },
+    {
+      "path": "docs/mockups/piu/painel_1x.png",
+      "extension": ".png",
+      "bytes": 6507
+    },
+    {
+      "path": "docs/mockups/assustado.png",
+      "extension": ".png",
+      "bytes": 45753
+    },
+    {
+      "path": "docs/mockups/piu/legibilidade_fundos_4x.png",
+      "extension": ".png",
+      "bytes": 102204
+    },
+    {
+      "path": "docs/mockups/piu/fundo_fotografico_cc0.jpg",
+      "extension": ".jpg",
+      "bytes": 159670
+    },
+    {
+      "path": "docs/mockups/piu/contraste_legibilidade.csv",
+      "extension": ".csv",
+      "bytes": 375
+    },
+    {
+      "path": "docs/mockups/piu/cena_noite_4x.png",
+      "extension": ".png",
+      "bytes": 3964
+    },
+    {
+      "path": "docs/mockups/piu/cena_noite_1x.png",
+      "extension": ".png",
+      "bytes": 1912
+    },
+    {
+      "path": "docs/mockups/piu/cena_entardecer_4x.png",
+      "extension": ".png",
+      "bytes": 3784
+    },
+    {
+      "path": "docs/mockups/piu/cena_entardecer_1x.png",
+      "extension": ".png",
+      "bytes": 1806
+    },
+    {
+      "path": "docs/mockups/piu/cena_dia_4x.png",
+      "extension": ".png",
+      "bytes": 3783
+    },
+    {
+      "path": "docs/mockups/piu/cena_dia_1x.png",
+      "extension": ".png",
+      "bytes": 1781
+    },
+    {
+      "path": "docs/mockups/piu/animacoes_piu_aseprite.json",
+      "extension": ".json",
+      "bytes": 5095
+    },
+    {
+      "path": "docs/mockups/triste.png",
+      "extension": ".png",
+      "bytes": 42110
+    },
+    {
+      "path": "docs/mockups/README.md",
+      "extension": ".md",
+      "bytes": 1629
+    },
+    {
+      "path": "docs/mockups/neutro.png",
+      "extension": ".png",
+      "bytes": 45004
+    },
+    {
+      "path": "docs/mockups/feliz.png",
+      "extension": ".png",
+      "bytes": 42698
+    },
+    {
+      "path": "docs/mockups/dormindo.png",
+      "extension": ".png",
+      "bytes": 28002
+    },
+    {
+      "path": "docs/mockups/piu/legibilidade_fundos_2x.png",
+      "extension": ".png",
+      "bytes": 117713
+    },
+    {
+      "path": "tools/generate_ascii_eye_mockups.py",
+      "extension": ".py",
+      "bytes": 849
+    }
+  ],
+  "note": "The inventory JSON itself is excluded from its file list to avoid a self-referential size entry. work/ is ignored by the repository as local dependency/probe staging."
+}

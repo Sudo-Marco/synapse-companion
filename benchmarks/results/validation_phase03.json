@@ -1,0 +1,67 @@
+{
+  "schema": 1,
+  "phase": 3,
+  "timestamp_local": "2026-11-11T03:39:42-03:00",
+  "environment": {
+    "platform": "Windows 11",
+    "python": "3.14.10",
+    "qt_platform": "offscreen"
+  },
+  "tests_before": {
+    "command": ".\\.venv\\Scripts\\python.exe -m pytest -q -ra --tb=no",
+    "collected": 148,
+    "passed": 147,
+    "failed": 1
+  },
+  "tests_after": {
+    "command": ".\\.venv\\Scripts\\python.exe -m pytest -q -ra --tb=no",
+    "collected": 158,
+    "passed": 157,
+    "failed": 1,
+    "failures": [
+      {
+        "nodeid": "tests/test_pet_renderer.py::test_floating_pet_switches_to_panel_and_back",
+        "summary": "Headless virtual-screen bottom clamp prevents the sad jump from moving the pet window down by 4 px; same known failure before Phase 3 and unrelated to neural backend changes."
+      }
+    ]
+  },
+  "determinism": {
+    "seed": 20261102,
+    "steps": 4096,
+    "spike_sha256": "45c47b8e06e2f7dfff2a61832f9d07d5cc4197c8ee35c82df65e3260bbcc92b7",
+    "state_sha256": "d34fec09870ee66aa118d91bfc1293c44e9b2fddb14ab6990eb742d330978279",
+    "matches_reference": true
+  },
+  "backend": {
+    "configured": "numpy",
+    "active": "numpy",
+    "cython_kernels_available": false,
+    "cython_auto_fallback_tested": true
+  },
+  "benchmark": {
+    "before": "phase2_after_final.json",
+    "after": "phase3_backend_numpy.json",
+    "frequency_mhz_reported_both_runs": 1802.0,
+    "wall_mean_delta_percent": {
+      "600": -1.69,
+      "1000": 0.65
+    },
+    "cpu_mean_delta_percent": {
+      "600": -1.11,
+      "1000": 1.18
+    },
+    "wall_p95_delta_percent": {
+      "600": 3.36,
+      "1000": 10.73
+    },
+    "wall_p99_delta_percent": {
+      "600": 3.63,
+      "1000": 2.56
+    }
+  },
+  "notes": [
+    "The mean tick cost remained within +3%; tail percentiles varied and are reported without claiming equivalence.",
+    "Desktop GUI was not validated interactively.",
+    "No Cython kernel was implemented or claimed in Phase 3."
+  ]
+}

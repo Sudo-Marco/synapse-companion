@@ -1,5 +1,10 @@
 seed: 41
 renderer: ascii
+neural_backend:
+  engine: numpy       # numpy, cython ou auto; NumPy é a referência atual
+  fallback: numpy     # usado até os kernels Cython estarem disponíveis
+  precision: float32
+  deterministic: true
 pet:
   mode: floating          # floating (somente o olho) ou window (painel ao iniciar)
   render_style: pixel     # pixel (Piu), spectral, ascii ou vector

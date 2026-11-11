@@ -51,22 +51,30 @@ class SleepConsolidator:
                     spikes = network.step(np.clip(replay_input, 0.0, 1.5))
                     h = slice(network.hidden_start, network.output_start)
                     out = slice(network.output_start, network.output_start + network.hidden_to_output.n_post)
-                    learners["sensor_hidden"].mark(network.sensor_to_hidden, spikes[:network.n_sensor], spikes[h], dt_s)
-                    learners["recurrent"].mark(network.recurrent, spikes[h], spikes[h], dt_s)
-                    learners["hidden_output"].mark(network.hidden_to_output, spikes[h], spikes[out], dt_s)
+                    network.backend.update_stdp(
+                        learners["sensor_hidden"], network.sensor_to_hidden,
+                        spikes[:network.n_sensor], spikes[h], dt_s)
+                    network.backend.update_stdp(
+                        learners["recurrent"], network.recurrent,
+                        spikes[h], spikes[h], dt_s)
+                    network.backend.update_stdp(
+                        learners["hidden_output"], network.hidden_to_output,
+                        spikes[h], spikes[out], dt_s)
                 dopamine = float(np.clip(float(rpe_value), -1.0, 1.0)) * 0.1
-                learners["sensor_hidden"].apply_reward(network.sensor_to_hidden, dopamine)
-                learners["recurrent"].apply_reward(network.recurrent, dopamine)
+                network.backend.apply_reward(
+                    learners["sensor_hidden"], network.sensor_to_hidden, dopamine)
+                network.backend.apply_reward(
+                    learners["recurrent"], network.recurrent, dopamine)
                 tool_group = network.output_groups.get(f"tool:{action}") if action else None
                 if tool_group is not None:
                     output_indices = (tool_group - network.output_start).astype(np.int32)
-                    learners["hidden_output"].apply_action_credit(
-                        network.hidden_to_output, dopamine, output_indices,
-                        spikes[h].astype(np.float32),
+                    network.backend.apply_action_credit(
+                        learners["hidden_output"], network.hidden_to_output,
+                        dopamine, output_indices, spikes[h].astype(np.float32),
                         learning_rate=learners["hidden_output"].learning_rate)
                 else:
-                    learners["hidden_output"].apply_reward(
-                        network.hidden_to_output, dopamine)
+                    network.backend.apply_reward(
+                        learners["hidden_output"], network.hidden_to_output, dopamine)
         finally:
             if episodes:
                 if active_context is None:

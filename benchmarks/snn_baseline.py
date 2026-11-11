@@ -249,6 +249,9 @@ def _memory_probe(neurons: int) -> None:
              engine.network.hidden_to_output)},
         "numpy_array_bytes_unique": _array_bytes(engine.network),
     }
+    # PetEngine installs a rotating file handler on a process-global logger.
+    # Close it before TemporaryDirectory removes the data folder on Windows.
+    engine.stop()
     del engine
     gc.collect()
     temporary.cleanup()
@@ -373,6 +376,7 @@ def main() -> None:
             spike_activity["1000_active"] = activity_sample
             tick_cost_1000["mean_cpu_ms_50ms_simulated"] = tick_cost_1000[
                 "active"]["mean_cpu_ms"]
+            engine_1000.stop()
             del engine_1000
             gc.collect()
         results["tick_cost_600"] = tick_cost
@@ -399,6 +403,7 @@ def main() -> None:
         results["top_profile_costs"] = _profile_top_five(
             engine, args.profile_steps,
             args.profile_dir / "legacy_active.prof")
+        engine.stop()
         del engine
         gc.collect()
 
