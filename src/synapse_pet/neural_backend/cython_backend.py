@@ -61,27 +61,21 @@ class CythonBackend(NumpyBackend):
                 and learner._pre_spike_float is not None
                 and learner._post_spike_float is not None)
 
-        arrays = (
-            projection.pre,
-            projection.post,
-            learner.pre_trace,
-            learner.post_trace,
-            learner.eligibility,
-            learner._pre_spike_float,
-            learner._post_spike_float,
-        )
-        expected_dtypes = (
-            np.dtype(np.int32),
-            np.dtype(np.int32),
-            np.dtype(np.float32),
-            np.dtype(np.float32),
-            np.dtype(np.float32),
-            np.dtype(np.float32),
-            np.dtype(np.float32),
-        )
-        if not all(
-            array.flags.c_contiguous and array.dtype == dtype
-            for array, dtype in zip(arrays, expected_dtypes, strict=True)
+        if not (
+            projection.pre.flags.c_contiguous
+            and projection.pre.dtype == np.int32
+            and projection.post.flags.c_contiguous
+            and projection.post.dtype == np.int32
+            and learner.pre_trace.flags.c_contiguous
+            and learner.pre_trace.dtype == np.float32
+            and learner.post_trace.flags.c_contiguous
+            and learner.post_trace.dtype == np.float32
+            and learner.eligibility.flags.c_contiguous
+            and learner.eligibility.dtype == np.float32
+            and learner._pre_spike_float.flags.c_contiguous
+            and learner._pre_spike_float.dtype == np.float32
+            and learner._post_spike_float.flags.c_contiguous
+            and learner._post_spike_float.dtype == np.float32
         ):
             # Preserve support for unusual externally supplied views without
             # adding copies to the normal contiguous CSR hot path.
@@ -118,21 +112,15 @@ class CythonBackend(NumpyBackend):
             learner.initialize(projection)
             return
 
-        arrays = (
-            projection.weights,
-            projection.pre,
-            projection.source_sign,
-            learner.eligibility,
-        )
-        expected_dtypes = (
-            np.dtype(np.float32),
-            np.dtype(np.int32),
-            np.dtype(np.float32),
-            np.dtype(np.float32),
-        )
-        if not all(
-            array.flags.c_contiguous and array.dtype == dtype
-            for array, dtype in zip(arrays, expected_dtypes, strict=True)
+        if not (
+            projection.weights.flags.c_contiguous
+            and projection.weights.dtype == np.float32
+            and projection.pre.flags.c_contiguous
+            and projection.pre.dtype == np.int32
+            and projection.source_sign.flags.c_contiguous
+            and projection.source_sign.dtype == np.float32
+            and learner.eligibility.flags.c_contiguous
+            and learner.eligibility.dtype == np.float32
         ):
             super().apply_reward(learner, projection, dopamine)
             return
