@@ -1,27 +1,44 @@
 # Synapse Pet
 
-Português (Brasil) · [English](README.md)
+Português (Brasil) · [English](README.en.md)
 
 ![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 ![Windows 10/11](https://img.shields.io/badge/Plataforma-Windows%2010%2F11-0078D6?logo=windows&logoColor=white)
 ![MIT](https://img.shields.io/badge/Licença-MIT-2E8B57.svg)
 ![Versão](https://img.shields.io/badge/vers%C3%A3o-0.3.0-blue)
 
+**Companion desktop local em Python e PySide6, com uma SNN experimental em NumPy (LIF e STDP modulada por recompensa).**
+
+![Captura real do painel do Synapse Pet em execução, com o Piu no cenário pixel art, telemetria e sensores desligados](docs/screenshots/synapse-demo-window.jpg)
+
+*Captura do painel em modo `window`; a configuração padrão inicia o Piu em modo flutuante. Os sensores opcionais estão desligados.*
+
 Synapse Pet é um companheiro de desktop local para Windows e um experimento com redes neurais de disparos pequenas. O companheiro é o **Piu**, um canarinho em pixel art cujas expressões e movimentos mostram o estado da simulação. A política de decisão combina uma SNN feita à mão em NumPy com um seletor pequeno de preferências por contexto.
 
 **Ele não é um modelo de linguagem, chatbot ou assistente de programação.** Não entende texto aberto nem responde perguntas gerais. Reage a sinais numéricos e categorias simples, carinho e feedback explícitos e ferramentas locais permitidas.
 
-![Piu no cenário em pixel art](docs/screenshots/piu/piu-cenario-dia.png)
+## Como rodar em 3 passos
 
-*Prévia offline renderizada pelo Qt; não é uma captura do programa em um desktop físico.*
+1. Use Windows 10/11 com Python 3.10 ou superior.
+2. No PowerShell, na pasta do repositório, instale as dependências:
 
-![Folha de conceitos dos cinco ambientes pelo horário local](docs/mockups/piu/v03_stage1/ambientes_5_periodos_1x.png)
+   ```powershell
+   .\scripts\install.ps1
+   ```
 
-*Prévia de arte gerada para madrugada, manhã, tarde, entardecer e noite.*
+3. Inicie o companion:
 
-![Animação flutuante do Piu](docs/screenshots/piu/piu-animacao.gif)
+   ```powershell
+   .\scripts\run.ps1
+   ```
 
-*Prévia gerada da animação em pixel art. Na aplicação, a janela flutuante é transparente.*
+O script instala o ambiente local e inicia o modo definido em `configs/default.yaml`. Sensores opcionais começam desligados.
+
+## Decisões técnicas
+
+- A rede LIF esparsa e a STDP modulada por recompensa estão implementadas em NumPy; avaliações sintéticas separam a contribuição neural da preferência contextual.
+- O seletor híbrido combina taxas de disparo normalizadas com preferências aprendidas por contexto. A documentação evita atribuir os resultados combinados somente à SNN.
+- A interface PySide6 observa snapshots do estado da simulação; memória, episódios e configuração permanecem locais. Sensores de áudio são opcionais e não gravam nem enviam áudio.
 
 ## Escopo do projeto
 
@@ -185,6 +202,10 @@ As medições atuais, linhas de comparação, número de amostras e CPU/FPS do r
 
 Limitações conhecidas: a SNN não é um modelo de linguagem; a política é híbrida; replay usa uma entrada substituta derivada do hash de uma categoria, não sequências sensoriais armazenadas; a experiência de replay não atingiu a meta de >80% de retenção SNN-only; e a competição opcional piorou um contexto medido. Essas pendências estão em [`ROADMAP.md`](ROADMAP.md).
 
+## Roadmap atual
+
+O roadmap acompanha a melhoria da classificação neural por contexto e da retenção, avaliação com várias seeds e intervalos de confiança, revisão das regras experimentais de inibição/replay e validação interativa em Windows com diferentes monitores, escalas de DPI e renderizadores. São itens em aberto, não capacidades já entregues.
+
 ## Criar uma ferramenta local
 
 Uma ferramenta declara risco, tags, tipos de parâmetros e uma função. O engine valida os campos obrigatórios antes da execução:
@@ -204,3 +225,23 @@ engine.register_tool(tool)
 ```
 
 Consulte [Arquitetura](docs/ARCHITECTURE.md), [Aprendizado](docs/LEARNING.md), [Autonomia](docs/AUTONOMY.md), [Privacidade](docs/PRIVACY.md) e [Desempenho](docs/PERFORMANCE.md) para limites e metodologia detalhados.
+
+## Galeria
+
+### Cenário diurno
+
+![Piu no cenário em pixel art](docs/screenshots/piu/piu-cenario-dia.png)
+
+*Prévia offline renderizada pelo Qt; não é uma captura do programa em um desktop físico.*
+
+### Conceitos dos ambientes
+
+![Folha de conceitos dos cinco ambientes pelo horário local](docs/mockups/piu/v03_stage1/ambientes_5_periodos_1x.png)
+
+*Prévia de arte gerada para madrugada, manhã, tarde, entardecer e noite.*
+
+### Animação flutuante do Piu
+
+![Animação flutuante do Piu](docs/screenshots/piu/piu-animacao.gif)
+
+*Prévia gerada da animação em pixel art. Na aplicação, a janela flutuante é transparente.*

@@ -1,54 +1,71 @@
 # Synapse Pet
 
-[Português (Brasil)](README.pt-BR.md) · English
+Português (Brasil) · [English](README.en.md)
 
 ![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
-![Windows 10/11](https://img.shields.io/badge/Platform-Windows%2010%2F11-0078D6?logo=windows&logoColor=white)
-![MIT](https://img.shields.io/badge/License-MIT-2E8B57.svg)
-![Version](https://img.shields.io/badge/version-0.3.0-blue)
+![Windows 10/11](https://img.shields.io/badge/Plataforma-Windows%2010%2F11-0078D6?logo=windows&logoColor=white)
+![MIT](https://img.shields.io/badge/Licença-MIT-2E8B57.svg)
+![Versão](https://img.shields.io/badge/vers%C3%A3o-0.3.0-blue)
 
-Synapse Pet is a local-first Windows desktop companion and an experiment in small spiking neural networks. The companion is **Piu**, a pixel-art canary whose expressions and movement visualize the simulation. Its decision policy combines a hand-built NumPy SNN with a small contextual-preference selector.
+**Companion desktop local em Python e PySide6, com uma SNN experimental em NumPy (LIF e STDP modulada por recompensa).**
 
-**It is not a language model, chatbot, or programming assistant.** It does not understand open-ended text or answer general questions. It responds to numeric/coarse-category inputs, explicit affection and feedback, and permitted local tools.
+![Captura real do painel do Synapse Pet em execução, com o Piu no cenário pixel art, telemetria e sensores desligados](docs/screenshots/synapse-demo-window.jpg)
 
-![Piu in the pixel-art scene](docs/screenshots/piu/piu-cenario-dia.png)
+*Captura do painel em modo `window`; a configuração padrão inicia o Piu em modo flutuante. Os sensores opcionais estão desligados.*
 
-*Offline Qt render preview of the scene and Piu; not a capture of the application running on a physical desktop.*
+Synapse Pet é um companheiro de desktop local para Windows e um experimento com redes neurais de disparos pequenas. O companheiro é o **Piu**, um canarinho em pixel art cujas expressões e movimentos mostram o estado da simulação. A política de decisão combina uma SNN feita à mão em NumPy com um seletor pequeno de preferências por contexto.
 
-![Offline concept sheet showing the five local-time environments](docs/mockups/piu/v03_stage1/ambientes_5_periodos_1x.png)
+**Ele não é um modelo de linguagem, chatbot ou assistente de programação.** Não entende texto aberto nem responde perguntas gerais. Reage a sinais numéricos e categorias simples, carinho e feedback explícitos e ferramentas locais permitidas.
 
-*Generated art preview for dawn, morning, afternoon, dusk, and night.*
+## Como rodar em 3 passos
 
-![Piu floating animation](docs/screenshots/piu/piu-animacao.gif)
+1. Use Windows 10/11 com Python 3.10 ou superior.
+2. No PowerShell, na pasta do repositório, instale as dependências:
 
-*Generated pixel-art animation preview. The floating window is transparent in the application.*
+   ```powershell
+   .\scripts\install.ps1
+   ```
 
-## Project scope
+3. Inicie o companion:
 
-| Area | Delivered behavior |
+   ```powershell
+   .\scripts\run.ps1
+   ```
+
+O script instala o ambiente local e inicia o modo definido em `configs/default.yaml`. Sensores opcionais começam desligados.
+
+## Decisões técnicas
+
+- A rede LIF esparsa e a STDP modulada por recompensa estão implementadas em NumPy; avaliações sintéticas separam a contribuição neural da preferência contextual.
+- O seletor híbrido combina taxas de disparo normalizadas com preferências aprendidas por contexto. A documentação evita atribuir os resultados combinados somente à SNN.
+- A interface PySide6 observa snapshots do estado da simulação; memória, episódios e configuração permanecem locais. Sensores de áudio são opcionais e não gravam nem enviam áudio.
+
+## Escopo do projeto
+
+| Área | O que foi implementado |
 | --- | --- |
-| Desktop UI | PySide6 panel, optional transparent floating pet, system tray, full-screen view, ASCII/HUD view toggle, and panel shortcuts. |
-| Character | Approved Piu pixel-art sprite sheets, emotion poses, run/jump/turn/depth views, scene backgrounds, and nearest-neighbor rendering. |
-| SNN | NumPy sparse LIF population, reward-modulated STDP, eligibility traces, homeostasis, and context-specific output projections on shared sparse topology. |
-| Hybrid policy | Neural firing-rate scores combined with learned per-context action preferences. Both components are reported separately in synthetic evaluations. |
-| Autonomy | Bounded movement, depth-aware views, stamina-limited jumps and dancing, geometry-only window interaction, and local post-it templates. It does not run tools directly. |
-| Optional audio | Individually enabled microphone and system-loopback heuristics for a listening pose and simple beat-following dances. Audio is never recorded, transcribed, or sent. |
-| Local environment | Smooth local-time sky and scene, optional manual sunrise/sunset coordinates, and decorative weather that works offline. |
-| Safety and privacy | Typed tool-parameter validation, permission checks, proposal/confirmation flow, local persistence, rotating diagnostics, and opt-in sensors disabled by default. |
-| Learning records | Local episode and action databases, aggregate habits, optional bounded sleep replay, and an on-demand learning view. |
+| Interface | Painel PySide6, modo flutuante transparente opcional, bandeja do sistema, tela cheia, alternância cenário/HUD e atalhos. |
+| Personagem | Folhas de sprites aprovadas do Piu, poses emocionais, corrida, pulo, virada e profundidade, cenário e ampliação por vizinho mais próximo. |
+| SNN | População LIF esparsa em NumPy, STDP modulada por recompensa, traços de elegibilidade, homeostase e projeções de saída por contexto sobre topologia esparsa compartilhada. |
+| Política híbrida | Taxas de disparo da SNN combinadas com preferências aprendidas por contexto. Avaliações sintéticas mostram os componentes separadamente. |
+| Autonomia | Movimento limitado, vistas por profundidade, pulos e dança limitados pelo fôlego, interação geométrica com janelas e post-its locais. A autonomia não executa ferramentas diretamente. |
+| Áudio opcional | Heurísticas individuais para microfone e loopback do sistema, com pose de escuta e dança simples por batida. O áudio nunca é gravado, transcrito ou enviado. |
+| Ambiente local | Céu e cenário suaves conforme o horário local, nascer/pôr do sol configuráveis manualmente e clima decorativo offline. |
+| Segurança e privacidade | Validação de parâmetros tipados, permissões, propostas e confirmações, dados locais, logs rotativos e sensores opcionais desligados por padrão. |
+| Aprendizado observável | Banco local de episódios e ações, hábitos agregados, replay opcional durante sono e aba de aprendizado sob demanda. |
 
-The implementation is still experimental. Automated tests and offscreen renders do not validate interactive behavior on every Windows desktop, GPU, multi-monitor arrangement, or DPI setting.
+O projeto ainda é experimental. Testes automatizados e renderizações offscreen não validam a interação em todos os desktops Windows, GPUs, configurações de monitor ou escalas de DPI.
 
-## Install and run on Windows
+## Instalação e execução no Windows
 
-Use PowerShell from the repository folder:
+No PowerShell, dentro da pasta do repositório:
 
 ```powershell
 .\scripts\install.ps1
 .\scripts\run.ps1
 ```
 
-Or run the app directly after installing dependencies:
+Ou execute diretamente após instalar as dependências:
 
 ```powershell
 python -m venv .venv
@@ -56,138 +73,142 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m synapse_pet.main
 ```
 
-Run the headless simulation or tests:
+Simulação sem interface e testes:
 
 ```powershell
 .\.venv\Scripts\python.exe -m synapse_pet.main --headless --ticks 100
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-The Windows and Linux GitHub Actions jobs use Qt's offscreen platform for automated tests. Windows is the supported desktop target; Linux CI is a test portability check.
+As ações do GitHub executam os testes no Windows e Linux com o Qt offscreen. Windows é o alvo de desktop; o CI no Linux é apenas uma verificação de portabilidade dos testes.
 
-## Modes and controls
+## Modos e controles
 
-`pet.mode: floating` shows the transparent, borderless, topmost Piu window. A mask derived from the currently displayed sprite lets clicks pass through outside the character. Double-click the Piu to open the panel; right-click opens its pet menu. The panel's **OLHO** or close control returns to the floating Piu at its saved position. The tray menu can open the panel, pause the simulation, silence autonomy, configure startup, or exit.
+`pet.mode: floating` mostra somente o Piu numa janela transparente, sem borda e sempre no topo. Uma máscara extraída do sprite exibido deixa os cliques passarem fora do personagem. Clique duas vezes no Piu para abrir o painel; clique direito abre o menu do mascote. O botão **OLHO** ou o botão de fechar do painel retorna o Piu à posição salva. A bandeja pode abrir o painel, pausar a simulação, silenciar a autonomia, configurar inicialização ou sair.
 
-| Control | Effect |
+| Controle | Ação |
 | --- | --- |
-| **CARINHO** | Sends deliberate positive affect and learning feedback. Hover alone gives no reward. A held drag over Piu counts after `interaction.affection_drag_min_s`. |
-| **FEEDBACK** | Sends negative feedback to the simulation. |
-| **DEBUG** | Shows SNN telemetry, tick, runtime regime, queues, and simulation-thread state. |
-| **SENSORS** | Opens the opt-in sensor controls; sensors are off by default. |
-| **APRENDIZADO** | Shows aggregate habit and reward summaries while the panel is visible. |
-| **CENÁRIO / HUD** | Toggles the pixel-art scene and telemetry HUD. |
-| **DESFAZER** | Reverses the latest action only when that tool supports undo. |
-| **SALVAR** | Queues an asynchronous local snapshot save. |
-| **ACEITAR / RECUSAR / DEPOIS** | Responds to a pending tool proposal. Risky tools require confirmation according to policy. |
+| **CARINHO** | Envia afeto positivo deliberado e feedback de aprendizado. Só passar o mouse não gera recompensa. Arrastar sobre o Piu conta após `interaction.affection_drag_min_s`. |
+| **FEEDBACK** | Envia feedback negativo à simulação. |
+| **DEBUG** | Exibe telemetria da SNN, tick, regime, filas e estado da thread. |
+| **SENSORES** | Abre os controles de sensores opcionais, desligados por padrão. |
+| **APRENDIZADO** | Mostra estatísticas agregadas de hábitos e recompensas enquanto o painel está visível. |
+| **CENÁRIO / HUD** | Alterna entre cenário pixel art e HUD de telemetria. |
+| **DESFAZER** | Desfaz a última ação somente se a ferramenta oferecer essa função. |
+| **SALVAR** | Enfileira um snapshot local assíncrono. |
+| **ACEITAR / RECUSAR / DEPOIS** | Responde a uma proposta pendente. Ferramentas de maior risco seguem as confirmações exigidas. |
 
-Panel shortcuts: `M` toggles scene/HUD, `H` selects HUD, `F11` toggles full screen, `T` changes panel opacity, and `Esc` exits full screen. Global `Ctrl+Alt+O` opens the panel when optional `pynput` is installed. Keyboard shortcuts are not captured while the floating pet is active.
+Atalhos do painel: `M` alterna cenário/HUD, `H` seleciona HUD, `F11` alterna tela cheia, `T` muda a opacidade e `Esc` sai da tela cheia. `Ctrl+Alt+O` abre o painel se o pacote opcional `pynput` estiver instalado. O programa não captura atalhos enquanto o Piu flutuante está ativo.
 
-## Configuration
+## Configuração
 
-Edit [`configs/default.yaml`](configs/default.yaml) and restart the app.
+Edite [`configs/default.yaml`](configs/default.yaml) e reinicie o aplicativo.
 
-| Setting | Purpose |
+| Opção | Função |
 | --- | --- |
-| `pet.render_style` | `pixel` (default), `spectral`, `ascii`, or `vector`. Existing eye renderers remain selectable. |
-| `pet.mode`, `pet.width`, `pet.height`, `pet.anchor`, `pet.margin` | Select panel/floating mode and initial window placement. |
-| `visual.scene_time` | `auto`, `dia`, `entardecer`, or `noite`; `auto` follows local time. |
-| `day_cycle.sunrise_hour`, `day_cycle.sunset_hour` | Local default sunrise and sunset; optional manual `latitude`/`longitude` refine the estimates without network access. |
-| `weather.mode` | `none` (default), `rain`, `fog`, or `wind`; decorative local effects only. |
-| `pet.depth_in_pet_mode` | Enables depth scaling in the floating mode; default `false`. |
-| `pet_motion.*`, `teleport.*` | Tunes bounded movement and motion budgets. |
-| `audio.*` | Tunes in-memory voice/music thresholds, BPM behavior, cooldowns, and stamina limits. |
-| `renderer` | Rendering backend: `ascii`/`cpu` or `auto` (tries OpenGL then CPU fallback). This is separate from `pet.render_style`. |
-| `network.tool_output_inhibition` | Experimental output competition. Keep disabled: the configured 10-step interval did not improve scenario c/Z beyond 77.5% SNN-only, below the >80% target. |
-| `sleep.replay_enabled`, `sleep.max_replay_episodes`, `sleep.replay_recent_fraction` | Opt-in, bounded sleep replay. It changes weights only when replay is explicitly enabled. |
-| `network.allow_neuron_growth_migration` | Explicit opt-in snapshot migration for network growth; defaults to `false`, and shrinking is never automatic. |
-| `autonomy.*`, `teleport.*` | Enable and bound local post-it and movement behaviors. |
-| `privacy.sensors.*` | Opt-in sensor settings; all start disabled. |
+| `pet.render_style` | `pixel` (padrão), `spectral`, `ascii` ou `vector`. Os renderizadores antigos do olho continuam disponíveis. |
+| `pet.mode`, `pet.width`, `pet.height`, `pet.anchor`, `pet.margin` | Escolhe painel ou janela flutuante e sua posição inicial. |
+| `visual.scene_time` | `auto`, `dia`, `entardecer` ou `noite`; `auto` usa o horário local. |
+| `day_cycle.sunrise_hour`, `day_cycle.sunset_hour` | Nascer e pôr do sol padrão; `latitude`/`longitude` manuais refinam a estimativa sem rede. |
+| `weather.mode` | `none` (padrão), `rain`, `fog` ou `wind`; apenas efeitos decorativos locais. |
+| `pet.depth_in_pet_mode` | Habilita escala por profundidade no modo flutuante; padrão `false`. |
+| `pet_motion.*`, `teleport.*` | Ajusta movimentos limitados e seus orçamentos. |
+| `audio.*` | Ajusta limites heurísticos de voz/música, BPM, cooldowns e limites de fôlego. |
+| `renderer` | Backend de desenho: `ascii`/`cpu` ou `auto` (tenta OpenGL e usa fallback CPU). É separado de `pet.render_style`. |
+| `network.tool_output_inhibition` | Competição experimental entre saídas. Mantenha desligada: no intervalo configurado de 10 passos, c/Z ficou em 77,5% SNN-only, abaixo da meta de >80%. |
+| `sleep.replay_enabled`, `sleep.max_replay_episodes`, `sleep.replay_recent_fraction` | Replay limitado e opcional durante o sono; altera pesos somente se habilitado. |
+| `network.allow_neuron_growth_migration` | Autoriza migração explícita ao aumentar a rede; padrão `false`; redução nunca é automática. |
+| `autonomy.*`, `teleport.*` | Habilita e limita post-its e movimentos locais. |
+| `privacy.sensors.*` | Configura sensores opcionais, todos inicialmente desligados. |
 
-Changing renderer style or YAML requires an application restart. The Piu sprites use integer nearest-neighbor scaling. See [ART.md](docs/ART.md) to rebuild and edit the PNG sheets and JSON animation metadata.
+Alterações no YAML ou estilo de renderização exigem reiniciar o aplicativo. Os sprites do Piu usam ampliação inteira por vizinho mais próximo. Consulte [ART.md](docs/ART.md) para editar as folhas PNG e os metadados JSON.
 
-## Audio and local-time behavior
+## Áudio e comportamento pelo horário local
 
-Voice detection uses short in-memory audio windows and simple energy, frequency
-band, and modulation thresholds. It can trigger Piu's **listening** pose; it
-does not identify words, intent, or who is speaking. Music detection estimates
-activity and BPM from spectral changes to choose a short dance animation. If
-system loopback capture is unavailable, Windows playback state can provide a
-coarser dance cue without BPM synchronization. Missing optional packages or
-devices leave the sensor unavailable without affecting the simulation.
+A detecção de voz usa pequenas janelas em memória e limites simples de energia,
+faixa de frequência e modulação. Ela pode mostrar a pose **ouvindo**; não
+reconhece palavras, intenção nem quem está falando. A detecção de música estima
+atividade e BPM por mudanças espectrais para escolher uma dança curta. Se a
+captura de loopback não estiver disponível, o estado de reprodução do Windows
+pode fornecer uma indicação mais simples, sem sincronização por BPM. Pacotes ou
+dispositivos ausentes deixam o sensor indisponível sem afetar a simulação.
 
-The audio dependencies are optional: install them with `pip install -e ".[audio]"`
-only when you plan to enable the sensors. The microphone and loopback controls
-appear in **SENSORS** and the tray sensor menu; both are off by default. Read
-[Privacy](docs/PRIVACY.md) before enabling them.
-The optional adapters use [SoundCard](https://soundcard.readthedocs.io/en/latest/)
-and, on Windows, [Pycaw](https://andremiras.github.io/pycaw/api/index.html).
+As dependências de áudio são opcionais: instale com `pip install -e ".[audio]"`
+somente se for habilitar esses sensores. Os controles aparecem em **SENSORES** e
+no menu de sensores da bandeja; ambos começam desligados. Leia
+[Privacidade](docs/PRIVACY.md) antes de ativá-los.
+Os adaptadores opcionais usam [SoundCard](https://soundcard.readthedocs.io/en/latest/)
+e, no Windows, [Pycaw](https://andremiras.github.io/pycaw/api/index.html).
 
-The sky and landscape interpolate across local dawn, morning, afternoon, dusk,
-and night. Sunrise/sunset default to 06:00/18:00; optional manual coordinates
-are used only for an offline solar-time estimate. Weather is decorative and
-never fetched from a service. The existing clock input feeds the simulation;
-the visual scene does not change the SNN topology.
+O céu e a paisagem interpolam entre madrugada, manhã, tarde, entardecer e noite.
+Nascer e pôr do sol usam 06:00/18:00 por padrão; coordenadas manuais opcionais
+refinam uma estimativa solar offline. O clima é decorativo e não vem de serviços
+externos. A entrada de relógio existente continua alimentando a simulação; a
+cena visual não altera a topologia da SNN.
 
-For implementation details, privacy boundaries, limitations, and synthetic
-learning results, see [Architecture](docs/ARCHITECTURE.md), [Autonomy](docs/AUTONOMY.md),
-[Privacy](docs/PRIVACY.md), [Learning](docs/LEARNING.md), [Art](docs/ART.md),
-[Performance](docs/PERFORMANCE.md), and [Roadmap](ROADMAP.md). Contributions and
-release checks are described in [CONTRIBUTING.md](CONTRIBUTING.md).
+Detalhes de implementação, privacidade, limitações e resultados sintéticos estão
+em [Arquitetura](docs/ARCHITECTURE.md), [Autonomia](docs/AUTONOMY.md),
+[Privacidade](docs/PRIVACY.md), [Aprendizado](docs/LEARNING.md), [Arte](docs/ART.md),
+[Desempenho](docs/PERFORMANCE.md) e [Roadmap](ROADMAP.md). As regras de
+contribuição e release estão em [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## How the SNN and learning work
+## Como funcionam a SNN e o aprendizado
 
-1. The encoder turns permitted numeric signals and coarse context categories into sensor spikes; it never feeds typed text to the SNN.
-2. Leaky integrate-and-fire neurons exchange signals through sparse sensor, recurrent, and output projections.
-3. The decoder turns named output-group spikes into rates. Contexts can receive lazy output-weight projections over the shared sparse topology.
-4. Eligibility traces record spike timing. `learning_rpe` is the signal that changes synaptic weights through reward-modulated STDP. `affect_impulse` changes simulated affect and remains separate from weight learning.
-5. The action selector combines normalized SNN rates with contextual preferences. These preferences can dominate a combined choice; this is why the neural-only ablation is reported separately.
+1. O codificador transforma sinais numéricos permitidos e categorias simples em disparos sensoriais; texto digitado nunca entra na SNN.
+2. Neurônios leaky integrate-and-fire se comunicam por projeções esparsas sensoriais, recorrentes e de saída.
+3. O decodificador converte grupos de disparos em taxas. Cada contexto pode receber pesos de saída alocados sob demanda sobre a topologia esparsa compartilhada.
+4. Traços de elegibilidade registram a temporização dos disparos. `learning_rpe` é o sinal que altera pesos via STDP modulada por recompensa. `affect_impulse` altera o afeto simulado e permanece separado do aprendizado dos pesos.
+5. O seletor combina taxas da SNN normalizadas e preferências por contexto. As preferências podem dominar uma decisão combinada; por isso a ablação SNN-only é mostrada separadamente.
 
 ```mermaid
 flowchart LR
-    S[Opt-in sensors and explicit UI events] --> Q[Thread-safe input queue]
-    C[Local clock and coarse categories] --> Q
-    AU[Opt-in microphone or system loopback] --> AX[Bounded NumPy audio features]
-    AX --> P[Listening and dance cues; no transcript]
-    AU -->|audio discarded| X[No recording or upload]
-    Q --> N[Sparse NumPy LIF SNN]
-    N --> R[Output rates and eligibility traces]
-    R --> E[Emotions and drives]
-    R --> L[STDP updated by learning RPE]
-    N --> A[Neural score]
-    E --> P[Personality and contextual preference selector]
+    S[Sensores opcionais e ações explícitas] --> Q[Fila de entrada thread-safe]
+    C[Relógio local e categorias] --> Q
+    AU[Microfone ou loopback opt-in] --> AX[Recursos de áudio NumPy limitados]
+    AX --> P[Pistas de escuta e dança; sem transcrição]
+    AU -->|áudio descartado| X[Sem gravação ou envio]
+    Q --> N[SNN LIF esparsa em NumPy]
+    N --> R[Taxas de saída e traços de elegibilidade]
+    R --> E[Emoções e necessidades]
+    R --> L[STDP atualizada por learning RPE]
+    N --> A[Pontuação neural]
+    E --> P[Personalidade e preferências contextuais]
     A --> P
-    P --> T[Permission-checked tools]
-    E --> U[Autonomy and Piu movement]
-    N --> V[Read-only visual snapshot]
+    P --> T[Ferramentas com permissão]
+    E --> U[Autonomia e movimentos do Piu]
+    N --> V[Snapshot visual somente leitura]
     U --> V
     P --> V
-    V --> UI[PySide6 pixel-art UI]
+    V --> UI[Interface pixel art PySide6]
 ```
 
-## Synthetic learning evaluation
+## Avaliação sintética de aprendizado
 
-These measurements use seed `20261102`, 600 requested neurons, artificial contexts/actions, and no real tools. They are generated by the offline simulator; they do **not** establish usefulness in the running desktop application. Combined accuracy uses the neural score and contextual preferences. The neural-only and preference-only columns are evaluation-time ablations after the same training history.
+As medições usam seed `20261102`, 600 neurônios solicitados, contextos e ações artificiais e nenhuma ferramenta real. Os resultados vêm do simulador offline e **não demonstram utilidade no aplicativo desktop em execução**. A precisão combinada usa taxas neurais e preferências contextuais. As colunas SNN-only e preferência-only são ablações de avaliação após a mesma história de treinamento.
 
-| Scenario | Combined | SNN-only | Preference-only | Mean absolute winner-score share: SNN / selector |
+| Cenário | Combinada | SNN-only | Só preferências | Média da magnitude do score vencedor: SNN / seletor |
 | --- | ---: | ---: | ---: | ---: |
-| a — association | 100% | 100% | 100% | 41% / 59% |
-| b — reversal | 100%; readaptation 44 episodes | 100% | 100% | 17% / 83% |
-| c — contexts X/Y/Z | 100% / 100% / 100% | 100% / 97.5% / 77.5% | 100% / 100% / 100% | 28% / 72% (mean) |
-| d — 10% feedback noise | 100% | 100% | 100% | 26% / 74% |
-| e — 1,000-episode interference | 100% | 67% | 100% | 22% / 78% |
+| a — associação | 100% | 100% | 100% | 41% / 59% |
+| b — reversão | 100%; readaptação em 44 episódios | 100% | 100% | 17% / 83% |
+| c — contextos X/Y/Z | 100% / 100% / 100% | 100% / 97,5% / 77,5% | 100% / 100% / 100% | 28% / 72% (média) |
+| d — 10% de ruído no feedback | 100% | 100% | 100% | 26% / 74% |
+| e — interferência de 1.000 episódios | 100% | 67% | 100% | 22% / 78% |
 
-The score-share column describes the mean magnitude of the two terms for the selected candidate; it is not causal attribution. Optional replay was also tested in e and is reported in [`docs/LEARNING.md`](docs/LEARNING.md), including its remaining gap. At the configured 10-step interval, output competition matched the baseline in b and c and did not reach the >80% SNN-only target in c/Z; its measured tick overhead was about 1.1%, so the YAML flag remains off pending a useful accuracy gain. Per-episode CSVs and curves are in [`docs/learning/piu-snn-baseline/`](docs/learning/piu-snn-baseline/) and [`docs/learning/piu-snn-enabled/`](docs/learning/piu-snn-enabled/).
+A fração da tabela descreve a magnitude média dos dois termos para o candidato escolhido; não é uma atribuição causal. O replay opcional também foi testado no cenário e; [LEARNING.md](docs/LEARNING.md) registra o resultado e a meta ainda não atingida. No intervalo de 10 passos, a competição de saída igualou a linha de base em b e c e não alcançou a meta SNN-only >80% em c/Z; o custo medido por tick ficou cerca de 1,1% maior. A flag YAML permanece desligada até haver ganho útil de acerto. CSVs e curvas por episódio estão em [`docs/learning/piu-snn-baseline/`](docs/learning/piu-snn-baseline/) e [`docs/learning/piu-snn-enabled/`](docs/learning/piu-snn-enabled/).
 
-## Performance and limitations
+## Desempenho e limitações
 
-Current measurements, comparison baselines, exact sample sizes, and renderer CPU/FPS are in [PERFORMANCE.md](docs/PERFORMANCE.md). They are short measurements on the development environment; CPU percentages, VRAM, DPI and desktop compositor costs vary by machine. The small pixel renderer reached 30 FPS active and 5 FPS idle in the offscreen benchmark. GUI behavior, OpenGL on physical hardware, multiple monitors, and taskbar/DPI interactions are **not validated** here.
+As medições atuais, linhas de comparação, número de amostras e CPU/FPS do renderizador estão em [PERFORMANCE.md](docs/PERFORMANCE.md). São amostras curtas no ambiente de desenvolvimento; CPU, VRAM, DPI e composição do desktop variam conforme a máquina. O renderizador pixel art alcançou 30 FPS ativo e 5 FPS em repouso no benchmark offscreen. Interface interativa, OpenGL em hardware físico, múltiplos monitores e comportamento com barra de tarefas/DPI **não foram validados** aqui.
 
-Known limits include: the SNN is not a language model; the policy is hybrid; sleep replay uses a hashed coarse-context surrogate rather than stored sensory sequences; the replay experiment did not reach its >80% neural-only retention target; and optional output competition degraded a tested context. These gaps and deferred behavior are tracked in [`ROADMAP.md`](ROADMAP.md).
+Limitações conhecidas: a SNN não é um modelo de linguagem; a política é híbrida; replay usa uma entrada substituta derivada do hash de uma categoria, não sequências sensoriais armazenadas; a experiência de replay não atingiu a meta de >80% de retenção SNN-only; e a competição opcional piorou um contexto medido. Essas pendências estão em [`ROADMAP.md`](ROADMAP.md).
 
-## Create a local tool
+## Roadmap atual
 
-Tools declare risk, tags, parameter types, and a callable. The engine validates required fields before execution:
+O roadmap acompanha a melhoria da classificação neural por contexto e da retenção, avaliação com várias seeds e intervalos de confiança, revisão das regras experimentais de inibição/replay e validação interativa em Windows com diferentes monitores, escalas de DPI e renderizadores. São itens em aberto, não capacidades já entregues.
+
+## Criar uma ferramenta local
+
+Uma ferramenta declara risco, tags, tipos de parâmetros e uma função. O engine valida os campos obrigatórios antes da execução:
 
 ```python
 from synapse_pet.tools.manifest import ToolManifest, ToolParameter
@@ -196,11 +217,31 @@ def count_items(params):
     return {"count": len(params["items"])}
 
 tool = ToolManifest(
-    name="count_items", description="Count supplied items", risk="low",
+    name="count_items", description="Contar itens fornecidos", risk="low",
     tags=("example",), run=count_items,
     parameters={"items": ToolParameter(list, required=True, max_length=100)},
 )
 engine.register_tool(tool)
 ```
 
-See [Architecture](docs/ARCHITECTURE.md), [Learning](docs/LEARNING.md), [Autonomy](docs/AUTONOMY.md), [Privacy](docs/PRIVACY.md), and [Performance](docs/PERFORMANCE.md) for detailed boundaries and methodology.
+Consulte [Arquitetura](docs/ARCHITECTURE.md), [Aprendizado](docs/LEARNING.md), [Autonomia](docs/AUTONOMY.md), [Privacidade](docs/PRIVACY.md) e [Desempenho](docs/PERFORMANCE.md) para limites e metodologia detalhados.
+
+## Galeria
+
+### Cenário diurno
+
+![Piu no cenário em pixel art](docs/screenshots/piu/piu-cenario-dia.png)
+
+*Prévia offline renderizada pelo Qt; não é uma captura do programa em um desktop físico.*
+
+### Conceitos dos ambientes
+
+![Folha de conceitos dos cinco ambientes pelo horário local](docs/mockups/piu/v03_stage1/ambientes_5_periodos_1x.png)
+
+*Prévia de arte gerada para madrugada, manhã, tarde, entardecer e noite.*
+
+### Animação flutuante do Piu
+
+![Animação flutuante do Piu](docs/screenshots/piu/piu-animacao.gif)
+
+*Prévia gerada da animação em pixel art. Na aplicação, a janela flutuante é transparente.*
