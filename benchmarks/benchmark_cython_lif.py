@@ -38,11 +38,19 @@ def _run(network: SpikingNetwork, inputs: np.ndarray) -> int:
 def _validated_run(network: SpikingNetwork, inputs: np.ndarray):
     output_hash = hashlib.sha256()
     spike_count = 0
+    population_counts = {"sensor": 0, "hidden": 0, "output": 0}
     for sensory in inputs:
         output = network.step(sensory)
         output_hash.update(output.tobytes())
         spike_count += int(output.sum())
-    return spike_count, output_hash.hexdigest()
+        population_counts["sensor"] += int(output[:network.n_sensor].sum())
+        population_counts["hidden"] += int(
+            output[network.hidden_start:network.output_start].sum()
+        )
+        population_counts["output"] += int(
+            output[network.output_start:].sum()
+        )
+    return spike_count, output_hash.hexdigest(), population_counts
 
 
 def _measure(
@@ -123,11 +131,25 @@ def _measure_size(
 
     # Re-run the entire sequence and compare end states, output count and RNG.
     numpy_check, cython_check = numpy_factory(), cython_factory()
-    numpy_spikes, numpy_output_hash = _validated_run(numpy_check, inputs)
-    cython_spikes, cython_output_hash = _validated_run(cython_check, inputs)
+    numpy_spikes, numpy_output_hash, population_counts = _validated_run(
+        numpy_check, inputs
+    )
+    cython_spikes, cython_output_hash, cython_population_counts = _validated_run(
+        cython_check, inputs
+    )
     assert cython_spikes == numpy_spikes
     assert cython_output_hash == numpy_output_hash
+    assert cython_population_counts == population_counts
     _state_equal(cython_check, numpy_check)
+    population_sizes = {
+        "sensor": numpy_check.n_sensor,
+        "hidden": numpy_check.n_hidden,
+        "output": numpy_check.population.size - numpy_check.output_start,
+    }
+    population_rates = {
+        name: count / (steps * population_sizes[name])
+        for name, count in population_counts.items()
+    }
 
     return {
         "neurons": size,
@@ -139,6 +161,9 @@ def _measure_size(
         "seed": seed,
         "spikes_across_network_over_validation_sequence": numpy_spikes,
         "spike_vector_sha256": numpy_output_hash,
+        "population_spikes_over_validation_sequence": population_counts,
+        "population_sizes": population_sizes,
+        "population_spikes_per_neuron_per_tick": population_rates,
         "numpy": numpy_result,
         "cython": cython_result,
         "speedup_wall": (
