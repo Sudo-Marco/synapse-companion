@@ -7,6 +7,7 @@ from synapse_pet.core.network import SpikingNetwork
 from synapse_pet.core.plasticity import RewardSTDP
 from synapse_pet.core.synapses import SparseProjection
 from synapse_pet.neural_backend import NumpyBackend, create_neural_backend
+from synapse_pet.neural_backend.cython_backend import CythonBackendUnavailable
 from synapse_pet.runtime.config import load_config
 
 
@@ -28,7 +29,15 @@ def test_default_yaml_selects_deterministic_float32_numpy():
 
 
 @pytest.mark.parametrize("requested", ["cython", "auto"])
-def test_missing_cython_kernels_fall_back_to_numpy_with_reason(requested: str):
+def test_unavailable_cython_extension_falls_back_to_numpy_with_reason(
+    requested: str, monkeypatch: pytest.MonkeyPatch
+):
+    import synapse_pet.neural_backend.factory as factory
+
+    def unavailable(*, deterministic: bool):
+        raise CythonBackendUnavailable("simulated missing compiled extension")
+
+    monkeypatch.setattr(factory, "CythonBackend", unavailable)
     selection = create_neural_backend({
         "engine": requested,
         "fallback": "numpy",
@@ -39,7 +48,7 @@ def test_missing_cython_kernels_fall_back_to_numpy_with_reason(requested: str):
     assert isinstance(selection.backend, NumpyBackend)
     assert selection.requested_engine == requested
     assert selection.active_engine == "numpy"
-    assert "not implemented yet" in (selection.fallback_reason or "")
+    assert "simulated missing" in (selection.fallback_reason or "")
     assert selection.as_dict()["deterministic"] is True
 
 

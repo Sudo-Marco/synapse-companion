@@ -2,45 +2,60 @@
 
 ## Estado
 
-A Fase 3 introduz a seleção e o contrato comum para os cálculos numéricos da SNN. O backend de referência continua sendo NumPy/SciPy e é o padrão. A Fase 3 **não** contém kernels compilados nem declara ganho de desempenho Cython.
+A Fase 3 introduziu a seleção e o contrato comum para cálculos numéricos da
+SNN. A Fase 4 adiciona kernels Cython opcionais somente para STDP: atualização
+de traços/elegibilidade e aplicação da recompensa. O backend padrão continua
+NumPy; LIF, propagação CSR, crédito por ação e homeostase permanecem no caminho
+NumPy existente.
 
 ## Configuração
 
-O arquivo `configs/default.yaml` contém:
+`configs/default.yaml` mantém `engine: numpy`, `fallback: numpy`, precisão
+`float32` e determinismo ativado.
 
-```yaml
-neural_backend:
-  engine: numpy       # numpy, cython ou auto
-  fallback: numpy
-  precision: float32
-  deterministic: true
-```
+- `numpy`: implementação NumPy/SciPy de referência.
+- `cython`: usa `_stdp` quando a extensão compilada está disponível; caso
+  contrário, registra a causa e usa o fallback NumPy.
+- `auto`: tenta carregar Cython e usa NumPy quando não consegue.
+- `fallback`: nesta fase, somente `numpy` é suportado.
+- `precision`: somente `float32` é suportado.
 
-- `numpy`: usa a implementação atual e determinística como referência.
-- `cython`: tenta selecionar o backend opcional; enquanto os kernels das fases seguintes não existem, registra o motivo e usa o fallback NumPy.
-- `auto`: tenta o backend Cython e usa o fallback quando indisponível.
-- `fallback`: nesta etapa, somente `numpy` é suportado.
-- `precision`: somente `float32` é suportado pela implementação atual.
-- `deterministic`: transporta a preferência ao backend selecionado. O NumPy continua reproduzindo as operações e a seed existentes.
-
-Configuração desconhecida ou precisão não suportada gera erro claro na inicialização, em vez de ser ignorada. O engine registra a seleção efetiva e qualquer fallback no log rotativo do runtime.
+Configuração desconhecida ou precisão não suportada gera erro explícito. O
+engine registra o backend efetivo e o motivo de fallback no log do runtime.
 
 ## Contrato e ownership
 
-`src/synapse_pet/neural_backend/interface.py` define as operações de passo LIF, propagação esparsa, marcação STDP, aplicação de recompensa, crédito de ação e homeostase. `numpy_backend.py` delega às implementações atuais sem replicar fórmulas. `SpikingNetwork` possui o backend que usa em cada passo; o `PetEngine` usa a mesma seleção para aprendizado, homeostase e replay durante o sono. Recarregar snapshot reconecta o backend selecionado sem persistir uma escolha de implementação no formato do snapshot.
+`interface.py` define as operações numéricas utilizadas por rede e runtime.
+`NumpyBackend` delega às implementações atuais sem replicar fórmulas. O
+`CythonBackend` herda esse adaptador e substitui apenas `update_stdp` e
+`apply_reward`. Os arrays continuam pertencendo aos objetos NumPy; o kernel usa
+memoryviews contíguas durante a chamada e não armazena ponteiros.
 
-Arrays permanecem propriedade dos objetos de estado NumPy. A saída de spikes mantém o contrato existente de cópia, e o buffer de corrente é interno à rede. Os backends não devem reter referências ou ponteiros além da chamada.
+Entradas fora de contiguidade usam a referência NumPy. Nenhum estado do backend
+é escrito no snapshot, então saves permanecem independentes de Cython.
 
-## Cython opcional
+## Build Cython opcional
 
-O extra de instalação `native` declara Cython para as próximas fases:
+Instalação e compilação são separadas. O pacote padrão nunca tenta compilar
+código nativo:
 
 ```powershell
-python -m pip install -e ".[native]"
+python -m pip install -e ".[dev,native]"
+$env:SYNAPSE_PET_BUILD_CYTHON = "1"
+python setup.py build_ext --inplace
+Remove-Item Env:SYNAPSE_PET_BUILD_CYTHON
 ```
 
-Instalar Cython, por si só, **não** ativa kernels: nenhum módulo compilado está presente nesta fase. O fallback evita impedir o início do pet em computadores sem compilador/extensão. As operações compiladas serão incorporadas uma a uma nas fases de kernels, com testes de equivalência antes de poderem ser selecionadas como implementação efetiva.
+É necessário MSVC com ferramentas C++ no Windows ou GCC/build-essential no
+Linux. Instruções completas estão em
+[`BUILD_CYTHON.md`](../development/BUILD_CYTHON.md). O workflow
+`.github/workflows/cython-stdp.yml` compila em Windows e Ubuntu, executa a
+suíte com a extensão e publica o JSON do benchmark por plataforma.
 
-## Validação nesta fase
+## Validação
 
-Testes cobrem seleção explícita NumPy, fallback de `cython`/`auto`, validação de configuração, equivalência exata da trajetória de spikes/voltagens e delegação de STDP/recompensa/crédito. O hash global de determinismo e o custo total do tick devem ser conferidos no relatório da Fase 3. A interface desktop interativa não é validada por estes testes headless.
+`tests/test_cython_stdp.py` compara bit a bit traces, elegibilidade e pesos
+após STDP e recompensa. O benchmark `benchmarks/benchmark_cython_stdp.py`
+separa tempo de CPU e parede, mede pico rastreado pelo `tracemalloc` e registra
+o RSS do processo. RSS representa o processo inteiro, não a extensão isolada.
+LIF, CSR, aprendizado comportamental e GUI não fazem parte desse benchmark.

@@ -46,7 +46,18 @@ Legenda: ✅ concluído com evidência; ⚠️ executado com ressalva registrada
 - [x] Confirmar equivalência/determinismo, rodar suíte integral e benchmark de custo; registrar `docs/performance/PHASE3_BACKEND_REPORT.md`.
 - [x] Registrar a falha visual headless que já existia antes da fase, sem alterar a asserção.
 
-## Próximas fases — aguardando conclusão e autorização
+## Fase 4 — STDP Cython (validação pendente)
 
-- [ ] Fase 4: primeiro kernel compilado (STDP) com equivalência.
-- [ ] Fases posteriores: migração gradual, equivalência, estresse e documentação de release.
+- [x] Criar kernel compilado para traces/elegibilidade preservando a ordem float32.
+- [x] Compilar aplicação de recompensa, clipping e Lei de Dale; deixar crédito por ação no NumPy.
+- [x] Manter fallback NumPy, instalação padrão sem compilação e build nativo explicitamente opt-in.
+- [x] Adicionar testes bit a bit condicionais e benchmark CPU/parede/memória para update e reward.
+- [x] Adicionar CI Windows/Linux para compilar, executar a suíte e gerar artefato de benchmark.
+- [ ] Confirmar compilação e equivalência nativa nos dois sistemas por CI.
+- [ ] Medir o ganho e RSS/temporários; preencher `docs/performance/PHASE4_STDP_REPORT.md` com os resultados.
+- [ ] Confirmar hash congelado e resultado integral da suíte pós-Cython.
+
+## Próximas fases — não iniciadas
+
+- [ ] Fase 5: LIF compilado, somente após fechar a Fase 4 com evidência.
+- [ ] Fases posteriores: CSR, event-driven, codificação/aprendizado, reorganização e release.
