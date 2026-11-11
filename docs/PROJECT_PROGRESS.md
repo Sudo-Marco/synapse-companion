@@ -11,7 +11,8 @@ Atualizado em **11 de novembro de 2026**.
 | 2 — Otimização Python | Concluída com ressalva de validação UI headless | `docs/performance/PHASE2_OPTIMIZATION_REPORT.md`; alterações locais no buffer de tick/STDP e crédito de ação |
 | 3 — Infraestrutura híbrida | Concluída com limites medidos | `docs/performance/PHASE3_BACKEND_REPORT.md`, testes e benchmark; NumPy padrão, Cython ainda faz fallback |
 | 4 — STDP compilada | Concluída; equivalência e benchmark no CI Windows/Ubuntu | `docs/performance/PHASE4_STDP_REPORT.md`, artefatos `cython_stdp_ci_*`, workflow e testes |
-| 5+ — LIF compilado e evolução | Não iniciadas | Dependem de equivalência e benchmark aprovados da Fase 4 |
+| 5 — LIF compilado | Implementação local; validação nativa pendente | Testes condicionais, benchmark e CI Windows/Ubuntu nesta branch |
+| 6+ — CSR e evolução | Não iniciadas | Fora do escopo autorizado nesta etapa |
 
 ## Linha de base atual
 
@@ -29,4 +30,6 @@ O bloco de desempenho foi registrado no commit local `3f1bd4e` (`perf: complete 
 
 **Checkpoint da Fase 3:** interface integrada ao engine, rede, replay e homeostase; configuração NumPy/Cython/auto, fallback explícito e Cython opcional. O custo médio ficou dentro de 3%; percentis de cauda variaram e estão discriminados no relatório.
 
-**Checkpoint da Fase 4:** kernels Cython para marcação STDP e aplicação de recompensa com clipping/Lei de Dale, fallback NumPy para ausência/layout incompatível e build opt-in. CI compilou e passou a suíte em Windows/Ubuntu; equivalência bit a bit foi confirmada. Marcação acelerou 5,21× no Ubuntu e 6,81× no Windows; aplicação da recompensa, 3,40× e 1,44×. Resultados brutos e ressalvas estão no relatório. A falha local headless preexistente foi mantida e a GUI real não foi validada. Fase 5 ainda não iniciada.
+**Checkpoint da Fase 4:** kernels Cython para marcação STDP e aplicação de recompensa com clipping/Lei de Dale, fallback NumPy para ausência/layout incompatível e build opt-in. CI compilou e passou a suíte em Windows/Ubuntu; equivalência bit a bit foi confirmada. Marcação acelerou 5,21× no Ubuntu e 6,81× no Windows; aplicação da recompensa, 3,40× e 1,44×. Resultados brutos e ressalvas estão no relatório. A falha local headless preexistente foi mantida e a GUI real não foi validada.
+
+**Trabalho local da Fase 5 (CI pendente):** kernel Cython para LIF, fallback em layouts incompatíveis/alias, testes bit a bit em populações e rede completa, benchmark de ticks em 600/1.000 neurônios e build opt-in atualizado. Cython traduziu os dois `.pyx` localmente, mas este ambiente Windows não tem MSVC nem extensões nativas; equivalência compilada e custo ainda não estão validados. A suíte local repetiu a mesma falha headless de GUI observada antes da Fase 5.

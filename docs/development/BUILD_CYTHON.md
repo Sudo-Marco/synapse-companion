@@ -1,8 +1,9 @@
-# Build opcional do kernel Cython de STDP
+# Build opcional dos kernels Cython
 
-O backend padrão do Synapse Pet continua NumPy. A extensão Cython acelera
-somente atualização de traços/elegibilidade e aplicação da recompensa da STDP.
-LIF, propagação CSR, crédito de ação e homeostase continuam no caminho NumPy.
+O backend padrão do Synapse Pet continua NumPy. As extensões Cython opcionais
+aceleram o passo LIF e a atualização de traços/elegibilidade e aplicação de
+recompensa da STDP. Propagação CSR, crédito de ação e homeostase continuam no
+caminho NumPy.
 
 ## Requisitos
 
@@ -22,7 +23,7 @@ python setup.py build_ext --inplace
 Remove-Item Env:SYNAPSE_PET_BUILD_CYTHON
 ```
 
-O `setup.py` inclui a extensão somente quando
+O `setup.py` inclui as extensões somente quando
 `SYNAPSE_PET_BUILD_CYTHON=1`. Instalar o pacote normalmente não tenta compilar
 código nativo.
 
@@ -36,22 +37,28 @@ SYNAPSE_PET_BUILD_CYTHON=1 python setup.py build_ext --inplace
 ## Selecionar e testar
 
 Depois de compilar, defina `neural_backend.engine: cython` na configuração local
-do pet e mantenha `fallback: numpy`. Se a extensão estiver ausente ou não puder
-ser carregada, o pet inicia pelo backend NumPy e registra o motivo do fallback.
+do pet e mantenha `fallback: numpy`. Se uma extensão estiver ausente ou nao
+puder ser carregada, o pet inicia pelo backend NumPy e registra o motivo do
+fallback.
 
 ```powershell
 python -m pytest -q
 python benchmarks/benchmark_cython_stdp.py --output benchmarks/results/cython_stdp_local.json
+python benchmarks/benchmark_cython_lif.py --output benchmarks/results/cython_lif_local.json
 ```
 
-`tests/test_cython_stdp.py` é pulado se a extensão não estiver compilada. O
-workflow `.github/workflows/cython-stdp.yml` compila em Windows e Ubuntu,
-executa todos os testes e publica o benchmark. CI não valida a GUI no desktop
-físico.
+`tests/test_cython_stdp.py` e `tests/test_cython_lif.py` são pulados quando as
+extensões opcionais não estão compiladas. O workflow
+`.github/workflows/cython-stdp.yml` compila ambos os kernels em Windows e
+Ubuntu, executa os testes e publica os benchmarks STDP e LIF. O benchmark LIF
+compara ticks completos da rede em 600 e 1.000 neurônios, verifica o hash da
+sequência de saídas e mede tempo CPU/parede, memória Python e RSS do processo.
+CI não valida a GUI no desktop físico.
 
 ## Escopo e limites
 
-Não há OpenMP nem alteração da topologia, parâmetros ou fórmula da SNN. O kernel
+Não há OpenMP nem alteração da topologia, parâmetros ou fórmulas da SNN. O kernel
 recebe memoryviews dos arrays NumPy contíguos existentes; arrays não contíguos
-usam a referência NumPy. O backend Cython não deve ser selecionado como padrão
-antes de passar nos testes de equivalência.
+ou com alias usam a referência NumPy. O backend Cython não é o padrão e deve
+permanecer assim até equivalência e custo serem revisados no CI das plataformas
+suportadas.
