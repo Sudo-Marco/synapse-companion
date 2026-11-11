@@ -1,0 +1,108 @@
+{
+  "benchmark": "cython_stdp_mark",
+  "environment": {
+    "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+    "platform": "Windows-2025Server-10.0.26100-SP0",
+    "numpy": "2.5.4",
+    "scipy": "1.18.1",
+    "cython": "3.3.1",
+    "rss_bytes_after": 54304768
+  },
+  "workload": {
+    "pre_neurons": 712,
+    "post_neurons": 304,
+    "edges": 17358,
+    "density": 0.08,
+    "updates_per_sample": 1200,
+    "warmup_updates": 100,
+    "repeats": 7,
+    "seed": 20261111,
+    "input_arrays_bytes": 1219200,
+    "trace_arrays_bytes": 77560
+  },
+  "kernels": {
+    "update_stdp": {
+      "numpy": {
+        "wall_seconds_mean": 0.26384112857143044,
+        "wall_seconds_median": 0.2642225999999823,
+        "wall_seconds_p95": 0.26877283000000884,
+        "cpu_seconds_mean": 0.26339285714285715,
+        "ns_per_update_mean": 219867.6071428587,
+        "python_traced_peak_bytes": 287048,
+        "wall_samples_seconds": [
+          0.2692279000000042,
+          0.25973999999999364,
+          0.2677110000000198,
+          0.2614097000000015,
+          0.2644798000000037,
+          0.2642225999999823,
+          0.26009690000000774
+        ]
+      },
+      "cython": {
+        "wall_seconds_mean": 0.038757742857139225,
+        "wall_seconds_median": 0.03876790000001051,
+        "wall_seconds_p95": 0.03957114999998623,
+        "cpu_seconds_mean": 0.03571428571428571,
+        "ns_per_update_mean": 32298.11904761602,
+        "python_traced_peak_bytes": 80128,
+        "wall_samples_seconds": [
+          0.0388415999999836,
+          0.038539399999990565,
+          0.03979089999998564,
+          0.039058399999987614,
+          0.03778230000000349,
+          0.03876790000001051,
+          0.03852370000001315
+        ]
+      },
+      "speedup_wall_mean": 6.807443084184418
+    },
+    "apply_reward": {
+      "numpy": {
+        "calls_per_sample": 300,
+        "wall_seconds_mean": 0.02260435714285742,
+        "wall_seconds_median": 0.022589299999992818,
+        "wall_seconds_p95": 0.02293397999999911,
+        "cpu_seconds_mean": 0.020089285714285716,
+        "ns_per_update_mean": 75347.85714285806,
+        "python_traced_peak_bytes": 208912,
+        "wall_samples_seconds": [
+          0.02283149999999523,
+          0.022318200000000843,
+          0.022645100000005414,
+          0.022589299999992818,
+          0.022394300000001977,
+          0.022474200000004885,
+          0.022977900000000773
+        ]
+      },
+      "cython": {
+        "calls_per_sample": 300,
+        "wall_seconds_mean": 0.015652300000003345,
+        "wall_seconds_median": 0.015653700000001436,
+        "wall_seconds_p95": 0.015816890000004948,
+        "cpu_seconds_mean": 0.015625,
+        "ns_per_update_mean": 52174.33333334448,
+        "python_traced_peak_bytes": 960,
+        "wall_samples_seconds": [
+          0.015579299999984642,
+          0.015653700000001436,
+          0.01551000000000613,
+          0.015522599999997055,
+          0.015847100000002,
+          0.015707000000020344,
+          0.015746400000011818
+        ]
+      },
+      "speedup_wall_mean": 1.4441556284285753
+    }
+  },
+  "exact_equivalence": true,
+  "notes": [
+    "Memory is Python tracemalloc peak for the update loop; native RSS is process-wide.",
+    "LIF and CSR remain NumPy; both STDP marking and reward application are measured."
+  ],
+  "ci_run_id": 42977920290,
+  "commit": "442bdd821a5b1726f7355419397f91c7a2387331"
+}
