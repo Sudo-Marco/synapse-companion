@@ -82,7 +82,7 @@ def _measure(
             / (len(inputs) * loops_per_sample)
         ),
         "python_traced_peak_bytes": int(peak_bytes),
-        "output_spikes_last_sample": spikes,
+        "spikes_across_network_last_sample": spikes,
         "wall_samples_seconds": wall_samples,
         "timed_ticks_per_sample": len(inputs) * loops_per_sample,
     }
@@ -137,8 +137,8 @@ def _measure_size(
         "loops_per_timed_sample": loops_per_sample,
         "repeats": repeats,
         "seed": seed,
-        "output_spikes_over_validation_sequence": numpy_spikes,
-        "output_spike_sha256": numpy_output_hash,
+        "spikes_across_network_over_validation_sequence": numpy_spikes,
+        "spike_vector_sha256": numpy_output_hash,
         "numpy": numpy_result,
         "cython": cython_result,
         "speedup_wall": (
