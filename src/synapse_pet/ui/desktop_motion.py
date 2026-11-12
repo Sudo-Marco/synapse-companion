@@ -31,6 +31,22 @@ def clamp_window_top_left(x: int, y: int, window_width: int,
             max(area.top, min(int(y), max_y)))
 
 
+def clamp_pet_top_left(x: int, y: int, window_width: int,
+                       window_height: int, anchor_y_px: int,
+                       area: WorkArea) -> tuple[int, int]:
+    """Keep the pet above the taskbar while letting its feet touch its top edge.
+
+    The transparent window may extend below the work area by the unused pixels
+    beneath the sprite's foot anchor. Other desktop windows should continue to
+    use :func:`clamp_window_top_left`.
+    """
+    max_x = area.right - max(1, int(window_width))
+    anchor_offset = max(0, min(int(window_height), int(anchor_y_px)))
+    max_y = area.bottom - anchor_offset
+    return (max(area.left, min(int(x), max_x)),
+            max(area.top, min(int(y), max_y)))
+
+
 def desktop_depth(center_y: int, area: WorkArea) -> float:
     """Map the top of a work area to far (1) and the bottom to near (0)."""
     if area.height <= 1:
@@ -39,9 +55,21 @@ def desktop_depth(center_y: int, area: WorkArea) -> float:
     return max(0.0, min(1.0, 1.0 - fraction))
 
 
+def desktop_depth_from_anchor(anchor_y: int, anchor_offset: int,
+                              area: WorkArea) -> float:
+    """Map the sprite's foot position from the top of a screen to its floor."""
+    far_y = area.top + max(0, int(anchor_offset))
+    near_y = area.bottom
+    if near_y <= far_y:
+        return 0.0
+    fraction = (int(anchor_y) - far_y) / (near_y - far_y)
+    return max(0.0, min(1.0, 1.0 - fraction))
+
+
 def choose_work_area_target(areas: list[WorkArea], current: tuple[int, int],
                             window_size: tuple[int, int], rng: random.Random,
-                            *, far: bool | None = None) -> tuple[int, int, int]:
+                            *, far: bool | None = None,
+                            ground_offset: int = 0) -> tuple[int, int, int]:
     """Choose a valid top-left point and return the chosen monitor index."""
     if not areas:
         raise ValueError("at least one work area is required")
@@ -49,15 +77,25 @@ def choose_work_area_target(areas: list[WorkArea], current: tuple[int, int],
     index = rng.randrange(len(areas))
     area = areas[index]
     x = rng.randint(area.left, max(area.left, area.right - width))
+    top_min = area.top
+    top_max = max(top_min, area.bottom - max(0, int(ground_offset)))
+    vertical_span = top_max - top_min
     if far is True:
-        y = round(area.top + area.height * rng.uniform(0.10, 0.32))
+        y = round(top_min + vertical_span * rng.uniform(0.02, 0.15))
     elif far is False:
-        y = round(area.top + area.height * rng.uniform(0.62, 0.86))
+        y = round(top_min + vertical_span * rng.uniform(0.88, 0.98))
     else:
-        y = round(area.top + area.height * rng.uniform(0.16, 0.80))
-    x, y = clamp_window_top_left(x, y, width, height, area)
+        y = round(top_min + vertical_span * rng.uniform(0.16, 0.80))
+    if ground_offset:
+        x, y = clamp_pet_top_left(x, y, width, height, ground_offset, area)
+    else:
+        x, y = clamp_window_top_left(x, y, width, height, area)
     if math.hypot(x - current[0], y - current[1]) < 90 and len(areas) == 1:
-        x, y = clamp_window_top_left(x + 120, y + 45, width, height, area)
+        if ground_offset:
+            x, y = clamp_pet_top_left(x + 120, y + 45, width, height,
+                                      ground_offset, area)
+        else:
+            x, y = clamp_window_top_left(x + 120, y + 45, width, height, area)
     return index, x, y
 
 
@@ -120,4 +158,5 @@ class DesktopBehaviorSelector:
 
 
 __all__ = ["DesktopBehaviorSelector", "WorkArea", "choose_work_area_target",
-           "clamp_window_top_left", "desktop_depth"]
+           "clamp_pet_top_left", "clamp_window_top_left", "desktop_depth",
+           "desktop_depth_from_anchor"]

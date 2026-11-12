@@ -21,6 +21,7 @@ from .pet_motion import MotionFrame, PetMotionController
 
 
 ASSET_DIR = Path(__file__).resolve().parents[1] / "assets" / "pixel"
+PET_SPRITE_DIR = Path(__file__).resolve().parents[1] / "assets" / "pet"
 FONT_PATH = (Path(__file__).resolve().parents[1] / "assets" / "fonts"
              / "silkscreen" / "Silkscreen-Bold.ttf")
 
@@ -41,6 +42,7 @@ class PixelPetWidget(QWidget):
                  depth_config: dict[str, object] | None = None,
                  day_cycle_config: dict[str, object] | None = None,
                  weather_config: dict[str, object] | None = None,
+                 sprite_scale: float = 4.0,
                  parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.compact = bool(compact)
@@ -66,6 +68,13 @@ class PixelPetWidget(QWidget):
         self._manifest = json.loads((ASSET_DIR / "animations.json").read_text(
             encoding="utf-8"))
         self._sheets: dict[str, QImage] = {}
+        from .sprite_adapter import SpriteAdapter
+
+        self._sprite_adapter = SpriteAdapter(PET_SPRITE_DIR)
+        self._sprite_mapping = json.loads(
+            (PET_SPRITE_DIR / "sprite_mapping.json").read_text(encoding="utf-8"))
+        self.sprite_scale = SpriteAdapter.normalize_scale(sprite_scale)
+        self._sheets[self._sprite_adapter.sheet_name] = self._sprite_adapter.sheet
         for animation in self._manifest["animations"].values():
             name = animation["sheet"]
             if name not in self._sheets:
@@ -86,10 +95,11 @@ class PixelPetWidget(QWidget):
         self._drag_tracker = AffectionDragTracker(affection_drag_min_s)
         self._motion_blocked = False
         self._world_travel_action: str | None = None
-        self._world_depth = 0.0
+        self._world_depth: float | None = None
         self._world_direction = 1
         self._world_stride_phase = 0.0
         self._behavior_action: str | None = None
+        self._last_sprite_motion_action = "idle"
         self._audio_microphone_enabled = False
         self._audio_loopback_enabled = False
         self._audio_voice_active = False
@@ -162,7 +172,7 @@ class PixelPetWidget(QWidget):
             self.update()
         return accepted
 
-    def set_world_travel(self, action: str | None, *, depth: float = 0.0,
+    def set_world_travel(self, action: str | None, *, depth: float | None = None,
                          direction: int = 1,
                          stride_delta_px: float = 0.0) -> None:
         """Animate the bird in-place while its transparent window moves on desktop."""
@@ -170,7 +180,8 @@ class PixelPetWidget(QWidget):
         if action not in {None, "walk", "run", "away", "return", "fly"}:
             action = None
         self._world_travel_action = action
-        self._world_depth = max(0.0, min(1.0, float(depth)))
+        if depth is not None:
+            self._world_depth = max(0.0, min(1.0, float(depth)))
         self._world_direction = -1 if direction < 0 else 1
         if action is not None:
             self._world_stride_phase += max(0.0, float(stride_delta_px)) * 8.0 / 24.0
@@ -184,6 +195,11 @@ class PixelPetWidget(QWidget):
                           "peek", "dance_sway", "dance_hop", "dance_head"}:
             action = None
         self._behavior_action = action
+        self.update()
+
+    def set_sprite_override(self, animation_name: str | None) -> None:
+        """Show a temporary atlas animation over the current mapped state."""
+        self._sprite_adapter.set_override(animation_name, time.monotonic())
         self.update()
 
     def set_audio_status(self, *, microphone_enabled: bool = False,
@@ -285,79 +301,141 @@ class PixelPetWidget(QWidget):
             elif self._world_travel_action == "return":
                 view = "front"
             else:
-                view = "back" if self._world_depth > 0.78 else "profile"
+                view = ("back" if self._world_depth is not None
+                        and self._world_depth > 0.78 else "profile")
             minimum = 20 if self.depth_min_scale <= (20 / 48) + 0.01 else 32
             far_threshold = 1.0 - self.depth_far_fraction
-            lod = (minimum if self._world_depth >= far_threshold else
-                   32 if self._world_depth > 0.43 else 48)
+            world_depth = self._world_depth or 0.0
+            lod = (minimum if world_depth >= far_threshold else
+                   32 if world_depth > 0.43 else 48)
             motion = replace(motion, action=self._world_travel_action,
-                             view=view, depth=self._world_depth,
+                             view=view, depth=world_depth,
                              lod_size=lod, facing=self._world_direction,
                              stride_phase=self._world_stride_phase)
+        elif self.mode == "pet" and self._world_depth is not None:
+            far_threshold = 1.0 - self.depth_far_fraction
+            view = "back" if self._world_depth >= far_threshold else motion.view
+            if self._world_depth >= far_threshold:
+                lod = 20 if self.depth_min_scale <= (20 / 48) + 0.01 else 32
+            else:
+                lod = 32 if self._world_depth > 0.43 else 48
+            motion = replace(motion, view=view, depth=self._world_depth,
+                             lod_size=lod)
         elif self._behavior_action is not None:
             motion = replace(motion, action=self._behavior_action)
         scene_depth = motion.depth
         if (self.mode != "pet" and not self._motion_blocked
                 and not self.motion.moving and now >= self._next_idle_action):
             self._schedule_mood_motion(state, now)
-        if self.mode == "pet" and not self.depth_in_pet_mode:
+        if (self.mode == "pet" and not self.depth_in_pet_mode
+                and self._world_travel_action is None
+                and self._world_depth is None):
             motion = replace(motion, depth=0.0, lod_size=48)
-        group, index, use_lod = self._select_pose(state, motion, now)
-        source_sheet, source_rect = self._source_rect(group, index, use_lod,
-                                                      motion)
-        if source_rect is None:
-            self.rendered_frames += 1
-            return
-
-        art_scale = scale
-        native_width, native_height = source_rect.width(), source_rect.height()
-        dest_width, dest_height = native_width * art_scale, native_height * art_scale
-        pivot = self._current_frame_entry.get(
-            "pivot", [native_width // 2, native_height])
-        pivot_x, pivot_y = map(int, pivot)
-        anchor_x = round(bounds.left() + motion.x * bounds.width())
-        x = anchor_x - pivot_x * art_scale
-        ground_y = (bounds.bottom() - 3 - 4 * art_scale if self.mode == "pet"
-                    else round(bounds.top() + bounds.height() * 0.83))
-        bob = round(math.sin(now * 1.7) * (0 if motion.action != "idle" else 1))
-        depth_lift = (motion.depth * 26.0 if self.mode != "pet"
-                      or self.depth_in_pet_mode else
-                      min(scene_depth, 0.6) * 26.0
-                      if motion.action == "away" else 0.0)
-        stress_wobble = (round(math.sin(now * 42.0) * min(2.0, state.stress * 2.0))
-                         if state.stress >= 0.62 else 0)
-        x += stress_wobble * art_scale
-        y = round(ground_y - pivot_y * art_scale - motion.height * dest_height
-                  - depth_lift + bob)
-        destination = QRect(x, y, dest_width, dest_height)
         previous_mask_key = self._mask_geometry_key
-        self._current_source = (source_sheet, source_rect)
-        self._current_destination = destination
-        is_run_group = group.startswith("corrida_")
-        self._current_mirror = motion.facing < 0 and is_run_group
+        if self.mode == "pet":
+            if (self._last_sprite_motion_action in {"jump", "fly"}
+                    and motion.action == "idle"):
+                self._sprite_adapter.set_override("land", now)
+            self._last_sprite_motion_action = motion.action
+            art_scale = self._pet_sprite_scale(bounds, motion)
+            animation_name = self._mapped_pet_animation(state, motion)
+            self._sprite_adapter.flip(False)  # *_left rows are already mirrored.
+            window_scale = min(self.sprite_scale,
+                               math.floor(min(bounds.width(), bounds.height())
+                                          / 48.0 * 2.0) / 2.0)
+            anchor = (bounds.left() + bounds.width() // 2,
+                      bounds.top() + round(self._sprite_adapter.anchor_y
+                                           * max(0.5, window_scale)))
+            beat_frame = None
+            if (self._audio_music_active
+                    and self._behavior_action in {"dance_sway", "dance_hop",
+                                                  "dance_head"}):
+                beat_frame = int(self._audio_beat_phase * int(
+                    self._sprite_adapter.animations[animation_name]["frames"]))
+            self._sprite_adapter.flip(False)  # Left-facing frames are pre-mirrored.
+            frame = self._sprite_adapter.draw(
+                painter, anchor, art_scale, now, animation_name,
+                fallback=str(self._sprite_mapping.get(
+                    "non_loop_fallback", "idle")),
+                frame_index_override=beat_frame)
+            destination = frame.destination
+            source_sheet, source_rect = self._sprite_adapter.sheet_name, frame.source
+            group = frame.animation
+            self._current_source = (source_sheet, source_rect)
+            self._current_destination = destination
+            self._current_mirror = frame.flipped
+            self._current_frame_entry = {
+                "animation": group,
+                "frame_index": frame.index,
+                "label_key": f"{group}_{frame.index}",
+                "view": {"back": "costas", "front": "frente"}.get(
+                    motion.view, "perfil"),
+                "row": int(self._sprite_adapter.animations[group]["row"]),
+                "rect": [source_rect.x(), source_rect.y(),
+                         source_rect.width(), source_rect.height()],
+                "pivot": [self._sprite_adapter.anchor_x,
+                          self._sprite_adapter.anchor_y],
+                "native_size": self._sprite_adapter.frame_width,
+            }
+        else:
+            animation_name = self._mapped_pet_animation(state, motion)
+            art_scale = self._pet_sprite_scale(bounds, motion)
+            if self.mode == "pet":
+                window_scale = min(self.sprite_scale,
+                                   math.floor(min(bounds.width(), bounds.height())
+                                              / 48.0 * 2.0) / 2.0)
+                anchor = (bounds.left() + bounds.width() // 2,
+                          bounds.top() + round(self._sprite_adapter.anchor_y
+                                               * max(0.5, window_scale)))
+            else:
+                anchor_x = round(bounds.left() + motion.x * bounds.width())
+                ground_y = round(bounds.top() + bounds.height() * 0.815)
+                bob = round(math.sin(now * 1.7)
+                            * (0 if motion.action != "idle" else 1))
+                depth_lift = motion.depth * 26.0
+                height_lift = motion.height * 48.0 * art_scale
+                stress_wobble = (
+                    round(math.sin(now * 42.0) * min(2.0, state.stress * 2.0))
+                    if state.stress >= 0.62 else 0)
+                anchor = (round(anchor_x + stress_wobble * art_scale),
+                          round(ground_y - depth_lift - height_lift + bob))
+            beat_frame = None
+            if (self._audio_music_active
+                    and self._behavior_action in {"dance_sway", "dance_hop",
+                                                  "dance_head"}):
+                beat_frame = int(self._audio_beat_phase * int(
+                    self._sprite_adapter.animations[animation_name]["frames"]))
+            frame = self._sprite_adapter.draw(
+                painter, anchor, art_scale, now, animation_name,
+                fallback=str(self._sprite_mapping.get("non_loop_fallback", "idle")),
+                frame_index_override=beat_frame)
+            destination = frame.destination
+            source_sheet, source_rect, group = (
+                self._sprite_adapter.sheet_name, frame.source, frame.animation)
+            self._current_source = (source_sheet, source_rect)
+            self._current_destination = destination
+            self._current_mirror = frame.flipped
+            self._current_frame_entry = {
+                "animation": group,
+                "frame_index": frame.index,
+                "label_key": f"{group}_{frame.index}",
+                "view": {"back": "costas", "front": "frente"}.get(
+                    motion.view, "perfil"),
+                "row": int(self._sprite_adapter.animations[group]["row"]),
+                "rect": [source_rect.x(), source_rect.y(),
+                         source_rect.width(), source_rect.height()],
+                "pivot": [self._sprite_adapter.anchor_x,
+                          self._sprite_adapter.anchor_y],
+                "native_size": self._sprite_adapter.frame_width,
+            }
+            if self.mode != "pet":
+                self._draw_shadow(painter, destination, motion, local_time)
+
         self._mask_geometry_key = (
             source_sheet, source_rect.x(), source_rect.y(),
             source_rect.width(), source_rect.height(),
             destination.x(), destination.y(), destination.width(),
             destination.height(), self._current_mirror)
-
-        if self.mode != "pet":
-            self._draw_shadow(painter, destination, motion, local_time)
-        painter.save()
-        if self._current_mirror:
-            painter.translate(destination.left() * 2 + destination.width(), 0)
-            painter.scale(-1.0, 1.0)
-            draw_rect = destination
-        else:
-            draw_rect = destination
-        painter.drawImage(draw_rect, self._sheets[source_sheet], source_rect)
-        painter.restore()
-        if self._current_mirror and group == "corrida_lateral":
-            for px, py, color in ((20, 18, "#ffd93b"), (23, 19, "#ffd93b"),
-                                  (8, 19, "#fff3a0"), (11, 18, "#ffffff")):
-                painter.fillRect(destination.left() + px * art_scale,
-                                 destination.top() + py * art_scale,
-                                 art_scale, art_scale, QColor(color))
         if self.mode == "pet":
             self._draw_pet_tint(painter, destination, local_time)
         self._draw_snn_sparks(painter, destination, state, now)
@@ -372,11 +450,73 @@ class PixelPetWidget(QWidget):
             self.spriteMaskChanged.emit()
         self.rendered_frames += 1
 
+    def _pet_sprite_scale(self, bounds: QRect, motion: MotionFrame) -> float:
+        if self.mode == "pet":
+            use_depth = (self.depth_in_pet_mode or self._world_depth is not None
+                         or self._world_travel_action is not None)
+            base_scale = self.sprite_scale
+        else:
+            use_depth = True
+            base_scale = float(self._draw_scale(bounds))
+        depth = motion.depth if use_depth else 0.0
+        depth_scale = 1.0 - max(0.0, min(1.0, depth)) * (1.0 - self.depth_min_scale)
+        requested = base_scale * depth_scale
+        available = max(0.5, min(bounds.width(), bounds.height()) / 48.0)
+        # Round down at a half-step when the configured window is smaller.
+        maximum = max(0.5, math.floor(available * 2.0) / 2.0)
+        return min(self._sprite_adapter.normalize_scale(requested), maximum)
+
+    def _mapped_pet_animation(self, state: VisualState,
+                              motion: MotionFrame) -> str:
+        """Translate existing UI/SNN labels to names in the new sprite atlas."""
+        actions = self._sprite_mapping.get("actions", {})
+        action = self._behavior_action or motion.action
+        if action in {"walk", "run"}:
+            if motion.view == "back":
+                return str(actions[action]["back"])
+            if motion.view == "front":
+                return str(actions[action]["front"])
+            side = str(actions[action]["side"])
+            return f"{side}_left" if motion.facing < 0 else side
+        if action in {"away", "return"}:
+            return str(actions[action])
+        if action in {"jump", "fly"}:
+            phases = actions.get("jump", {})
+            if motion.progress < 0.24:
+                return str(phases.get("rise", "rise"))
+            if motion.progress < 0.58:
+                key = "apex_front" if motion.view == "front" else "apex_side"
+                name = str(phases.get(key, "jump_front"))
+                return f"{name}_left" if key == "apex_side" and motion.facing < 0 else name
+            if motion.progress < 0.88:
+                return str(phases.get("fall", "fall"))
+            return str(phases.get("land", "land"))
+        if action in actions:
+            mapped = actions[action]
+            if isinstance(mapped, dict):
+                mapped = mapped.get(motion.view, mapped.get("side", "idle"))
+            return str(mapped)
+        if motion.view == "back":
+            return str(self._sprite_mapping.get("views", {}).get(
+                "back", "idle_back"))
+
+        emotion = str(state.expression_override or state.emotion).strip().lower()
+        if emotion in {"bicando", "peck"}:
+            gaze_x, _gaze_y = self._gaze_target
+            if (self._pointer_over and gaze_x < 0.5) or motion.facing < 0:
+                return "peck_left"
+        if emotion == "curioso" and self._pointer_over:
+            gaze_x, _gaze_y = self._gaze_target
+            if gaze_x < 0.38:
+                return "look_side_left"
+            if gaze_x > 0.62:
+                return "look_side"
+        return str(self._sprite_mapping.get("emotions", {}).get(
+            emotion, self._sprite_mapping.get("default_animation", "idle")))
+
     def _draw_scale(self, bounds: QRect) -> int:
         if self.mode == "pet":
-            # A 48 px source sprite fills about three quarters of the floating
-            # window while leaving transparent breathing room around it.
-            return max(2, min(8, round(bounds.height() * 0.75 / 48)))
+            return max(1, min(8, round(self.sprite_scale)))
         # Keep the actor between 15% and 25% of the scene height. The half-size
         # render buffer is nearest-neighbour enlarged, so this integer factor
         # retains crisp pixels without oversized panel sprites.
@@ -452,6 +592,16 @@ class PixelPetWidget(QWidget):
                 firefly = QColor("#d7e990" if index % 2 else "#a5ded1")
                 firefly.setAlpha(alpha)
                 painter.fillRect(fx, fy, 3, 3, firefly)
+            # Slow water glints add a quiet moving point of light near the bank.
+            stream_y = bounds.top() + int(h * 0.775)
+            for index in range(3):
+                span = max(1, int(w * 0.16))
+                shimmer_x = bounds.left() + int(w * 0.58) + int(
+                    (now * (8 + index * 2) + index * span / 3) % span)
+                shimmer = QColor("#b8e9d5" if index % 2 else "#d7efb5")
+                shimmer.setAlpha(round(95 * night_weight))
+                painter.fillRect(shimmer_x, stream_y + 1 + index % 3,
+                                 5 + index % 2, 1, shimmer)
         elif period_name(local_time, self.day_cycle_config) in {"manha", "tarde"}:
             for index in range(3):
                 phase = now * 1.8 + index * 2.1
@@ -500,6 +650,26 @@ class PixelPetWidget(QWidget):
             QPoint(int(w * 0.36), int(h * 0.73)), QPoint(int(w * 0.58), int(h * 0.66)),
             QPoint(int(w * 0.78), int(h * 0.74)), QPoint(w, int(h * 0.68)),
             QPoint(w, int(h * 0.80)), QPoint(0, int(h * 0.80))])
+        ridge_light = QColor("#7892aa" if night else "#a4c39c")
+        ridge_light.setAlpha(60)
+        painter.setPen(QPen(ridge_light, 2))
+        painter.drawPolyline([
+            QPoint(0, int(h * 0.75)), QPoint(int(w * 0.19), int(h * 0.68)),
+            QPoint(int(w * 0.36), int(h * 0.73)),
+            QPoint(int(w * 0.58), int(h * 0.66)),
+            QPoint(int(w * 0.78), int(h * 0.74)), QPoint(w, int(h * 0.68))])
+        painter.setPen(Qt.PenStyle.NoPen)
+        # A winding pale path links the distant cottage to the foreground.
+        path_color = QColor("#75839a" if night else "#d4b989")
+        path_color.setAlpha(85)
+        painter.setBrush(path_color)
+        painter.drawPolygon([
+            QPoint(int(w * 0.71), int(h * 0.77)),
+            QPoint(int(w * 0.75), int(h * 0.77)),
+            QPoint(int(w * 0.66), int(h * 0.88)),
+            QPoint(int(w * 0.70), h), QPoint(int(w * 0.57), h),
+            QPoint(int(w * 0.60), int(h * 0.89))])
+        painter.setPen(Qt.PenStyle.NoPen)
         # Distant cottage with a warm pixel window.
         house_x, house_y = int(w * 0.70), int(h * 0.59)
         painter.fillRect(house_x, house_y + 12, 34, 25, QColor("#b99877"))
@@ -510,6 +680,12 @@ class PixelPetWidget(QWidget):
         painter.fillRect(house_x + 7, house_y + 20, 7, 8,
                          QColor("#ffe5a1" if night else "#87c7d0"))
         painter.fillRect(house_x + 22, house_y + 20, 7, 17, QColor("#694b48"))
+        painter.fillRect(house_x + 3, house_y + 4, 6, 12,
+                         QColor("#594d59" if night else "#765452"))
+        painter.fillRect(house_x + 24, house_y + 22, 3, 5,
+                         QColor("#fff0b4" if night else "#bce9e2"))
+        painter.fillRect(house_x + 3, house_y + 14, 28, 2,
+                         QColor("#dbc39a"))
         # Layered tree silhouettes frame the view.
         for tx, ty, size in ((int(w * 0.12), int(h * 0.64), 1.0),
                              (int(w * 0.88), int(h * 0.61), 0.82)):
@@ -539,10 +715,16 @@ class PixelPetWidget(QWidget):
         for fx in (int(w * 0.37), int(w * 0.42), int(w * 0.49), int(w * 0.53)):
             painter.fillRect(fx, fence_y, 3, 23, QColor("#a18567"))
         stream_y = int(h * 0.775)
-        painter.fillRect(int(w * 0.57), stream_y, int(w * 0.18), 6,
+        stream_x, stream_width = int(w * 0.57), int(w * 0.18)
+        painter.fillRect(stream_x - 3, stream_y - 2, stream_width + 6, 10,
+                         QColor("#3e625f" if night else "#79916d"))
+        painter.fillRect(stream_x, stream_y, stream_width, 6,
                          QColor("#578fa0" if night else "#76c9d2"))
-        painter.fillRect(int(w * 0.60), stream_y + 1, int(w * 0.09), 2,
-                         QColor("#b6e7dc"))
+        painter.fillRect(stream_x + int(stream_width * 0.12), stream_y + 1,
+                         int(stream_width * 0.35), 2, QColor("#b6e7dc"))
+        painter.fillRect(stream_x + int(stream_width * 0.66), stream_y + 3,
+                         int(stream_width * 0.22), 1,
+                         QColor("#a3dbe0" if night else "#e2ffff"))
         for fx, flower in ((int(w * 0.08), "#f7cb81"),
                            (int(w * 0.61), "#ef9eaa"),
                            (int(w * 0.82), "#e5d889")):
@@ -556,6 +738,17 @@ class PixelPetWidget(QWidget):
             painter.fillRect(fx, int(h * 0.91), 3, 7, QColor("#2f604c"))
             painter.fillRect(fx - 3, int(h * 0.90), 9, 3, QColor("#f7cb81"))
             painter.fillRect(fx - 1, int(h * 0.895), 4, 4, QColor("#fff0bd"))
+        # Small grass tufts and stepping stones make the foreground feel lived in.
+        for gx, gy in ((0.22, 0.88), (0.31, 0.94), (0.77, 0.87), (0.86, 0.94)):
+            x, y = int(w * gx), int(h * gy)
+            green = QColor("#436f58" if not night else "#385d58")
+            painter.fillRect(x, y, 3, 8, green)
+            painter.fillRect(x - 3, y + 3, 3, 3, green)
+            painter.fillRect(x + 3, y + 1, 3, 4, green)
+        stone = QColor("#8a91a0" if night else "#c9b89c")
+        stone.setAlpha(115)
+        for sx, sy, sw in ((0.61, 0.88, 11), (0.66, 0.91, 14), (0.72, 0.94, 9)):
+            painter.fillRect(int(w * sx), int(h * sy), sw, 3, stone)
         # A small post-it on the post marks the companion's home without stealing focus.
         post_x, post_y = int(w * 0.91), int(h * 0.55)
         painter.fillRect(post_x, post_y, 5, int(h * 0.25), QColor("#76563e"))

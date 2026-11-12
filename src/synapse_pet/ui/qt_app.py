@@ -31,8 +31,9 @@ from ..sensors.audio_service import AudioMonitorService
 from ..sensors.window_geometry import WindowGeometryObserver
 from .day_cycle import activity_factor, period_name
 from .desktop_motion import (DesktopBehaviorSelector, WorkArea,
-                             choose_work_area_target, clamp_window_top_left,
-                             desktop_depth)
+                             choose_work_area_target, clamp_pet_top_left,
+                             desktop_depth_from_anchor)
+from .desktop_surfaces import detect_visual_platform
 from .teleport import STYLES as TELEPORT_STYLES, TeleportTrail, teleport_geometry
 from .gl_renderer import EyeCanvas
 from .postit import PostItWindow
@@ -424,8 +425,14 @@ class PetWindow(QMainWindow):
         self._postit_windows: dict[int, PostItWindow] = {}
         self._pet_mode_enabled = str(self.pet_config.get("mode", "window")).lower() == "floating"
         self._is_floating = False
-        self._pet_width = max(180, int(self.pet_config.get("width", 320)))
-        self._pet_height = max(104, int(self.pet_config.get("height", 180)))
+        requested_sprite_scale = float(self.pet_config.get("sprite_scale", 4.0))
+        self._sprite_scale = max(0.5, min(8.0,
+                                          round(requested_sprite_scale * 2) / 2))
+        if self._pixel_theme:
+            self._pet_width = self._pet_height = round(48 * self._sprite_scale)
+        else:
+            self._pet_width = max(180, int(self.pet_config.get("width", 320)))
+            self._pet_height = max(104, int(self.pet_config.get("height", 180)))
         self._pet_drag_offset: QPoint | None = None
         self._pet_drag_origin: QPoint | None = None
         self._pet_drag_started = 0.0
@@ -438,6 +445,10 @@ class PetWindow(QMainWindow):
         self._autostart_enabled = False
         self._requested_exit = False
         self._settings = QSettings("SynapsePet", "Oculus")
+        self._visual_perches_enabled = bool(self._settings.value(
+            "privacy/visual_perches", self.audio_privacy.get(
+                "visual_perches", False), type=bool))
+        self._visual_platform: tuple[int, int, int] | None = None
         self._panel_size = (1000, 790)
         self._pet_animation = None
         self._pet_hover_start_geometry: QRect | None = None
@@ -517,7 +528,8 @@ class PetWindow(QMainWindow):
                 "enabled", pet_config.get("depth_in_pet_mode", False))),
             depth_config=pet_config.get("depth", {}),
             day_cycle_config=self.day_cycle_config,
-            weather_config=self.weather_config)
+            weather_config=self.weather_config,
+            sprite_scale=self._sprite_scale)
         layout.addWidget(self.canvas, 1)
         self.canvas.petRequested.connect(self._give_affection)
         self.canvas.panelRequested.connect(self._show_panel)
@@ -722,6 +734,12 @@ class PetWindow(QMainWindow):
         if not self._window_geometry_enabled:
             self._active_window_geometry = None
         self._poll_window_geometry()
+
+    def _set_visual_perches_enabled(self, enabled: bool) -> None:
+        self._visual_perches_enabled = bool(enabled)
+        self._settings.setValue("privacy/visual_perches", self._visual_perches_enabled)
+        if not self._visual_perches_enabled:
+            self._visual_platform = None
 
     def _update_tray_icon(self) -> None:
         tray_icon = getattr(self, "_tray_icon", None)
@@ -1030,15 +1048,16 @@ class PetWindow(QMainWindow):
                            area.top() + margin)
         elif anchor == "bottom_left":
             point = QPoint(area.left() + margin,
-                           area.bottom() - self.height() - margin)
+                           area.bottom() + 1 - self._pet_anchor_offset_y())
         elif anchor == "bottom_right" or saved_x is None:
             point = QPoint(area.right() - self.width() - margin,
-                           area.bottom() - self.height() - margin)
+                           area.bottom() + 1 - self._pet_anchor_offset_y())
         work = WorkArea(area.left(), area.top(), area.width(), area.height())
-        x, y = clamp_window_top_left(point.x(), point.y(), self.width(),
-                                     self.height(), work)
+        x, y = clamp_pet_top_left(point.x(), point.y(), self.width(),
+                                  self.height(), self._pet_anchor_offset_y(), work)
         point = QPoint(x, y)
         self.move(point)
+        self.canvas.set_world_travel(None, depth=self._pet_depth_at(point))
 
     @staticmethod
     def _screen_work_areas() -> list[WorkArea]:
@@ -1060,18 +1079,92 @@ class PetWindow(QMainWindow):
         area = self._work_area_at(center)
         if area is None:
             return QPoint(point)
-        x, y = clamp_window_top_left(point.x(), point.y(), self.width(),
-                                     self.height(), area)
+        x, y = clamp_pet_top_left(point.x(), point.y(), self.width(),
+                                  self.height(), self._pet_anchor_offset_y(), area)
         return QPoint(x, y)
+
+    def _pet_anchor_offset_y(self) -> int:
+        if self._pixel_theme:
+            return max(0, min(self.height(), round(43 * self._sprite_scale)))
+        return max(0, self.height() - 2)
+
+    def _pet_anchor_global(self, position: QPoint | None = None) -> QPoint:
+        position = self.pos() if position is None else position
+        return QPoint(position.x() + self.width() // 2,
+                      position.y() + self._pet_anchor_offset_y())
+
+    def _pet_depth_at(self, position: QPoint) -> float:
+        anchor = self._pet_anchor_global(position)
+        area = self._work_area_at(anchor)
+        if area is None:
+            return 0.0
+        return desktop_depth_from_anchor(anchor.y(), self._pet_anchor_offset_y(), area)
+
+    def _detect_visual_perch(self) -> tuple[int, int, int] | None:
+        """Inspect a small screen patch at drop time and immediately discard it."""
+        if not self._visual_perches_enabled or not self._is_floating:
+            return None
+        anchor = self._pet_anchor_global()
+        screen = QGuiApplication.screenAt(anchor)
+        if screen is None:
+            return None
+        screen_rect = screen.geometry()
+        capture_rect = QRect(anchor.x() - 160, anchor.y() - 120,
+                             320, 160).intersected(screen_rect)
+        if capture_rect.width() < 48 or capture_rect.height() < 32:
+            return None
+        opacity = self.windowOpacity()
+        pixmap = None
+        try:
+            self.setWindowOpacity(0.0)
+            self.application.processEvents()
+            pixmap = screen.grabWindow(
+                0, capture_rect.x() - screen_rect.x(),
+                capture_rect.y() - screen_rect.y(),
+                capture_rect.width(), capture_rect.height())
+        except Exception:
+            return None
+        finally:
+            try:
+                self.setWindowOpacity(opacity)
+            except Exception:
+                pass
+        if pixmap is None or pixmap.isNull():
+            return None
+        image = pixmap.toImage()
+        device_scale = max(1.0, float(pixmap.devicePixelRatio()))
+        try:
+            candidate = detect_visual_platform(
+                image,
+                round((anchor.x() - capture_rect.x()) * device_scale),
+                round((anchor.y() - capture_rect.y()) * device_scale))
+        except Exception:
+            candidate = None
+        image = None
+        pixmap = None
+        if candidate is None:
+            return None
+        foot_half_width = round((10 if self._pixel_theme else 14)
+                                * self._sprite_scale)
+        left_anchor = (capture_rect.left()
+                       + round(candidate.left / device_scale) + foot_half_width)
+        right_anchor = (capture_rect.left()
+                        + round(candidate.right / device_scale) - foot_half_width)
+        min_x = left_anchor - self.width() // 2
+        max_x = right_anchor - self.width() // 2
+        if max_x < min_x:
+            min_x = max_x = self.x()
+        return (min_x, max_x,
+                capture_rect.top() + round(candidate.top / device_scale))
 
     def _sync_world_travel_pose(self) -> None:
         if self._desktop_animation is None:
             return
-        center = self.frameGeometry().center()
-        area = self._work_area_at(center)
+        anchor = self._pet_anchor_global()
+        area = self._work_area_at(anchor)
         if area is None:
             return
-        depth = desktop_depth(center.y(), area)
+        depth = desktop_depth_from_anchor(anchor.y(), self._pet_anchor_offset_y(), area)
         dx = self._desktop_animation.endValue().x() - self._desktop_animation.startValue().x()
         direction = -1 if dx < 0 else 1
         position = self.pos()
@@ -1299,22 +1392,49 @@ class PetWindow(QMainWindow):
                 target_x = self.x() + (self.width() if current.x() < cursor.x()
                                        else -self.width())
                 target_y = self.y()
-            target_x, target_y = clamp_window_top_left(
-                target_x, target_y, self.width(), self.height(), area)
+            target_x, target_y = clamp_pet_top_left(
+                target_x, target_y, self.width(), self.height(),
+                self._pet_anchor_offset_y(), area)
             style = "run" if action == "flee_cursor" else "walk"
             self._start_desktop_travel(target_x, target_y, style,
                                        behavior=action, duration_s=duration)
             return
 
         if action == "wander":
+            if self._visual_platform is not None:
+                platform_left, platform_right, platform_y = self._visual_platform
+                anchor = self._pet_anchor_global()
+                if (platform_left <= self.x() <= platform_right
+                        and abs(anchor.y() - platform_y) <= max(
+                            28, round(self._pet_anchor_offset_y() * 0.12))):
+                    area = self._work_area_at(anchor)
+                    low_x = max(platform_left, area.left if area else platform_left)
+                    high_x = min(platform_right,
+                                 (area.right - self.width()) if area else platform_right)
+                    if high_x > low_x:
+                        target_x = self._desktop_rng.randint(low_x, high_x)
+                        target_y = platform_y - self._pet_anchor_offset_y()
+                        target = self._clamp_pet_position(QPoint(target_x, target_y))
+                        if math.hypot(target.x() - self.x(),
+                                      target.y() - self.y()) >= 70:
+                            self._start_desktop_travel(
+                                target.x(), target.y(), "run",
+                                behavior=action, duration_s=2.5)
+                            return
             far = (True if self._desktop_rng.random() < 0.18 else
                    False if self._desktop_rng.random() < 0.22 else None)
             index, x, y = choose_work_area_target(
                 areas, (self.x(), self.y()), (self.width(), self.height()),
-                self._desktop_rng, far=far)
+                self._desktop_rng, far=far,
+                ground_offset=self._pet_anchor_offset_y())
             target_area = areas[index]
-            current_depth = desktop_depth(current.y(), self._work_area_at(current) or target_area)
-            target_depth = desktop_depth(y + self.height() // 2, target_area)
+            current_anchor = self._pet_anchor_global()
+            current_depth = desktop_depth_from_anchor(
+                current_anchor.y(), self._pet_anchor_offset_y(),
+                self._work_area_at(current_anchor) or target_area)
+            target_depth = desktop_depth_from_anchor(
+                y + self._pet_anchor_offset_y(), self._pet_anchor_offset_y(),
+                target_area)
             style = ("away" if target_depth > current_depth + 0.14 else
                      "return" if target_depth < current_depth - 0.14 else "walk")
             self._start_desktop_travel(x, y, style, behavior=action,
@@ -1362,6 +1482,12 @@ class PetWindow(QMainWindow):
                         (point - self._pet_drag_origin).manhattanLength()
                         >= QApplication.startDragDistance())
                 self.move(self._clamp_pet_position(point - self._pet_drag_offset))
+                self.canvas.set_world_travel(
+                    None, depth=self._pet_depth_at(self.pos()))
+                if self._pet_drag_moved:
+                    drag_animation = ("drag" if self.last_state.stress >= 0.62
+                                      else "drag_calm")
+                    self.canvas.set_sprite_override(drag_animation)
                 if (self._pet_drag_moved and not self._pet_drag_rewarded
                         and time.monotonic() - self._pet_drag_started >= float(
                             self.interaction_config.get("affection_drag_min_s", 1.0))):
@@ -1375,12 +1501,21 @@ class PetWindow(QMainWindow):
                 else:
                     self._pet_last_click_at = 0.0
                     self._pet_last_click_position = None
+                    self._visual_platform = self._detect_visual_perch()
+                    if self._visual_platform is not None:
+                        _left, _right, floor_y = self._visual_platform
+                        target = self._clamp_pet_position(QPoint(
+                            self.x(), floor_y - self._pet_anchor_offset_y()))
+                        self.move(target)
                 self._settings.setValue("pet/x", self.x())
                 self._settings.setValue("pet/y", self.y())
                 self._pet_drag_offset = None
                 self._pet_drag_origin = None
                 self._pet_drag_moved = False
                 self._pet_drag_rewarded = False
+                self.canvas.set_sprite_override(None)
+                self.canvas.set_world_travel(
+                    None, depth=self._pet_depth_at(self.pos()))
         return super().eventFilter(watched, event)
 
     def _show_pet_context_menu(self) -> None:
@@ -1525,6 +1660,10 @@ class PetWindow(QMainWindow):
         if start is None or not self._is_floating:
             return
         t = max(0.0, min(1.0, progress))
+        jump_animation = ("rise" if t < 0.24 else
+                          "jump_front" if t < 0.58 else
+                          "fall" if t < 0.88 else "land")
+        self.canvas.set_sprite_override(jump_animation)
         arc = math.sin(math.pi * t)
         if style == "happy":
             lift = abs(math.sin(math.tau * t)) * amplitude * (1.0 - 0.25 * t)
@@ -1554,6 +1693,7 @@ class PetWindow(QMainWindow):
         self._jump_start_geometry = None
         if start is not None and self._is_floating:
             self.setGeometry(start)
+            self.canvas.set_sprite_override("land")
         animation.deleteLater()
 
     def _stop_jump(self, *, restore_start: bool) -> None:
@@ -1564,6 +1704,7 @@ class PetWindow(QMainWindow):
         if animation is not None:
             animation.stop()
             animation.deleteLater()
+        self.canvas.set_sprite_override(None)
         if restore_start and start is not None and self._is_floating:
             self.setGeometry(start)
 
@@ -1902,6 +2043,15 @@ class PetWindow(QMainWindow):
             "Usa somente o retângulo da janela em foco; nunca lê título, texto ou conteúdo.")
         self.window_geometry_action.toggled.connect(
             self._set_window_geometry_enabled)
+        self.visual_perches_action = self.sensor_menu.addAction(
+            "Pousar em letras/logos (captura local ao soltar)")
+        self.visual_perches_action.setCheckable(True)
+        self.visual_perches_action.setChecked(self._visual_perches_enabled)
+        self.visual_perches_action.setToolTip(
+            "Desligado por padrão. Ao soltar o pet, analisa somente uma área "
+            "pequena da tela para encontrar uma superfície visual. Não usa OCR "
+            "nem guarda ou envia a imagem.")
+        self.visual_perches_action.toggled.connect(self._set_visual_perches_enabled)
         self.sensor_menu.addSeparator()
         self.audio_actions = {}
         labels = {

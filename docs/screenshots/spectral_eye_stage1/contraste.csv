@@ -1,0 +1,109 @@
+﻿fundo,estado,altura_px,silhueta_fundo_min,pupila_iris,reflexo_esclera
+preto,neutro,48,16.175598337177195,4.66,12.99
+preto,neutro,64,16.175598337177195,4.66,12.99
+preto,neutro,96,16.175598337177195,4.66,12.99
+preto,neutro,128,16.175598337177195,4.66,12.99
+preto,neutro,192,16.175598337177195,4.66,12.99
+preto,neutro,256,16.175598337177195,4.66,12.99
+preto,feliz,48,16.175598337177195,4.66,12.99
+preto,feliz,64,16.175598337177195,4.66,12.99
+preto,feliz,96,16.175598337177195,4.66,12.99
+preto,feliz,128,16.175598337177195,4.66,12.99
+preto,feliz,192,16.175598337177195,4.66,12.99
+preto,feliz,256,16.175598337177195,4.66,12.99
+preto,dormindo,48,16.175598337177195,N/A (olho fechado),N/A (olho fechado)
+preto,dormindo,64,16.175598337177195,N/A (olho fechado),N/A (olho fechado)
+preto,dormindo,96,16.175598337177195,N/A (olho fechado),N/A (olho fechado)
+preto,dormindo,128,16.175598337177195,N/A (olho fechado),N/A (olho fechado)
+preto,dormindo,192,16.175598337177195,N/A (olho fechado),N/A (olho fechado)
+preto,dormindo,256,16.175598337177195,N/A (olho fechado),N/A (olho fechado)
+branco,neutro,48,13.388000010388076,4.66,1.05
+branco,neutro,64,13.388000010388076,4.66,1.05
+branco,neutro,96,13.388000010388076,4.66,1.05
+branco,neutro,128,13.388000010388076,4.66,1.05
+branco,neutro,192,13.388000010388076,4.66,1.05
+branco,neutro,256,13.388000010388076,4.66,1.05
+branco,feliz,48,13.388000010388076,4.66,1.05
+branco,feliz,64,13.388000010388076,4.66,1.05
+branco,feliz,96,13.388000010388076,4.66,1.05
+branco,feliz,128,13.388000010388076,4.66,1.05
+branco,feliz,192,13.388000010388076,4.66,1.05
+branco,feliz,256,13.388000010388076,4.66,1.05
+branco,dormindo,48,13.388000010388076,N/A (olho fechado),N/A (olho fechado)
+branco,dormindo,64,13.388000010388076,N/A (olho fechado),N/A (olho fechado)
+branco,dormindo,96,13.388000010388076,N/A (olho fechado),N/A (olho fechado)
+branco,dormindo,128,13.388000010388076,N/A (olho fechado),N/A (olho fechado)
+branco,dormindo,192,13.388000010388076,N/A (olho fechado),N/A (olho fechado)
+branco,dormindo,256,13.388000010388076,N/A (olho fechado),N/A (olho fechado)
+cinza,neutro,48,3.952277507461523,4.66,2.90
+cinza,neutro,64,3.952277507461523,4.66,2.90
+cinza,neutro,96,3.952277507461523,4.66,2.90
+cinza,neutro,128,3.952277507461523,4.66,2.90
+cinza,neutro,192,3.952277507461523,4.66,2.90
+cinza,neutro,256,3.952277507461523,4.66,2.90
+cinza,feliz,48,3.952277507461523,4.66,2.90
+cinza,feliz,64,3.952277507461523,4.66,2.90
+cinza,feliz,96,3.952277507461523,4.66,2.90
+cinza,feliz,128,3.952277507461523,4.66,2.90
+cinza,feliz,192,3.952277507461523,4.66,2.90
+cinza,feliz,256,3.952277507461523,4.66,2.90
+cinza,dormindo,48,3.952277507461523,N/A (olho fechado),N/A (olho fechado)
+cinza,dormindo,64,3.952277507461523,N/A (olho fechado),N/A (olho fechado)
+cinza,dormindo,96,3.952277507461523,N/A (olho fechado),N/A (olho fechado)
+cinza,dormindo,128,3.952277507461523,N/A (olho fechado),N/A (olho fechado)
+cinza,dormindo,192,3.952277507461523,N/A (olho fechado),N/A (olho fechado)
+cinza,dormindo,256,3.952277507461523,N/A (olho fechado),N/A (olho fechado)
+azul_escuro,neutro,48,14.555697255403146,4.66,10.51
+azul_escuro,neutro,64,14.555697255403146,4.66,10.51
+azul_escuro,neutro,96,14.555697255403146,4.66,10.51
+azul_escuro,neutro,128,14.555697255403146,4.66,10.51
+azul_escuro,neutro,192,14.555697255403146,4.66,10.51
+azul_escuro,neutro,256,14.555697255403146,4.66,10.51
+azul_escuro,feliz,48,14.555697255403146,4.66,10.51
+azul_escuro,feliz,64,14.555697255403146,4.66,10.51
+azul_escuro,feliz,96,14.555697255403146,4.66,10.51
+azul_escuro,feliz,128,14.555697255403146,4.66,10.51
+azul_escuro,feliz,192,14.555697255403146,4.66,10.51
+azul_escuro,feliz,256,14.555697255403146,4.66,10.51
+azul_escuro,dormindo,48,14.555697255403146,N/A (olho fechado),N/A (olho fechado)
+azul_escuro,dormindo,64,14.555697255403146,N/A (olho fechado),N/A (olho fechado)
+azul_escuro,dormindo,96,14.555697255403146,N/A (olho fechado),N/A (olho fechado)
+azul_escuro,dormindo,128,14.555697255403146,N/A (olho fechado),N/A (olho fechado)
+azul_escuro,dormindo,192,14.555697255403146,N/A (olho fechado),N/A (olho fechado)
+azul_escuro,dormindo,256,14.555697255403146,N/A (olho fechado),N/A (olho fechado)
+xadrez_ruido,neutro,48,4.546645346253981,4.66,3.85
+xadrez_ruido,neutro,64,4.546645346253981,4.66,5.35
+xadrez_ruido,neutro,96,4.546645346253981,4.66,3.85
+xadrez_ruido,neutro,128,4.61265445356946,4.66,4.99
+xadrez_ruido,neutro,192,4.546645346253981,4.66,1.96
+xadrez_ruido,neutro,256,4.546645346253981,4.66,1.48
+xadrez_ruido,feliz,48,4.546645346253981,4.66,3.85
+xadrez_ruido,feliz,64,4.61265445356946,4.66,5.35
+xadrez_ruido,feliz,96,4.546645346253981,4.66,3.85
+xadrez_ruido,feliz,128,4.546645346253981,4.66,4.99
+xadrez_ruido,feliz,192,4.546645346253981,4.66,1.96
+xadrez_ruido,feliz,256,4.546645346253981,4.66,1.48
+xadrez_ruido,dormindo,48,4.546645346253981,N/A (olho fechado),N/A (olho fechado)
+xadrez_ruido,dormindo,64,4.880589901613158,N/A (olho fechado),N/A (olho fechado)
+xadrez_ruido,dormindo,96,4.61265445356946,N/A (olho fechado),N/A (olho fechado)
+xadrez_ruido,dormindo,128,4.679833211881033,N/A (olho fechado),N/A (olho fechado)
+xadrez_ruido,dormindo,192,4.546645346253981,N/A (olho fechado),N/A (olho fechado)
+xadrez_ruido,dormindo,256,4.546645346253981,N/A (olho fechado),N/A (olho fechado)
+foto,neutro,48,3.6488222606706238,4.66,2.76
+foto,neutro,64,3.6530684030326652,4.66,2.65
+foto,neutro,96,3.6528698157295216,4.66,2.83
+foto,neutro,128,3.6490554310083523,4.66,2.47
+foto,neutro,192,3.6150746018074913,4.66,2.69
+foto,neutro,256,3.660413839209285,4.66,2.71
+foto,feliz,48,4.204721973540249,4.66,2.76
+foto,feliz,64,4.7108644605789864,4.66,2.65
+foto,feliz,96,3.973018705296036,4.66,2.83
+foto,feliz,128,5.304865812370368,4.66,2.47
+foto,feliz,192,4.026790623699334,4.66,2.69
+foto,feliz,256,4.139414509518384,4.66,2.71
+foto,dormindo,48,6.891166799545919,N/A (olho fechado),N/A (olho fechado)
+foto,dormindo,64,6.479382532610213,N/A (olho fechado),N/A (olho fechado)
+foto,dormindo,96,5.883576726826868,N/A (olho fechado),N/A (olho fechado)
+foto,dormindo,128,3.9606162198180352,N/A (olho fechado),N/A (olho fechado)
+foto,dormindo,192,4.591940229963514,N/A (olho fechado),N/A (olho fechado)
+foto,dormindo,256,4.208624165829258,N/A (olho fechado),N/A (olho fechado)

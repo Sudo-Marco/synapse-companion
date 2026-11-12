@@ -9,6 +9,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "src" / "synapse_pet" / "assets" / "pixel"
+PET_ASSETS = ROOT / "src" / "synapse_pet" / "assets" / "pet"
 
 
 def test_approved_piu_frames_are_packed_with_native_lod_metadata():
@@ -81,3 +82,29 @@ def test_pixel_ui_frame_asset_is_a_small_transparent_nine_slice():
     assert frame.size == (9, 9)
     assert frame.getpixel((4, 4))[3] == 0
     assert frame.getpixel((0, 0))[3] > 0
+
+
+def test_new_desktop_sprite_sheet_matches_its_row_atlas_and_mapping():
+    atlas = json.loads((PET_ASSETS / "pet_atlas.json").read_text(encoding="utf-8"))
+    mapping = json.loads((PET_ASSETS / "sprite_mapping.json").read_text(
+        encoding="utf-8"))
+    sheet = Image.open(PET_ASSETS / atlas["sheet"]).convert("RGBA")
+    assert sheet.size == (384, 1296)
+    assert (atlas["frame_width"], atlas["frame_height"]) == (48, 48)
+    assert (atlas["columns"], atlas["rows"]) == (8, 27)
+    assert (atlas["anchor_x"], atlas["anchor_y"]) == (24, 43)
+    assert len(atlas["animations"]) == 27
+    referenced = set()
+
+    def collect_names(value):
+        if isinstance(value, dict):
+            for nested in value.values():
+                collect_names(nested)
+        elif isinstance(value, str):
+            referenced.add(value)
+
+    for section in ("emotions", "actions", "views", "drag", "transient"):
+        collect_names(mapping[section])
+    collect_names(mapping["non_loop_fallback"])
+    assert referenced <= set(atlas["animations"])
+    assert (PET_ASSETS / "README.md").is_file()

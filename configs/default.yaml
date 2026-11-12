@@ -11,6 +11,7 @@ simulation:
 pet:
   mode: floating          # floating (somente o olho) ou window (painel ao iniciar)
   render_style: pixel     # pixel (Piu), spectral, ascii ou vector
+  sprite_scale: 4         # escala do sprite do pet flutuante; passos de 0,5x
   depth_in_pet_mode: false
   depth:
     enabled: true
@@ -20,7 +21,7 @@ pet:
     glow_strength: 0.82   # 0..1
     rune_count: 10        # 0..12; reduz automaticamente em tamanhos pequenos
     smoke_density: 0.62   # 0..1
-  width: 320
+  width: 320              # tamanho de fallback dos estilos sem sprite pixel
   height: 180
   anchor: none             # none, top_left, top_right, bottom_left, bottom_right
   margin: 24
@@ -242,6 +243,7 @@ privacy:
     window_geometry: false
     microphone: false
     system_loopback: false
+    visual_perches: false
 tools:
   max_automatic_per_hour: 6
   failure_cooldown_s: 300

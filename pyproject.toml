@@ -50,6 +50,9 @@ synapse_pet = [
     "assets/pixel/*.png",
     "assets/pixel/*.json",
     "assets/pixel/README.md",
+    "assets/pet/*.png",
+    "assets/pet/*.json",
+    "assets/pet/README.md",
     "assets/fonts/silkscreen/*.ttf",
     "assets/fonts/silkscreen/OFL.txt",
 ]

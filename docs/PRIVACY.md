@@ -2,7 +2,7 @@
 
 Synapse Pet is local-first. The engine, SNN, UI, episode memory, snapshots, and logs run on the user's computer. No remote inference or telemetry service is part of the current runtime. Installing dependencies requires network access; explicitly opening a URL or using a user-installed plugin can also access external resources.
 
-The pixel-art pet renderer draws from packaged sprite assets and UI state. It does not sample or capture desktop/background pixels. The floating mode uses window geometry for placement and the current sprite alpha for its click-through mask; it does not inspect other windows' titles or contents.
+The pixel-art pet renderer draws from packaged sprite assets and UI state. By default it does not sample or capture desktop/background pixels. The floating mode uses window geometry for placement and the current sprite alpha for its click-through mask; it does not inspect other windows' titles or contents. An optional visual-perch control can briefly capture a small region only when the user drops the pet; see below.
 
 ## Sensors
 
@@ -18,6 +18,7 @@ All optional sensors are disabled by default in `configs/default.yaml`.
 | `clock` | Local time | A normalized hour feature. |
 | `microphone` | Short microphone audio windows, only while explicitly enabled | Temporary level/voice-activity features for a listening gesture; no waveform, speech text, or recording is stored. |
 | `system_loopback` | Short system-output audio windows, only while explicitly enabled | Temporary level/music/BPM features for a dance cue. If loopback capture is unavailable, a coarse Windows playback-active boolean may be used; title and artist are not read. |
+| `visual_perches` | A 320 × 160 px screen region around the pet, only after a deliberate drag-and-drop and explicit opt-in | Local contrast/shape analysis can place the pet on a nearby visual ledge. No OCR or site/logo identification runs; the image is discarded immediately and never logged, stored, or transmitted. |
 
 The `historico_clipboard` tool is different from the clipboard counter sensor. When explicitly called with `capture: true` and accepted, it stores up to 4,000 characters in local SQLite. This action has medium risk; do not enable or accept it unless storing that clipboard material is intended.
 
@@ -48,6 +49,7 @@ The URL-opening tool can access a URL only as an explicit user action. The app d
 - Never capture keyboard text or active-window titles for curiosity, logging, autonomy, or training.
 - Keep sensor-derived inputs numeric or coarse category labels.
 - Keep microphone and loopback sensors off until the user enables each one. Analyze audio in worker memory, then discard the sample; never record, transcribe, upload, or add raw audio to logs.
+- Keep visual-perch screen sampling off until the user enables it in **SENSORES**. Capture only the small release-time region, analyze shapes locally, then discard the image; never OCR, identify a site, log, store, or upload pixels.
 - Do not attach recordings or transcripts to issue reports. Synthetic audio tests use generated arrays and do not open hardware devices.
 - Keep post-it templates in local configuration; persist template IDs and metadata only.
 - Do not commit live databases, snapshots, logs, or personal absolute file paths.

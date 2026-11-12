@@ -38,7 +38,7 @@ flowchart LR
 | Autonomy | `src/synapse_pet/runtime/autonomy.py` | Enforce action budgets and persist post-it template metadata / aggregate habits. |
 | Qt interface | `src/synapse_pet/ui/qt_app.py` | Manage floating/panel windows, tray, controls, panel refresh, and telemetry. |
 | Renderers | `src/synapse_pet/ui/` | Draw the Piu pixel scene by default, legacy ASCII/HUD and spectral/vector eye views, and CPU fallback. |
-| Pixel assets | `src/synapse_pet/assets/pixel/` | Hold sprite atlases, native-depth variants, frame metadata, and JSON pose routes. |
+| Pixel assets | `src/synapse_pet/assets/pixel/`, `assets/pet/` | Keep the panel art and the floating sprite sheet/atlas separate; `assets/pet/sprite_mapping.json` maps existing states to the new sprite names. |
 | Motion controller | `src/synapse_pet/ui/pet_motion.py` | Advance scene position, depth, jump height, stride phase, and hysteretic sprite size. |
 | Audio service | `src/synapse_pet/sensors/audio_service.py`, `audio_analysis.py` | Optional microphone/system-loopback capture in worker threads; emits bounded numeric features only and keeps no waveform or transcript. |
 | Day cycle | `src/synapse_pet/ui/day_cycle.py` | Interpolate local scene palettes and estimate sunrise, sunset, and moon phase without network access. |
@@ -52,7 +52,7 @@ The action selector combines a normalized neural score with learned contextual a
 
 ## Pixel view path
 
-`pet.render_style: pixel` is the default. The UI loads transparent sprite sheets and routes states to frames using `assets/pixel/animations.json`. Movement requests use the common `request_move(target, style)` entry point; scene-mode motion advances x, depth, height, stride, and LOD, while the floating window has its own bounded hop/teleport effects. The floating window mask is generated from the currently selected sprite frame's alpha. Sprite poses are static/source data; the simulation contributes read-only emotional state and spike summaries. The scene interpolates local-time palettes and draws optional local weather effects; sunrise/sunset coordinates are manual YAML values only.
+`pet.render_style: pixel` is the default. The panel keeps its existing atlas in `assets/pixel/animations.json`; the floating pet loads `assets/pet/pet_spritesheet.png` and `pet_atlas.json`, then uses `sprite_mapping.json` to translate already-published states and actions. The float scale is `pet.sprite_scale` (4× by default). Movement requests use the common `request_move(target, style)` entry point; scene-mode motion advances x, depth, height, stride, and LOD, while the floating window keeps its bounded hop/teleport behavior. Its click-through mask is generated from the currently selected frame's alpha. Sprite poses are static/source data; the simulation contributes read-only emotional state and spike summaries. The scene interpolates local-time palettes and draws optional local weather effects; sunrise/sunset coordinates are manual YAML values only.
 
 Adding a new emotion-to-frame route can be done in the source animation JSON without an emotion branch in the renderer. A new movement behavior still requires a controller action. See [ART](ART.md) for the asset format and current limits.
 

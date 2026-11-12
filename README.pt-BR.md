@@ -69,6 +69,8 @@ As ações do GitHub executam os testes no Windows e Linux com o Qt offscreen. W
 
 `pet.mode: floating` mostra somente o Piu numa janela transparente, sem borda e sempre no topo. Uma máscara extraída do sprite exibido deixa os cliques passarem fora do personagem. Clique duas vezes no Piu para abrir o painel; clique direito abre o menu do mascote. O botão **OLHO** ou o botão de fechar do painel retorna o Piu à posição salva. A bandeja pode abrir o painel, pausar a simulação, silenciar a autonomia, configurar inicialização ou sair.
 
+O atlas novo do pintinho é usado tanto no mascote flutuante quanto no personagem do cenário. No desktop, os pés servem de âncora: a posição inferior encosta no limite superior da barra de tarefas, sem prender o pet a ela. As viagens para o fundo mantêm a escala reduzida enquanto ele descansa naquele ponto. O cenário ganhou relevo, trilha, detalhes na água e pequenas luzes animadas.
+
 | Controle | Ação |
 | --- | --- |
 | **CARINHO** | Envia afeto positivo deliberado e feedback de aprendizado. Só passar o mouse não gera recompensa. Arrastar sobre o Piu conta após `interaction.affection_drag_min_s`. |
@@ -90,11 +92,13 @@ Edite [`configs/default.yaml`](configs/default.yaml) e reinicie o aplicativo.
 | Opção | Função |
 | --- | --- |
 | `pet.render_style` | `pixel` (padrão), `spectral`, `ascii` ou `vector`. Os renderizadores antigos do olho continuam disponíveis. |
+| `pet.sprite_scale` | Escala do sprite flutuante em passos de 0,5×; padrão 4× (quadro de 192 × 192 px). Emoções e ações são ligadas ao atlas por `src/synapse_pet/assets/pet/sprite_mapping.json`. |
 | `pet.mode`, `pet.width`, `pet.height`, `pet.anchor`, `pet.margin` | Escolhe painel ou janela flutuante e sua posição inicial. |
 | `visual.scene_time` | `auto`, `dia`, `entardecer` ou `noite`; `auto` usa o horário local. |
 | `day_cycle.sunrise_hour`, `day_cycle.sunset_hour` | Nascer e pôr do sol padrão; `latitude`/`longitude` manuais refinam a estimativa sem rede. |
 | `weather.mode` | `none` (padrão), `rain`, `fog` ou `wind`; apenas efeitos decorativos locais. |
-| `pet.depth_in_pet_mode` | Habilita escala por profundidade no modo flutuante; padrão `false`. |
+| `pet.depth_in_pet_mode` | Habilita a profundidade geral no modo flutuante; padrão `false`. Durante a viagem para o fundo, o atlas diminui e mantém essa escala enquanto o Piu para lá. |
+| `privacy.sensors.visual_perches` | Padrão `false`. Quando ativado em **SENSORES**, analisa somente uma área pequena ao soltar o pet e pode pousá-lo no topo de uma letra/logo contrastante. A imagem é processada localmente e descartada; não há OCR nem identificação de site. |
 | `pet_motion.*`, `teleport.*` | Ajusta movimentos limitados e seus orçamentos. |
 | `audio.*` | Ajusta limites heurísticos de voz/música, BPM, cooldowns e limites de fôlego. |
 | `renderer` | Backend de desenho: `ascii`/`cpu` ou `auto` (tenta OpenGL e usa fallback CPU). É separado de `pet.render_style`. |

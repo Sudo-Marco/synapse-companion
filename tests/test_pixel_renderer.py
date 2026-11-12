@@ -180,7 +180,7 @@ def test_v03_view_routes_select_exact_native_lod_and_keep_panel_scale():
         widget.close()
 
 
-def test_world_travel_selects_back_lod_and_rest_uses_manifest_pose():
+def test_world_travel_uses_back_sprite_and_rest_uses_sleep_animation():
     ensure_application()
     widget = PixelPetWidget(compact=True, depth_in_pet_mode=True)
     try:
@@ -189,11 +189,12 @@ def test_world_travel_selects_back_lod_and_rest_uses_manifest_pose():
         widget.set_world_travel("away", depth=0.9)
         widget.render_frame(8.0, datetime(2026, 11, 5, 12))
         assert widget._current_frame_entry["view"] == "costas"
-        assert widget._current_frame_entry["native_size"] == 20
+        assert widget._current_frame_entry["animation"] == "run_back"
+        assert widget._current_destination.width() == 96
         widget.set_world_travel(None)
         widget.set_behavior_action("rest")
         widget.render_frame(8.2, datetime(2026, 11, 5, 12))
-        assert widget._current_frame_entry["view"] == "frente"
+        assert widget._current_frame_entry["animation"] == "sleep"
         assert widget._current_frame_entry["native_size"] == 48
     finally:
         widget.close()
@@ -275,6 +276,9 @@ def test_floating_panel_can_use_pixel_sprite_mask_and_return_to_pixel_pet(tmp_pa
         ensure_application().processEvents()
         assert window.canvas.render_style == "pixel"
         assert window._is_floating
+        assert window._sprite_scale == 4
+        assert (window.width(), window.height()) == (192, 192)
+        assert window.canvas._pixel._current_frame_entry["animation"] == "idle"
         assert not window.mask().isEmpty()
         assert window.mask().contains(window.rect().center())
         window._show_panel()

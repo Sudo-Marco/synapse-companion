@@ -1,0 +1,201 @@
+{
+  "frame_width": 48,
+  "frame_height": 48,
+  "ground_y": 40,
+  "anchor_x": 24,
+  "anchor_y": 43,
+  "sheet": "pet_spritesheet.png",
+  "columns": 8,
+  "rows": 27,
+  "animations": {
+    "idle": {
+      "row": 0,
+      "frames": 6,
+      "fps": 6,
+      "loop": true,
+      "description": "parado respirando e piscando"
+    },
+    "run_front": {
+      "row": 1,
+      "frames": 6,
+      "fps": 12,
+      "loop": true,
+      "description": "correndo de frente (vindo na direcao da tela)"
+    },
+    "run_side": {
+      "row": 2,
+      "frames": 6,
+      "fps": 12,
+      "loop": true,
+      "description": "correndo de lado (direita; _left = espelhado)"
+    },
+    "run_side_left": {
+      "row": 3,
+      "frames": 6,
+      "fps": 12,
+      "loop": true,
+      "description": "correndo de lado (direita; _left = espelhado) [espelhado: olhando p/ esquerda]"
+    },
+    "run_back": {
+      "row": 4,
+      "frames": 6,
+      "fps": 12,
+      "loop": true,
+      "description": "correndo de costas (indo pro fundo da tela)"
+    },
+    "jump_front": {
+      "row": 5,
+      "frames": 7,
+      "fps": 12,
+      "loop": false,
+      "description": "pulo de frente (anticipa, sobe, apice, cai, amortece)"
+    },
+    "jump_side": {
+      "row": 6,
+      "frames": 7,
+      "fps": 12,
+      "loop": false,
+      "description": "pulo de lado"
+    },
+    "jump_side_left": {
+      "row": 7,
+      "frames": 7,
+      "fps": 12,
+      "loop": false,
+      "description": "pulo de lado [espelhado: olhando p/ esquerda]"
+    },
+    "rise": {
+      "row": 8,
+      "frames": 2,
+      "fps": 10,
+      "loop": true,
+      "description": "subindo no ar (use enquanto vy<0)"
+    },
+    "fall": {
+      "row": 9,
+      "frames": 4,
+      "fps": 14,
+      "loop": true,
+      "description": "caindo batendo as asas (use enquanto vy>0)"
+    },
+    "land": {
+      "row": 10,
+      "frames": 4,
+      "fps": 12,
+      "loop": false,
+      "description": "aterrissagem com squash (dispare ao tocar o chao; escale a intensidade pela velocidade)"
+    },
+    "squash": {
+      "row": 11,
+      "frames": 2,
+      "fps": 10,
+      "loop": false,
+      "description": "quique contra parede/chao (2 poses: achata e estica)"
+    },
+    "drag": {
+      "row": 12,
+      "frames": 4,
+      "fps": 8,
+      "loop": true,
+      "description": "sendo carregado pelo mouse (pernas balancando; use skew pela velocidade em X)"
+    },
+    "drag_calm": {
+      "row": 13,
+      "frames": 4,
+      "fps": 6,
+      "loop": true,
+      "description": "carregado, tranquilo (confiante no dono)"
+    },
+    "happy": {
+      "row": 14,
+      "frames": 8,
+      "fps": 10,
+      "loop": true,
+      "description": "feliz: pulinhos com olhos ^ ^ e coracoes"
+    },
+    "sad": {
+      "row": 15,
+      "frames": 6,
+      "fps": 4,
+      "loop": true,
+      "description": "triste: cabecinha baixa, asas caidas e lagrima"
+    },
+    "curious": {
+      "row": 16,
+      "frames": 8,
+      "fps": 6,
+      "loop": true,
+      "description": "curioso: inclina a cabeca, um olho maior e interrogacao"
+    },
+    "surprised": {
+      "row": 17,
+      "frames": 5,
+      "fps": 10,
+      "loop": false,
+      "description": "surpreso: pulo curto e exclamacao"
+    },
+    "angry": {
+      "row": 18,
+      "frames": 4,
+      "fps": 12,
+      "loop": true,
+      "description": "bravo: tremendo com sobrancelhas e veia"
+    },
+    "sleep": {
+      "row": 19,
+      "frames": 6,
+      "fps": 3,
+      "loop": true,
+      "description": "dormindo (zzz)"
+    },
+    "wave": {
+      "row": 20,
+      "frames": 6,
+      "fps": 8,
+      "loop": true,
+      "description": "acenando com a asa"
+    },
+    "dizzy": {
+      "row": 21,
+      "frames": 6,
+      "fps": 8,
+      "loop": true,
+      "description": "tonto (depois de ser arremessado/girado)"
+    },
+    "peck": {
+      "row": 22,
+      "frames": 6,
+      "fps": 8,
+      "loop": true,
+      "description": "bicando o chao (comendo)"
+    },
+    "peck_left": {
+      "row": 23,
+      "frames": 6,
+      "fps": 8,
+      "loop": true,
+      "description": "bicando o chao (comendo) [espelhado: olhando p/ esquerda]"
+    },
+    "look_side": {
+      "row": 24,
+      "frames": 4,
+      "fps": 5,
+      "loop": true,
+      "description": "parado de lado, respirando"
+    },
+    "look_side_left": {
+      "row": 25,
+      "frames": 4,
+      "fps": 5,
+      "loop": true,
+      "description": "parado de lado, respirando [espelhado: olhando p/ esquerda]"
+    },
+    "idle_back": {
+      "row": 26,
+      "frames": 2,
+      "fps": 3,
+      "loop": true,
+      "description": "parado de costas"
+    }
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "default_animation": "idle",
+  "emotions": {
+    "alegre": "happy",
+    "amoroso": "happy",
+    "feliz": "happy",
+    "happy": "happy",
+    "cantando": "happy",
+    "triste": "sad",
+    "sad": "sad",
+    "curioso": "curious",
+    "curious": "curious",
+    "curioso_esquerda": "look_side_left",
+    "curioso_direita": "look_side",
+    "ouvindo_esquerda": "look_side_left",
+    "estressado": "angry",
+    "stressed": "angry",
+    "assustado": "surprised",
+    "startled": "surprised",
+    "dormindo": "sleep",
+    "sleeping": "sleep",
+    "sonolento": "sleep",
+    "sleepy": "sleep",
+    "piscar": "idle",
+    "aberto": "curious",
+    "semicerrado": "sleep",
+    "arregalado": "surprised",
+    "ouvindo": "look_side",
+    "atencao": "look_side",
+    "observando": "idle",
+    "neutro": "idle",
+    "neutral": "idle",
+    "cumprimentando": "wave",
+    "wave": "wave",
+    "bicando": "peck",
+    "bicando_esquerda": "peck_left",
+    "peck": "peck",
+    "tonto": "dizzy",
+    "dizzy": "dizzy"
+  },
+  "actions": {
+    "walk": {
+      "side": "run_side",
+      "front": "run_front",
+      "back": "run_back"
+    },
+    "run": {
+      "side": "run_side",
+      "front": "run_front",
+      "back": "run_back"
+    },
+    "away": "run_back",
+    "return": "run_front",
+    "jump": {
+      "rise": "rise",
+      "apex_front": "jump_front",
+      "apex_side": "jump_side",
+      "fall": "fall",
+      "land": "land"
+    },
+    "fly": "rise",
+    "fall": "fall",
+    "dance_sway": "happy",
+    "dance_hop": "happy",
+    "dance_head": "happy",
+    "think": "curious",
+    "rest": "sleep",
+    "listen": "look_side",
+    "caught": "drag_calm",
+    "peek": "look_side"
+  },
+  "views": {
+    "profile": "idle",
+    "front": "idle",
+    "back": "idle_back"
+  },
+  "drag": {
+    "calm": "drag_calm",
+    "agitated": "drag"
+  },
+  "transient": {
+    "land": "land",
+    "collision": "squash",
+    "strong_impact": "dizzy",
+    "greeting": "wave",
+    "peck": "peck"
+  },
+  "non_loop_fallback": "idle"
+}

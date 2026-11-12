@@ -308,7 +308,8 @@ class EyeCanvas(QWidget):
                  depth_in_pet_mode: bool = False,
                  depth_config: dict[str, object] | None = None,
                  day_cycle_config: dict[str, object] | None = None,
-                 weather_config: dict[str, object] | None = None) -> None:
+                 weather_config: dict[str, object] | None = None,
+                 sprite_scale: float = 4.0) -> None:
         super().__init__(parent)
         self.renderer_config = renderer.lower()
         self.render_style = (render_style if render_style in {"pixel", "spectral", "ascii", "vector"}
@@ -334,6 +335,7 @@ class EyeCanvas(QWidget):
                 depth_config=depth_config,
                 day_cycle_config=day_cycle_config,
                 weather_config=weather_config,
+                sprite_scale=sprite_scale,
                 parent=self._stack)
             self._cpu = self._pixel
             self._pixel.petRequested.connect(self.petRequested.emit)
@@ -443,6 +445,10 @@ class EyeCanvas(QWidget):
     def set_behavior_action(self, action: str | None) -> None:
         if self._pixel is not None:
             self._pixel.set_behavior_action(action)
+
+    def set_sprite_override(self, animation_name: str | None) -> None:
+        if self._pixel is not None:
+            self._pixel.set_sprite_override(animation_name)
 
     def set_audio_status(self, **status) -> None:
         if self._pixel is not None:

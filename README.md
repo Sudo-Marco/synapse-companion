@@ -69,6 +69,8 @@ The Windows and Linux GitHub Actions jobs use Qt's offscreen platform for automa
 
 `pet.mode: floating` shows the transparent, borderless, topmost Piu window. A mask derived from the currently displayed sprite lets clicks pass through outside the character. Double-click the Piu to open the panel; right-click opens its pet menu. The panel's **OLHO** or close control returns to the floating Piu at its saved position. The tray menu can open the panel, pause the simulation, silence autonomy, configure startup, or exit.
 
+The new chick atlas is used both by the floating pet and by the character in the scene. On the desktop, the feet are the placement anchor: at the bottom edge they meet the top of the taskbar, while the pet remains free to move elsewhere. A trip to the background keeps its smaller scale while it pauses there. The scene now has more layered terrain, a winding path, water details, and slow moving lights.
+
 | Control | Effect |
 | --- | --- |
 | **CARINHO** | Sends deliberate positive affect and learning feedback. Hover alone gives no reward. A held drag over Piu counts after `interaction.affection_drag_min_s`. |
@@ -90,11 +92,13 @@ Edit [`configs/default.yaml`](configs/default.yaml) and restart the app.
 | Setting | Purpose |
 | --- | --- |
 | `pet.render_style` | `pixel` (default), `spectral`, `ascii`, or `vector`. Existing eye renderers remain selectable. |
+| `pet.sprite_scale` | Floating sprite scale in 0.5× steps; default 4× (192 × 192 px frame). Existing emotions and actions map through `src/synapse_pet/assets/pet/sprite_mapping.json`. |
 | `pet.mode`, `pet.width`, `pet.height`, `pet.anchor`, `pet.margin` | Select panel/floating mode and initial window placement. |
 | `visual.scene_time` | `auto`, `dia`, `entardecer`, or `noite`; `auto` follows local time. |
 | `day_cycle.sunrise_hour`, `day_cycle.sunset_hour` | Local default sunrise and sunset; optional manual `latitude`/`longitude` refine the estimates without network access. |
 | `weather.mode` | `none` (default), `rain`, `fog`, or `wind`; decorative local effects only. |
-| `pet.depth_in_pet_mode` | Enables depth scaling in the floating mode; default `false`. |
+| `pet.depth_in_pet_mode` | Enables general depth behavior in floating mode; default `false`. During existing travel toward the background, the atlas sprite still scales down with its depth and stays at that size during the pause. |
+| `privacy.sensors.visual_perches` | Defaults to `false`. When enabled in **SENSORS**, a small screen patch is inspected only after dropping the pet; a high-contrast letter/logo can become a perch. The image is processed locally and discarded; there is no OCR or site identification. |
 | `pet_motion.*`, `teleport.*` | Tunes bounded movement and motion budgets. |
 | `audio.*` | Tunes in-memory voice/music thresholds, BPM behavior, cooldowns, and stamina limits. |
 | `renderer` | Rendering backend: `ascii`/`cpu` or `auto` (tries OpenGL then CPU fallback). This is separate from `pet.render_style`. |
