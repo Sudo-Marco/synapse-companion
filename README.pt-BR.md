@@ -1,15 +1,30 @@
 # Synapse Pet
 
+<p align="center"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/brand/readme-header-dark.svg" />
+  <source media="(prefers-color-scheme: light)" srcset="assets/brand/readme-header-light.svg" />
+  <img src="assets/brand/readme-header-light.svg" alt="Marca Sudo-Marco com o pintinho original do Synapse Pet sobre uma curva LIF." width="100%" />
+</picture></p>
+
 Português (Brasil) · [English](README.md)
 
-![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
-![Windows 10/11](https://img.shields.io/badge/Plataforma-Windows%2010%2F11-0078D6?logo=windows&logoColor=white)
-![MIT](https://img.shields.io/badge/Licença-MIT-2E8B57.svg)
-![Versão](https://img.shields.io/badge/vers%C3%A3o-0.3.0-blue)
+<p align="center"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/brand/stack-badges-dark.svg" />
+  <source media="(prefers-color-scheme: light)" srcset="assets/brand/stack-badges-light.svg" />
+  <img src="assets/brand/stack-badges-light.svg" alt="Python, NumPy, PySide6 e uma rede LIF com STDP." />
+</picture></p>
+
+<p align="center"><sub>Python 3.10+ · Windows 10/11 · MIT · v0.3.0</sub></p>
 
 Synapse Pet é um companheiro de desktop local para Windows e um experimento com redes neurais de disparos pequenas. O companheiro é o **Piu**, um canarinho em pixel art cujas expressões e movimentos mostram o estado da simulação. A política de decisão combina uma SNN feita à mão em NumPy com um seletor pequeno de preferências por contexto.
 
 **Ele não é um modelo de linguagem, chatbot ou assistente de programação.** Não entende texto aberto nem responde perguntas gerais. Reage a sinais numéricos e categorias simples, carinho e feedback explícitos e ferramentas locais permitidas.
+
+<p align="center"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/brand/demo-card-dark.svg" />
+  <source media="(prefers-color-scheme: light)" srcset="assets/brand/demo-card-light.svg" />
+  <img src="assets/brand/demo-card-light.svg" alt="Captura real do painel do Synapse Pet em execução, com o Piu em pixel art, telemetria e sensores desligados, dentro da moldura Sudo-Marco." width="100%" />
+</picture></p>
 
 ![Piu no cenário em pixel art](docs/screenshots/piu/piu-cenario-dia.png)
 

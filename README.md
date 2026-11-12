@@ -1,15 +1,30 @@
 # Synapse Pet
 
+<p align="center"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/brand/readme-header-dark.svg" />
+  <source media="(prefers-color-scheme: light)" srcset="assets/brand/readme-header-light.svg" />
+  <img src="assets/brand/readme-header-light.svg" alt="Sudo-Marco identity with the original Synapse Pet chick above an LIF curve." width="100%" />
+</picture></p>
+
 [Português (Brasil)](README.pt-BR.md) · English
 
-![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
-![Windows 10/11](https://img.shields.io/badge/Platform-Windows%2010%2F11-0078D6?logo=windows&logoColor=white)
-![MIT](https://img.shields.io/badge/License-MIT-2E8B57.svg)
-![Version](https://img.shields.io/badge/version-0.3.0-blue)
+<p align="center"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/brand/stack-badges-dark.svg" />
+  <source media="(prefers-color-scheme: light)" srcset="assets/brand/stack-badges-light.svg" />
+  <img src="assets/brand/stack-badges-light.svg" alt="Python, NumPy, PySide6, and an LIF network with STDP." />
+</picture></p>
+
+<p align="center"><sub>Python 3.10+ · Windows 10/11 · MIT · v0.3.0</sub></p>
 
 Synapse Pet is a local-first Windows desktop companion and an experiment in small spiking neural networks. The companion is **Piu**, a pixel-art canary whose expressions and movement visualize the simulation. Its decision policy combines a hand-built NumPy SNN with a small contextual-preference selector.
 
 **It is not a language model, chatbot, or programming assistant.** It does not understand open-ended text or answer general questions. It responds to numeric/coarse-category inputs, explicit affection and feedback, and permitted local tools.
+
+<p align="center"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/brand/demo-card-en-dark.svg" />
+  <source media="(prefers-color-scheme: light)" srcset="assets/brand/demo-card-en-light.svg" />
+  <img src="assets/brand/demo-card-en-light.svg" alt="Real capture of the Synapse Pet panel in operation, showing Piu in pixel art, telemetry, and disabled sensors, in the Sudo-Marco frame." width="100%" />
+</picture></p>
 
 ![Piu in the pixel-art scene](docs/screenshots/piu/piu-cenario-dia.png)
 
