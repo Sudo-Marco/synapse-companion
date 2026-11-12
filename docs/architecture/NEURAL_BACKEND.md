@@ -27,7 +27,7 @@ engine registra o backend efetivo e o motivo de fallback no log do runtime.
 `interface.py` define as operações numéricas utilizadas por rede e runtime.
 `NumpyBackend` delega as implementações atuais sem replicar fórmulas. O
 `CythonBackend` herda esse adaptador e substitui `step_neurons`, `update_stdp`,
-`apply_reward` e `propagate`. Para CSR, usa travessia por fonte ativa até 60% de
+`apply_reward` e `propagate`. Para CSR, usa travessia por fonte ativa até 30% de
 atividade e travessia por linha para atividade mais densa; sem spikes retorna
 um vetor zero. O LIF mantém a ordem de operações e os arredondamentos
 float32 da implementação de referência, além de consumir o mesmo fluxo RNG

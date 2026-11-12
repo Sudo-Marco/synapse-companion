@@ -172,9 +172,11 @@ def test_incompatible_rebound_weights_select_numpy_fallback():
     )
 
 
-def test_backend_selects_csr_when_activity_is_above_crossover():
+@pytest.mark.parametrize("active_count", [60, 100])
+def test_backend_selects_csr_when_activity_is_above_crossover(active_count):
     projection = _projection(100, 73, 0.12, seed=55)
-    spikes = np.ones(100, dtype=np.bool_)
+    spikes = np.zeros(100, dtype=np.bool_)
+    spikes[:active_count] = True
     backend = CythonBackend()
     calls: list[str] = []
     original_csr = backend._sparse.propagate_csr
@@ -196,7 +198,7 @@ def test_backend_selects_csr_when_activity_is_above_crossover():
     assert calls == ["csr"]
 
 
-@pytest.mark.parametrize("active_count", [30, 60])
+@pytest.mark.parametrize("active_count", [2, 30])
 def test_backend_selects_active_sources_through_measured_crossover(active_count):
     projection = _projection(100, 73, 0.12, seed=56)
     spikes = np.zeros(100, dtype=np.bool_)
