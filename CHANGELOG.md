@@ -4,6 +4,11 @@ Notable changes are recorded here. This project follows a simple Keep a Changelo
 
 ## [Unreleased]
 
+### Added
+
+- Optional Cython LIF kernel with NumPy fallback, bitwise trajectory tests, and
+  Windows/Ubuntu full-network tick benchmarks; NumPy remains the default.
+
 ### Planned
 
 - Improve neural-only retention and evaluate the renderer on physical Windows

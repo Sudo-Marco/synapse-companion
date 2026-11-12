@@ -9,19 +9,20 @@ from numpy.typing import NDArray
 from .numpy_backend import NumpyBackend
 
 if TYPE_CHECKING:
+    from ..core.neurons import LIFPopulation
     from ..core.plasticity import RewardSTDP
     from ..core.synapses import SparseProjection
 
 
 class CythonBackendUnavailable(RuntimeError):
-    """Raised when the optional compiled STDP module cannot be loaded."""
+    """Raised when the optional compiled neural modules cannot be loaded."""
 
 
 class CythonBackend(NumpyBackend):
-    """NumPy backend with the STDP update implemented by an optional Cython kernel.
+    """NumPy backend with optional Cython kernels for STDP and LIF.
 
-    Neuron integration, sparse propagation, reward application and homeostasis
-    intentionally remain the established NumPy operations in this phase.
+    Sparse propagation, action credit and homeostasis remain established NumPy
+    operations in this phase.
     """
 
     name = "cython"
@@ -32,11 +33,90 @@ class CythonBackend(NumpyBackend):
             self._stdp = importlib.import_module(
                 "synapse_pet.neural_backend._stdp"
             )
+            self._lif = importlib.import_module(
+                "synapse_pet.neural_backend._lif"
+            )
         except (ImportError, OSError) as exc:
             raise CythonBackendUnavailable(
-                "The optional compiled Cython STDP kernel is unavailable; "
+                "The optional compiled Cython STDP/LIF kernels are unavailable; "
                 "install/build the native extra or use the NumPy fallback."
             ) from exc
+
+    def step_neurons(
+        self,
+        population: LIFPopulation,
+        current: NDArray[np.float32],
+        dt_ms: float,
+        rng: np.random.Generator,
+        noise_std: float = 0.0,
+        gain: float = 1.0,
+    ) -> NDArray[np.bool_]:
+        if current.shape != (population.size,):
+            raise ValueError(f"current must have shape ({population.size},)")
+
+        state_arrays = (
+            population.voltage,
+            population.threshold_offset,
+            population.refractory,
+            population.spikes,
+        )
+        if any(array.shape != (population.size,) for array in state_arrays):
+            return super().step_neurons(
+                population, current, dt_ms, rng, noise_std, gain
+            )
+
+        if not (
+            population.voltage.flags.c_contiguous
+            and population.voltage.dtype == np.float32
+            and population.threshold_offset.flags.c_contiguous
+            and population.threshold_offset.dtype == np.float32
+            and population.refractory.flags.c_contiguous
+            and population.refractory.dtype == np.float32
+            and population.spikes.flags.c_contiguous
+            and population.spikes.dtype == np.bool_
+            and all(array.flags.owndata for array in state_arrays)
+            and current.flags.c_contiguous
+            and current.dtype == np.float32
+        ):
+            return super().step_neurons(
+                population, current, dt_ms, rng, noise_std, gain
+            )
+        # Keep NumPy's sequential alias semantics when input reuses a state
+        # buffer; independently owned states cannot alias each other.
+        if any(np.shares_memory(current, state) for state in state_arrays[:3]):
+            return super().step_neurons(
+                population, current, dt_ms, rng, noise_std, gain
+            )
+
+        use_noise = bool(noise_std)
+        noise = (
+            rng.standard_normal(population.size, dtype=np.float32)
+            if use_noise else current
+        )
+        decay = np.float32(np.exp(-dt_ms / population.tau_m_ms))
+        adaptive_decay = np.float32(
+            np.exp(-dt_ms / population.adaptive_tau_ms)
+        )
+        self._lif.step_lif(
+            population.voltage,
+            population.threshold_offset,
+            population.refractory,
+            population.spikes,
+            current,
+            noise,
+            use_noise,
+            decay,
+            adaptive_decay,
+            np.float32(dt_ms),
+            np.float32(population.reset),
+            np.float32(population.threshold),
+            np.float32(population.adaptive_increment),
+            np.float32(population.refractory_ms),
+            np.float32(noise_std),
+            np.float32(gain),
+            gain != 1.0,
+        )
+        return population.spikes.copy()
 
     def update_stdp(
         self,
