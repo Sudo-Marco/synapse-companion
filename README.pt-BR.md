@@ -98,13 +98,14 @@ Edite [`configs/default.yaml`](configs/default.yaml) e reinicie o aplicativo.
 | `pet_motion.*`, `teleport.*` | Ajusta movimentos limitados e seus orçamentos. |
 | `audio.*` | Ajusta limites heurísticos de voz/música, BPM, cooldowns e limites de fôlego. |
 | `renderer` | Backend de desenho: `ascii`/`cpu` ou `auto` (tenta OpenGL e usa fallback CPU). É separado de `pet.render_style`. |
+| `simulation.mode`, `simulation.event_driven` | `fixed_step` é o modo padrão. `event_driven` é experimental, desligado por padrão e só acelera blocos sem ruído, entrada, spikes pendentes ou eventos de homeostase. |
 | `network.tool_output_inhibition` | Competição experimental entre saídas. Mantenha desligada: no intervalo configurado de 10 passos, c/Z ficou em 77,5% SNN-only, abaixo da meta de >80%. |
 | `sleep.replay_enabled`, `sleep.max_replay_episodes`, `sleep.replay_recent_fraction` | Replay limitado e opcional durante o sono; altera pesos somente se habilitado. |
 | `network.allow_neuron_growth_migration` | Autoriza migração explícita ao aumentar a rede; padrão `false`; redução nunca é automática. |
 | `autonomy.*`, `teleport.*` | Habilita e limita post-its e movimentos locais. |
 | `privacy.sensors.*` | Configura sensores opcionais, todos inicialmente desligados. |
 
-Alterações no YAML ou estilo de renderização exigem reiniciar o aplicativo. Os sprites do Piu usam ampliação inteira por vizinho mais próximo. Consulte [ART.md](docs/ART.md) para editar as folhas PNG e os metadados JSON.
+Alterações no YAML ou estilo de renderização exigem reiniciar o aplicativo. O modo event-driven também exige `network.background_noise: 0.0` para que blocos silenciosos possam ser agrupados; qualquer condição insegura retorna ao passo fixo. Consulte [NEURAL_BACKEND.md](docs/architecture/NEURAL_BACKEND.md) antes de experimentar. Os sprites do Piu usam ampliação inteira por vizinho mais próximo. Consulte [ART.md](docs/ART.md) para editar as folhas PNG e os metadados JSON.
 
 ## Áudio e comportamento pelo horário local
 

@@ -1,0 +1,159 @@
+{
+  "benchmark": "cython_lif_full_network_tick",
+  "environment": {
+    "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+    "platform": "Windows-2025Server-10.0.26100-SP0",
+    "numpy": "2.5.4",
+    "scipy": "1.18.1",
+    "cython": "3.3.1",
+    "rss_bytes_before": 35614720,
+    "rss_bytes_after": 52846592,
+    "rss_delta_bytes": 17231872
+  },
+  "cases": [
+    {
+      "neurons": 600,
+      "sensor_neurons": 96,
+      "ticks_per_sample": 600,
+      "warmup_ticks": 100,
+      "loops_per_timed_sample": 30,
+      "repeats": 5,
+      "seed": 20261111,
+      "spikes_across_network_over_validation_sequence": 358,
+      "spike_vector_sha256": "d776881144a3fae953e1e139056cf7b0d4bda2a13702eabdd30bb5a411068f54",
+      "population_spikes_over_validation_sequence": {
+        "sensor": 358,
+        "hidden": 0,
+        "output": 0
+      },
+      "population_sizes": {
+        "sensor": 96,
+        "hidden": 384,
+        "output": 120
+      },
+      "population_spikes_per_neuron_per_tick": {
+        "sensor": 0.006215277777777778,
+        "hidden": 0.0,
+        "output": 0.0
+      },
+      "numpy": {
+        "wall_seconds_mean": 1.6721610800000009,
+        "wall_seconds_median": 1.6692993999999999,
+        "wall_seconds_p95": 1.6922617800000181,
+        "cpu_seconds_mean": 1.653125,
+        "wall_ms_per_tick_mean": 0.09289783777777783,
+        "cpu_ms_per_tick_mean": 0.09184027777777778,
+        "python_traced_peak_bytes": 6767,
+        "spikes_across_network_last_sample": 10809,
+        "wall_samples_seconds": [
+          1.6959584000000234,
+          1.6692993999999999,
+          1.6774752999999976,
+          1.6530675999999858,
+          1.6650046999999972
+        ],
+        "timed_ticks_per_sample": 18000
+      },
+      "cython": {
+        "wall_seconds_mean": 0.8093226800000025,
+        "wall_seconds_median": 0.8132134999999892,
+        "wall_seconds_p95": 0.8178777800000205,
+        "cpu_seconds_mean": 0.8,
+        "wall_ms_per_tick_mean": 0.044962371111111246,
+        "cpu_ms_per_tick_mean": 0.044444444444444446,
+        "python_traced_peak_bytes": 6688,
+        "spikes_across_network_last_sample": 10809,
+        "wall_samples_seconds": [
+          0.8180889000000207,
+          0.8170333000000198,
+          0.8132134999999892,
+          0.8017370999999969,
+          0.7965405999999859
+        ],
+        "timed_ticks_per_sample": 18000
+      },
+      "speedup_wall": 2.0661240829183187,
+      "speedup_cpu": 2.06640625,
+      "cpu_regression_fraction": -0.5160680529300568,
+      "wall_regression_fraction": -0.5160019631601508,
+      "exact_trajectory_match": true
+    },
+    {
+      "neurons": 1000,
+      "sensor_neurons": 160,
+      "ticks_per_sample": 600,
+      "warmup_ticks": 100,
+      "loops_per_timed_sample": 30,
+      "repeats": 5,
+      "seed": 20262120,
+      "spikes_across_network_over_validation_sequence": 579,
+      "spike_vector_sha256": "7a8296d01c59226b452fcae3391aaa04cffab562319f89c396fce843e81e8187",
+      "population_spikes_over_validation_sequence": {
+        "sensor": 579,
+        "hidden": 0,
+        "output": 0
+      },
+      "population_sizes": {
+        "sensor": 160,
+        "hidden": 640,
+        "output": 200
+      },
+      "population_spikes_per_neuron_per_tick": {
+        "sensor": 0.00603125,
+        "hidden": 0.0,
+        "output": 0.0
+      },
+      "numpy": {
+        "wall_seconds_mean": 2.3985450199999945,
+        "wall_seconds_median": 2.39698820000001,
+        "wall_seconds_p95": 2.4048720399999923,
+        "cpu_seconds_mean": 2.3875,
+        "wall_ms_per_tick_mean": 0.1332525011111108,
+        "cpu_ms_per_tick_mean": 0.1326388888888889,
+        "python_traced_peak_bytes": 10687,
+        "spikes_across_network_last_sample": 17331,
+        "wall_samples_seconds": [
+          2.39698820000001,
+          2.4047829999999806,
+          2.393969999999996,
+          2.404894299999995,
+          2.3920895999999914
+        ],
+        "timed_ticks_per_sample": 18000
+      },
+      "cython": {
+        "wall_seconds_mean": 0.929153180000003,
+        "wall_seconds_median": 0.9323313999999812,
+        "wall_seconds_p95": 0.9357035000000054,
+        "cpu_seconds_mean": 0.925,
+        "wall_ms_per_tick_mean": 0.05161962111111128,
+        "cpu_ms_per_tick_mean": 0.05138888888888889,
+        "python_traced_peak_bytes": 10288,
+        "spikes_across_network_last_sample": 17331,
+        "wall_samples_seconds": [
+          0.9323313999999812,
+          0.9216035000000034,
+          0.9346531000000198,
+          0.9359661000000017,
+          0.9212118000000089
+        ],
+        "timed_ticks_per_sample": 18000
+      },
+      "speedup_wall": 2.581431212450876,
+      "speedup_cpu": 2.581081081081081,
+      "cpu_regression_fraction": -0.612565445026178,
+      "wall_regression_fraction": -0.6126179945540463,
+      "exact_trajectory_match": true
+    }
+  ],
+  "performance_budget": {
+    "max_cpu_regression_fraction": 0.03,
+    "passed": true
+  },
+  "notes": [
+    "CPU and wall values cover complete SpikingNetwork.step calls, including unchanged sparse propagation.",
+    "RSS is process-wide; tracemalloc excludes native allocations and reports Python-tracked peak only.",
+    "Per-step spike totals are diagnostics, not a target for changing the SNN.",
+    "Exact trajectory includes spike outputs, LIF state, tick count, and network RNG state."
+  ]
+}

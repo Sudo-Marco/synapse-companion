@@ -98,13 +98,14 @@ Edit [`configs/default.yaml`](configs/default.yaml) and restart the app.
 | `pet_motion.*`, `teleport.*` | Tunes bounded movement and motion budgets. |
 | `audio.*` | Tunes in-memory voice/music thresholds, BPM behavior, cooldowns, and stamina limits. |
 | `renderer` | Rendering backend: `ascii`/`cpu` or `auto` (tries OpenGL then CPU fallback). This is separate from `pet.render_style`. |
+| `simulation.mode`, `simulation.event_driven` | `fixed_step` is the default. `event_driven` is experimental, disabled by default, and only skips quiet blocks without noise, input, pending spikes, or a homeostasis event. |
 | `network.tool_output_inhibition` | Experimental output competition. Keep disabled: the configured 10-step interval did not improve scenario c/Z beyond 77.5% SNN-only, below the >80% target. |
 | `sleep.replay_enabled`, `sleep.max_replay_episodes`, `sleep.replay_recent_fraction` | Opt-in, bounded sleep replay. It changes weights only when replay is explicitly enabled. |
 | `network.allow_neuron_growth_migration` | Explicit opt-in snapshot migration for network growth; defaults to `false`, and shrinking is never automatic. |
 | `autonomy.*`, `teleport.*` | Enable and bound local post-it and movement behaviors. |
 | `privacy.sensors.*` | Opt-in sensor settings; all start disabled. |
 
-Changing renderer style or YAML requires an application restart. The Piu sprites use integer nearest-neighbor scaling. See [ART.md](docs/ART.md) to rebuild and edit the PNG sheets and JSON animation metadata.
+Changing renderer style or YAML requires an application restart. Event-driven mode also requires `network.background_noise: 0.0` to group quiet blocks; any unsafe condition returns to fixed steps. Read [NEURAL_BACKEND.md](docs/architecture/NEURAL_BACKEND.md) before trying it. The Piu sprites use integer nearest-neighbor scaling. See [ART.md](docs/ART.md) to rebuild and edit the PNG sheets and JSON animation metadata.
 
 ## Audio and local-time behavior
 

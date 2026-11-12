@@ -11,6 +11,8 @@ Notable changes are recorded here. This project follows a simple Keep a Changelo
 - Optional Cython CSR propagation with destination-row and active-source
   traversal, lazy source indexing, bitwise tests, and Windows/Ubuntu benchmarks;
   NumPy remains the default.
+- Experimental event-driven quiet-block fast-forward, disabled by default and
+  guarded by conservative fixed-step fallback conditions.
 
 ### Planned
 
