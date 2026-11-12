@@ -19,13 +19,15 @@ class CythonBackendUnavailable(RuntimeError):
 
 
 class CythonBackend(NumpyBackend):
-    """NumPy backend with optional Cython kernels for STDP and LIF.
+    """NumPy backend with optional Cython kernels for STDP, LIF and CSR.
 
-    Sparse propagation, action credit and homeostasis remain established NumPy
-    operations in this phase.
+    Action credit and homeostasis remain established NumPy operations.
     """
 
     name = "cython"
+    # CI microbenchmarks show active-source traversal wins through 30% activity;
+    # row-oriented CSR is the more consistent choice at higher firing rates.
+    ACTIVE_PROPAGATION_MAX_RATE = 0.30
 
     def __init__(self, *, deterministic: bool = True) -> None:
         super().__init__(deterministic=deterministic)
@@ -36,11 +38,52 @@ class CythonBackend(NumpyBackend):
             self._lif = importlib.import_module(
                 "synapse_pet.neural_backend._lif"
             )
+            self._sparse = importlib.import_module(
+                "synapse_pet.neural_backend._sparse"
+            )
         except (ImportError, OSError) as exc:
             raise CythonBackendUnavailable(
-                "The optional compiled Cython STDP/LIF kernels are unavailable; "
+                "The optional compiled Cython STDP/LIF/CSR kernels are unavailable; "
                 "install/build the native extra or use the NumPy fallback."
             ) from exc
+
+    def propagate(
+        self, projection: SparseProjection, spikes: NDArray[np.bool_]
+    ) -> NDArray[np.float32]:
+        if len(spikes) != projection.n_pre:
+            raise ValueError("spike vector does not match projection input size")
+
+        if (
+            projection._matrix is None
+            or not projection._compiled_csr_compatible
+        ):
+            return super().propagate(projection, spikes)
+        if not (
+            isinstance(spikes, np.ndarray)
+            and spikes.dtype == np.bool_
+            and spikes.ndim == 1
+            and spikes.flags.c_contiguous
+        ):
+            return super().propagate(projection, spikes)
+
+        matrix = projection._matrix
+        active_count = int(np.count_nonzero(spikes))
+        if active_count == 0:
+            return np.zeros(projection.n_post, dtype=np.float32)
+        if active_count / projection.n_pre <= self.ACTIVE_PROPAGATION_MAX_RATE:
+            source_indptr, source_order = projection.source_index()
+            return self._sparse.propagate_active(
+                source_indptr,
+                source_order,
+                projection.post,
+                projection.weights,
+                spikes,
+                projection.n_post,
+            )
+
+        return self._sparse.propagate_csr(
+            matrix.indptr, matrix.indices, matrix.data, spikes
+        )
 
     def step_neurons(
         self,

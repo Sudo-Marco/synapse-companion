@@ -14,6 +14,13 @@ class SparseProjection:
     source_sign: NDArray[np.float32]
     name: str = "projection"
     _matrix: object | None = field(default=None, init=False, repr=False)
+    _source_indptr: NDArray[np.int32] | None = field(
+        default=None, init=False, repr=False
+    )
+    _source_order: NDArray[np.int32] | None = field(
+        default=None, init=False, repr=False
+    )
+    _compiled_csr_compatible: bool = field(default=False, init=False, repr=False)
 
     def __post_init__(self) -> None:
         self.rebuild()
@@ -30,10 +37,15 @@ class SparseProjection:
 
     def rebuild(self) -> None:
         """Build CSR once; learning then mutates its data array directly."""
+        # Source-oriented indexing is derived only from topology. Invalidate it
+        # whenever CSR is rebuilt; weight rebinding does not need invalidation.
+        self._source_indptr = None
+        self._source_order = None
         try:
             from scipy.sparse import csr_matrix
         except ImportError:
             self._matrix = None
+            self._compiled_csr_compatible = False
             return
         matrix = csr_matrix((self.weights, (self.post, self.pre)),
                             shape=(self.n_post, self.n_pre), dtype=np.float32)
@@ -44,6 +56,68 @@ class SparseProjection:
         self.pre = matrix.indices.astype(np.int32, copy=False)
         self.post = np.repeat(np.arange(self.n_post, dtype=np.int32),
                               np.diff(matrix.indptr)).astype(np.int32, copy=False)
+        self._compiled_csr_compatible = self._has_compiled_csr_layout()
+
+    def _has_compiled_csr_layout(self) -> bool:
+        """Validate the stable CSR/weight layout outside the propagation path."""
+        matrix = self._matrix
+        if matrix is None:
+            return False
+        return bool(
+            matrix.indptr.dtype == np.int32
+            and matrix.indptr.flags.c_contiguous
+            and matrix.indptr.shape == (self.n_post + 1,)
+            and matrix.indices.dtype == np.int32
+            and matrix.indices.flags.c_contiguous
+            and np.shares_memory(matrix.indices, self.pre)
+            and matrix.data.dtype == np.float32
+            and matrix.data.flags.c_contiguous
+            and np.shares_memory(matrix.data, self.weights)
+            and self.weights.dtype == np.float32
+            and self.weights.flags.c_contiguous
+            and len(matrix.indices) == len(matrix.data)
+            and len(self.weights) == len(matrix.data)
+            and int(matrix.indptr[-1]) == len(matrix.data)
+            and self.pre.dtype == np.int32
+            and self.pre.flags.c_contiguous
+            and self.post.dtype == np.int32
+            and self.post.flags.c_contiguous
+            and len(self.pre) == len(matrix.data)
+            and len(self.post) == len(matrix.data)
+        )
+
+    def source_index(self) -> tuple[NDArray[np.int32], NDArray[np.int32]]:
+        """Return a lazy source-oriented edge index without copying weights.
+
+        ``source_order`` contains indices into the canonical CSR data arrays,
+        stably grouped by presynaptic neuron. It stores one int32 per edge and
+        is invalidated by ``rebuild``; the plastic weight vector remains shared.
+        """
+        if self._source_indptr is None or self._source_order is None:
+            if self.pre.shape != self.weights.shape:
+                raise ValueError("presynaptic indices do not match sparse weights")
+            if self.pre.size and (
+                int(self.pre.min()) < 0 or int(self.pre.max()) >= self.n_pre
+            ):
+                raise ValueError("presynaptic index is outside projection bounds")
+            if self.post.shape != self.weights.shape:
+                raise ValueError("postsynaptic indices do not match sparse weights")
+            if self.post.size and (
+                int(self.post.min()) < 0 or int(self.post.max()) >= self.n_post
+            ):
+                raise ValueError("postsynaptic index is outside projection bounds")
+            order = np.argsort(self.pre, kind="stable").astype(
+                np.int32, copy=False
+            )
+            counts = np.bincount(self.pre, minlength=self.n_pre).astype(
+                np.int32, copy=False
+            )
+            indptr = np.empty(self.n_pre + 1, dtype=np.int32)
+            indptr[0] = 0
+            np.cumsum(counts, dtype=np.int32, out=indptr[1:])
+            self._source_order = order
+            self._source_indptr = indptr
+        return self._source_indptr, self._source_order
 
     def bind_weights(self, weights: NDArray[np.float32]) -> None:
         """Swap weight data without rebuilding the shared sparse topology."""
@@ -52,6 +126,7 @@ class SparseProjection:
         self.weights = weights
         if self._matrix is not None:
             self._matrix.data = weights
+        self._compiled_csr_compatible = self._has_compiled_csr_layout()
 
     def currents(self, spikes: NDArray[np.bool_]) -> NDArray[np.float32]:
         if len(spikes) != self.n_pre:
