@@ -25,9 +25,9 @@ class CythonBackend(NumpyBackend):
     """
 
     name = "cython"
-    # Microbenchmarks compare this crossover for source-oriented traversal.
-    # It is deliberately centralized and can be revised with new evidence.
-    ACTIVE_PROPAGATION_MAX_RATE = 0.15
+    # CI microbenchmarks show source traversal wins through 30% activity on
+    # both platforms; row-oriented CSR is safer at denser firing rates.
+    ACTIVE_PROPAGATION_MAX_RATE = 0.30
 
     def __init__(self, *, deterministic: bool = True) -> None:
         super().__init__(deterministic=deterministic)
@@ -53,57 +53,25 @@ class CythonBackend(NumpyBackend):
         if len(spikes) != projection.n_pre:
             raise ValueError("spike vector does not match projection input size")
 
-        matrix = projection._matrix
-        if matrix is None:
+        if (
+            projection._matrix is None
+            or not projection._compiled_csr_compatible
+        ):
             return super().propagate(projection, spikes)
-        indptr = getattr(matrix, "indptr", None)
-        indices = getattr(matrix, "indices", None)
-        matrix_data = getattr(matrix, "data", None)
         if not (
             isinstance(spikes, np.ndarray)
             and spikes.dtype == np.bool_
             and spikes.ndim == 1
             and spikes.flags.c_contiguous
-            and isinstance(indptr, np.ndarray)
-            and indptr.dtype == np.int32
-            and indptr.flags.c_contiguous
-            and indptr.shape == (projection.n_post + 1,)
-            and isinstance(indices, np.ndarray)
-            and indices.dtype == np.int32
-            and indices.flags.c_contiguous
-            and np.shares_memory(indices, projection.pre)
-            and isinstance(matrix_data, np.ndarray)
-            and matrix_data.dtype == np.float32
-            and matrix_data.flags.c_contiguous
-            and np.shares_memory(matrix_data, projection.weights)
-            and projection.weights.dtype == np.float32
-            and projection.weights.flags.c_contiguous
-            and len(projection.weights) == len(matrix_data)
-            and len(indices) == len(matrix_data)
-            and int(indptr[-1]) == len(matrix_data)
-            and projection.pre.dtype == np.int32
-            and projection.pre.flags.c_contiguous
-            and projection.post.dtype == np.int32
-            and projection.post.flags.c_contiguous
-            and len(projection.pre) == len(matrix_data)
-            and len(projection.post) == len(matrix_data)
         ):
             return super().propagate(projection, spikes)
 
+        matrix = projection._matrix
         active_count = int(np.count_nonzero(spikes))
         if active_count == 0:
             return np.zeros(projection.n_post, dtype=np.float32)
         if active_count / projection.n_pre <= self.ACTIVE_PROPAGATION_MAX_RATE:
             source_indptr, source_order = projection.source_index()
-            if not (
-                source_indptr.flags.c_contiguous
-                and source_indptr.dtype == np.int32
-                and source_order.flags.c_contiguous
-                and source_order.dtype == np.int32
-                and len(source_indptr) == projection.n_pre + 1
-                and len(source_order) == len(matrix_data)
-            ):
-                return super().propagate(projection, spikes)
             return self._sparse.propagate_active(
                 source_indptr,
                 source_order,
@@ -114,7 +82,7 @@ class CythonBackend(NumpyBackend):
             )
 
         return self._sparse.propagate_csr(
-            indptr, indices, matrix_data, spikes
+            matrix.indptr, matrix.indices, matrix.data, spikes
         )
 
     def step_neurons(

@@ -93,6 +93,7 @@ def test_cython_sparse_strategies_are_bitwise_equal_to_scipy(
 
 def test_source_index_is_lazy_cached_and_rebuilt_with_topology():
     projection = _projection(32, 27, 0.2, seed=100)
+    assert projection._compiled_csr_compatible
     assert projection._source_indptr is None
     assert projection._source_order is None
     original_weights = projection.weights
@@ -106,6 +107,7 @@ def test_source_index_is_lazy_cached_and_rebuilt_with_topology():
 
     replacement = projection.weights.copy()
     projection.bind_weights(replacement)
+    assert projection._compiled_csr_compatible
     assert projection._source_order is first[1]
     spikes = np.ones(projection.n_pre, dtype=np.bool_)
     np.testing.assert_array_equal(
@@ -118,6 +120,7 @@ def test_source_index_is_lazy_cached_and_rebuilt_with_topology():
     assert projection._source_order is None
     rebuilt = projection.source_index()
     assert len(rebuilt[0]) == projection.n_pre + 1
+    assert projection._compiled_csr_compatible
 
 
 def test_duplicate_edges_are_canonicalized_before_source_indexing():
@@ -156,6 +159,19 @@ def test_noncontiguous_spikes_fall_back_to_numpy_and_keep_shape_error():
         )
 
 
+def test_incompatible_rebound_weights_select_numpy_fallback():
+    projection = _projection(18, 11, 0.3, seed=20)
+    strided = np.repeat(projection.weights, 2)[::2]
+    assert not strided.flags.c_contiguous
+    projection.bind_weights(strided)
+    assert not projection._compiled_csr_compatible
+    spikes = np.arange(projection.n_pre) % 3 == 0
+    np.testing.assert_array_equal(
+        CythonBackend().propagate(projection, spikes),
+        NumpyBackend().propagate(projection, spikes),
+    )
+
+
 def test_backend_selects_csr_when_activity_is_above_crossover():
     projection = _projection(100, 73, 0.12, seed=55)
     spikes = np.ones(100, dtype=np.bool_)
@@ -183,7 +199,7 @@ def test_backend_selects_csr_when_activity_is_above_crossover():
 def test_backend_selects_active_sources_when_activity_is_below_crossover():
     projection = _projection(100, 73, 0.12, seed=56)
     spikes = np.zeros(100, dtype=np.bool_)
-    spikes[[3, 67]] = True
+    spikes[:30] = True
     backend = CythonBackend()
     calls: list[str] = []
     original_active = backend._sparse.propagate_active

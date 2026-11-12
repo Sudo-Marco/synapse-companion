@@ -20,6 +20,7 @@ class SparseProjection:
     _source_order: NDArray[np.int32] | None = field(
         default=None, init=False, repr=False
     )
+    _compiled_csr_compatible: bool = field(default=False, init=False, repr=False)
 
     def __post_init__(self) -> None:
         self.rebuild()
@@ -44,6 +45,7 @@ class SparseProjection:
             from scipy.sparse import csr_matrix
         except ImportError:
             self._matrix = None
+            self._compiled_csr_compatible = False
             return
         matrix = csr_matrix((self.weights, (self.post, self.pre)),
                             shape=(self.n_post, self.n_pre), dtype=np.float32)
@@ -54,6 +56,35 @@ class SparseProjection:
         self.pre = matrix.indices.astype(np.int32, copy=False)
         self.post = np.repeat(np.arange(self.n_post, dtype=np.int32),
                               np.diff(matrix.indptr)).astype(np.int32, copy=False)
+        self._compiled_csr_compatible = self._has_compiled_csr_layout()
+
+    def _has_compiled_csr_layout(self) -> bool:
+        """Validate the stable CSR/weight layout outside the propagation path."""
+        matrix = self._matrix
+        if matrix is None:
+            return False
+        return bool(
+            matrix.indptr.dtype == np.int32
+            and matrix.indptr.flags.c_contiguous
+            and matrix.indptr.shape == (self.n_post + 1,)
+            and matrix.indices.dtype == np.int32
+            and matrix.indices.flags.c_contiguous
+            and np.shares_memory(matrix.indices, self.pre)
+            and matrix.data.dtype == np.float32
+            and matrix.data.flags.c_contiguous
+            and np.shares_memory(matrix.data, self.weights)
+            and self.weights.dtype == np.float32
+            and self.weights.flags.c_contiguous
+            and len(matrix.indices) == len(matrix.data)
+            and len(self.weights) == len(matrix.data)
+            and int(matrix.indptr[-1]) == len(matrix.data)
+            and self.pre.dtype == np.int32
+            and self.pre.flags.c_contiguous
+            and self.post.dtype == np.int32
+            and self.post.flags.c_contiguous
+            and len(self.pre) == len(matrix.data)
+            and len(self.post) == len(matrix.data)
+        )
 
     def source_index(self) -> tuple[NDArray[np.int32], NDArray[np.int32]]:
         """Return a lazy source-oriented edge index without copying weights.
@@ -95,6 +126,7 @@ class SparseProjection:
         self.weights = weights
         if self._matrix is not None:
             self._matrix.data = weights
+        self._compiled_csr_compatible = self._has_compiled_csr_layout()
 
     def currents(self, spikes: NDArray[np.bool_]) -> NDArray[np.float32]:
         if len(spikes) != self.n_pre:
