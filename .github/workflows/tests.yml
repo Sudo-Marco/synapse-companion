@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+    branches: [main, feat/cython-csr-phase6]
   workflow_dispatch:
 
 jobs:
