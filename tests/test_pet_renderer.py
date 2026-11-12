@@ -180,9 +180,19 @@ def test_floating_pet_switches_to_panel_and_back(tmp_path, monkeypatch):
         window._stop_jump(restore_start=True)
         assert window.geometry() == base_geometry
 
+        # The feet meet the top of the taskbar work area. A downward motion
+        # from the floor is clamped there; from above the floor it still falls.
         window._begin_jump("sad", 4, 900)
         window._jump_frame(0.5, "sad", 4)
-        assert window.y() > base_geometry.y()
+        assert window.y() == base_geometry.y()
+        window._stop_jump(restore_start=True)
+
+        window.move(base_geometry.x(), base_geometry.y() - 12)
+        window._begin_jump("sad", 4, 900)
+        fall_start_y = window.y()
+        window._jump_frame(0.5, "sad", 4)
+        assert window.y() > fall_start_y
+        assert window.y() <= base_geometry.y()
         window._stop_jump(restore_start=True)
     finally:
         window._requested_exit = True
