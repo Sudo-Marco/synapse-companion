@@ -68,15 +68,23 @@ Legenda: ✅ concluído com evidência; ⚠️ ressalva registrada; ⏳ aguardan
 - [x] Medir custo por tick, CPU/parede, memória e disparos por população; confirmar o limite de regressão de 3%.
 - [x] Registrar resultados e limites em `docs/performance/PHASE5_LIF_REPORT.md`.
 
-## Fase 6 — CSR compilado (em validação)
+## Fase 6 — CSR compilado (validada; PR aberta)
 
 - [x] Implementar kernels Cython para CSR por destino e travessia de fontes ativas.
 - [x] Criar índice fonte→arestas sob demanda sem cópia do vetor de pesos.
 - [x] Adicionar testes condicionais de equivalência bit a bit, cache/invalidação e seleção de estratégia.
 - [x] Adicionar benchmark de densidades e taxas de disparo em projeções representativas de 600/1.000 neurônios.
 - [x] Compilar, rodar a suíte completa e validar no CI Windows/Ubuntu.
-- [ ] Repetir benchmark final com crossover conservador em 30% e confirmar regressão de CPU dentro de 3%.
+- [x] Repetir benchmark final com crossover conservador em 30% e confirmar regressão de CPU dentro de 3%.
 - [x] Registrar hash, custo/memória e resultados por plataforma no relatório da Fase 6.
 
-## Próximas fases — não iniciadas
-- [ ] Fases posteriores: event-driven, codificação/aprendizado, reorganização e release.
+## Fase 7 — event-driven experimental
+
+- [ ] Investigar spikes novos, filas, correntes pendentes, decaimento, refratariedade, adaptação e elegibilidade.
+- [ ] Manter `fixed_step` como padrão e criar modo experimental independente, desativado por padrão.
+- [ ] Comparar saída, determinismo e custo com passos fixos em múltiplas taxas de spikes.
+- [ ] Reter a arquitetura tradicional se o ganho não for relevante ou se a fidelidade temporal não for preservada.
+- [ ] Não alterar topologia, pesos padrão, regras de aprendizado nem formato de snapshot.
+
+## Fases posteriores — não iniciadas
+- [ ] Codificação/aprendizado, reorganização arquitetural, persistência/runtime, testes de estresse e release.

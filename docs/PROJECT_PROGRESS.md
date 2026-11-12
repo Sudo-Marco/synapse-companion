@@ -12,8 +12,9 @@ Atualizado em **11 de novembro de 2026**.
 | 3 — Infraestrutura híbrida | Concluída com limites medidos | `docs/performance/PHASE3_BACKEND_REPORT.md`, testes e benchmark; NumPy padrão, kernels Cython opcionais para STDP/LIF |
 | 4 — STDP compilada | Concluída; equivalência e benchmark no CI Windows/Ubuntu | `docs/performance/PHASE4_STDP_REPORT.md`, artefatos `cython_stdp_ci_*`, workflow e testes |
 | 5 — LIF compilado | Concluída; equivalência e benchmark aprovados em CI | `docs/performance/PHASE5_LIF_REPORT.md`, testes, benchmark e CI Windows/Ubuntu |
-| 6 — CSR compilado | Implementada e validada; PR #4 aberta para `main` | `docs/performance/PHASE6_CSR_REPORT.md`, testes, benchmarks e CI Windows/Ubuntu |
-| 7+ — evolução | Não iniciadas | Event-driven, codificação/aprendizado, reorganização e release |
+| 6 — CSR compilado | Validada em CI; PR #4 aberta para `main` | `docs/performance/PHASE6_CSR_REPORT.md`, testes, benchmarks e CI Windows/Ubuntu |
+| 7 — Event-driven experimental | Próxima; protocolo definido | Modo fixo continua padrão; experimentar somente sob flag |
+| 8+ — evolução | Não iniciadas | Codificação/aprendizado, reorganização arquitetural, persistência/runtime, estresse e release |
 
 ## Linha de base atual
 
@@ -35,4 +36,6 @@ O bloco de desempenho foi registrado no commit local `3f1bd4e` (`perf: complete 
 
 **Checkpoint da Fase 5:** kernel LIF Cython opcional com NumPy como padrão, fallback para layouts incompatíveis/alias, testes bit a bit da população e da rede completa, e benchmark Windows/Ubuntu em 600/1.000 neurônios. CI compilou os módulos, passou a suíte completa e confirmou hashes idênticos; CPU melhorou 6,52% a 9,41% no Ubuntu e 7,22% a 9,13% no Windows. A medição detalhada, memória e atividade por população estão em `docs/performance/PHASE5_LIF_REPORT.md`. A falha local headless anterior permaneceu fora do escopo.
 
-**Andamento da Fase 6:** propagação CSR opcional em Cython por destino ou por spikes ativos, com índice fonte→arestas sob demanda e sem duplicar pesos. Layout validado uma vez na reconstrução/vinculação para não adicionar checagens caras em cada tick. A comparação direta favorece spikes ativos até 30%; em taxas maiores a CSR por linha é mais consistente, então o corte final volta a 30%. A validação da revisão final está rodando. PR #4 está aberta e não foi mesclada. A compilação nativa não foi feita localmente e a UI física do Windows não foi validada.
+**Checkpoint da Fase 6:** propagação CSR opcional em Cython por destino ou por spikes ativos, com índice fonte→arestas sob demanda e sem duplicar pesos. Layout validado uma vez na reconstrução/vinculação para não adicionar checagens caras em cada tick. O corte final é 30% de atividade: acima dele, CSR por destino é mais consistente. A CI compilou e passou a suíte completa em Windows/Ubuntu; hashes NumPy/Cython coincidiram. CPU do tick caiu 48,7–58,0% contra NumPy, sem regressão. O relatório e quatro JSONs com dados brutos estão em `docs/performance/PHASE6_CSR_REPORT.md` e `benchmarks/results/cython_phase6_*.json`. PR #4 está aberta e não foi mesclada. A compilação nativa local e a UI física do Windows não foram validadas.
+
+**Próxima fase autorizada — Fase 7:** investigar um modo event-driven experimental, sem substituir o passo fixo e sem alterar topologia ou regras de aprendizado. O trabalho começa após o checkpoint da Fase 6; a configuração padrão seguirá `fixed_step`.

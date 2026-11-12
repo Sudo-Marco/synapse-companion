@@ -111,7 +111,7 @@ Os módulos de UI estão listados em `docs/architecture/REPOSITORY_INVENTORY.jso
 
 ## Dependências e qualidade
 
-Dependências obrigatórias declaradas no `pyproject.toml`: NumPy, SciPy, PyYAML, psutil, PySide6 Essentials, ModernGL e Pillow. Extras opcionais: `pynput`/`watchdog` para Windows, `SoundCard`/`pycaw` para áudio, `pytest`/`tqdm` para desenvolvimento e Cython no extra `native`. Os kernels Cython opcionais cobrem STDP e LIF; propagação CSR está em validação na Fase 6. A configuração padrão continua NumPy.
+Dependências obrigatórias declaradas no `pyproject.toml`: NumPy, SciPy, PyYAML, psutil, PySide6 Essentials, ModernGL e Pillow. Extras opcionais: `pynput`/`watchdog` para Windows, `SoundCard`/`pycaw` para áudio, `pytest`/`tqdm` para desenvolvimento e Cython no extra `native`. Os kernels Cython opcionais cobrem STDP, LIF e propagação CSR; a configuração padrão continua NumPy. Os resultados CSR estão em [PHASE6_CSR_REPORT.md](../performance/PHASE6_CSR_REPORT.md).
 
 A CI GitHub Actions roda `pytest` no Windows e Ubuntu, com Python 3.12 e Qt offscreen. Na validação local pós-Fase 3 com Python 3.14.10 e Qt offscreen, foram coletados 158 testes: 157 passaram e um teste de geometria do salto falhou. A falha e seus limites estão descritos em `TECHNICAL_DEBT.md` e `benchmarks/results/validation_phase03.json`.
 

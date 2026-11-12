@@ -8,8 +8,9 @@ Notable changes are recorded here. This project follows a simple Keep a Changelo
 
 - Optional Cython LIF kernel with NumPy fallback, bitwise trajectory tests, and
   Windows/Ubuntu full-network tick benchmarks; NumPy remains the default.
-- Experimental Cython CSR propagation kernels for destination-row and
-  active-source traversal, with lazy source indexing and no copied weights.
+- Optional Cython CSR propagation with destination-row and active-source
+  traversal, lazy source indexing, bitwise tests, and Windows/Ubuntu benchmarks;
+  NumPy remains the default.
 
 ### Planned
 

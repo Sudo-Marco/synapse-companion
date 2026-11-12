@@ -65,4 +65,5 @@ Não há OpenMP nem alteração da topologia, parâmetros ou fórmulas da SNN. O
 recebe memoryviews dos arrays NumPy contíguos existentes; arrays não contíguos
 ou com alias usam a referência NumPy. O backend Cython permanece opt-in e NumPy segue como padrão. A equivalência
 e o custo medidos por plataforma estão documentados nos relatórios das Fases 4
-a 6.
+a 6. O relatório da Fase 6 registra os resultados do kernel CSR compilado e o
+seu ponto de seleção por taxa de disparos.
