@@ -1,0 +1,463 @@
+{
+  "benchmark": "event_driven_quiet_block_prototype",
+  "parameters": {
+    "steps": 25,
+    "repeats": 5,
+    "blocks": 10
+  },
+  "quiet_cases": [
+    {
+      "neurons": 600,
+      "steps_per_block": 25,
+      "repeats": 5,
+      "blocks_per_repeat": 10,
+      "fixed_step": {
+        "mean_ms_per_neural_step": 0.4251828800000112,
+        "median_ms_per_neural_step": 0.4225492000000486,
+        "samples_ms_per_neural_step": [
+          0.4135352000000694,
+          0.4239476000000195,
+          0.4219547999999804,
+          0.4225492000000486,
+          0.44392759999993814
+        ],
+        "skipped_blocks": 0,
+        "total_blocks": 50
+      },
+      "event_driven_quiet": {
+        "mean_ms_per_neural_step": 0.003949360000001434,
+        "median_ms_per_neural_step": 0.003912000000013904,
+        "samples_ms_per_neural_step": [
+          0.0041247999999995955,
+          0.0038683999999875596,
+          0.0037884000000758533,
+          0.003912000000013904,
+          0.004053199999930257
+        ],
+        "skipped_blocks": 50,
+        "total_blocks": 50
+      },
+      "speedup": 107.65867887451559,
+      "spike_equivalence": "exact",
+      "scope": "isolated noise-free network; no PetEngine, UI, or live sensors"
+    },
+    {
+      "neurons": 1000,
+      "steps_per_block": 25,
+      "repeats": 5,
+      "blocks_per_repeat": 10,
+      "fixed_step": {
+        "mean_ms_per_neural_step": 0.9416624799999227,
+        "median_ms_per_neural_step": 0.9301771999998891,
+        "samples_ms_per_neural_step": [
+          0.9296967999999879,
+          0.9502343999998857,
+          0.9276655999999548,
+          0.9705383999998958,
+          0.9301771999998891
+        ],
+        "skipped_blocks": 0,
+        "total_blocks": 50
+      },
+      "event_driven_quiet": {
+        "mean_ms_per_neural_step": 0.004609359999949447,
+        "median_ms_per_neural_step": 0.004648399999950925,
+        "samples_ms_per_neural_step": [
+          0.004389599999967686,
+          0.004633199999943827,
+          0.004679599999917627,
+          0.004648399999950925,
+          0.004695999999967171
+        ],
+        "skipped_blocks": 50,
+        "total_blocks": 50
+      },
+      "speedup": 204.29354183883453,
+      "spike_equivalence": "exact",
+      "scope": "isolated noise-free network; no PetEngine, UI, or live sensors"
+    }
+  ],
+  "injected_activity_cases": [
+    {
+      "neurons": 600,
+      "injected_spike_fraction": 0.01,
+      "steps_per_block": 25,
+      "fixed_step": {
+        "mean_ms_per_neural_step": 0.42848368000004483,
+        "median_ms_per_neural_step": 0.4250808000001598,
+        "samples_ms_per_neural_step": [
+          0.4201980000000276,
+          0.42597120000004907,
+          0.4250808000001598,
+          0.42270080000002963,
+          0.4484675999999581
+        ],
+        "skipped_blocks": 0,
+        "total_blocks": 50,
+        "output_hashes": [
+          "dd3df6b01f055a24175224d8bd5cc6f2e9b5b29e7c027a1b137cdda762aee179",
+          "dd3df6b01f055a24175224d8bd5cc6f2e9b5b29e7c027a1b137cdda762aee179",
+          "dd3df6b01f055a24175224d8bd5cc6f2e9b5b29e7c027a1b137cdda762aee179",
+          "dd3df6b01f055a24175224d8bd5cc6f2e9b5b29e7c027a1b137cdda762aee179",
+          "dd3df6b01f055a24175224d8bd5cc6f2e9b5b29e7c027a1b137cdda762aee179"
+        ]
+      },
+      "event_mode_with_fallback": {
+        "mean_ms_per_neural_step": 0.4247077599999557,
+        "median_ms_per_neural_step": 0.422972800000025,
+        "samples_ms_per_neural_step": [
+          0.42236879999995836,
+          0.422972800000025,
+          0.42262000000005173,
+          0.424983599999905,
+          0.43059359999983826
+        ],
+        "skipped_blocks": 0,
+        "total_blocks": 50,
+        "output_hashes": [
+          "dd3df6b01f055a24175224d8bd5cc6f2e9b5b29e7c027a1b137cdda762aee179",
+          "dd3df6b01f055a24175224d8bd5cc6f2e9b5b29e7c027a1b137cdda762aee179",
+          "dd3df6b01f055a24175224d8bd5cc6f2e9b5b29e7c027a1b137cdda762aee179",
+          "dd3df6b01f055a24175224d8bd5cc6f2e9b5b29e7c027a1b137cdda762aee179",
+          "dd3df6b01f055a24175224d8bd5cc6f2e9b5b29e7c027a1b137cdda762aee179"
+        ]
+      },
+      "guarded_fallback_overhead_ratio": 0.9911877157139597,
+      "output_hashes_match": true
+    },
+    {
+      "neurons": 600,
+      "injected_spike_fraction": 0.05,
+      "steps_per_block": 25,
+      "fixed_step": {
+        "mean_ms_per_neural_step": 0.4296331199999258,
+        "median_ms_per_neural_step": 0.42342279999979837,
+        "samples_ms_per_neural_step": [
+          0.4176319999999123,
+          0.42342279999979837,
+          0.42284360000007837,
+          0.4262935999997808,
+          0.4579736000000594
+        ],
+        "skipped_blocks": 0,
+        "total_blocks": 50,
+        "output_hashes": [
+          "dd3df6b01f055a24175224d8bd5cc6f2e9b5b29e7c027a1b137cdda762aee179",
+          "dd3df6b01f055a24175224d8bd5cc6f2e9b5b29e7c027a1b137cdda762aee179",
+          "dd3df6b01f055a24175224d8bd5cc6f2e9b5b29e7c027a1b137cdda762aee179",
+          "dd3df6b01f055a24175224d8bd5cc6f2e9b5b29e7c027a1b137cdda762aee179",
+          "dd3df6b01f055a24175224d8bd5cc6f2e9b5b29e7c027a1b137cdda762aee179"
+        ]
+      },
+      "event_mode_with_fallback": {
+        "mean_ms_per_neural_step": 0.42776503999998566,
+        "median_ms_per_neural_step": 0.4238040000000183,
+        "samples_ms_per_neural_step": [
+          0.42046159999995325,
+          0.4267460000000938,
+          0.4218639999999141,
+          0.4238040000000183,
+          0.445949599999949
+        ],
+        "skipped_blocks": 0,
+        "total_blocks": 50,
+        "output_hashes": [
+          "dd3df6b01f055a24175224d8bd5cc6f2e9b5b29e7c027a1b137cdda762aee179",
+          "dd3df6b01f055a24175224d8bd5cc6f2e9b5b29e7c027a1b137cdda762aee179",
+          "dd3df6b01f055a24175224d8bd5cc6f2e9b5b29e7c027a1b137cdda762aee179",
+          "dd3df6b01f055a24175224d8bd5cc6f2e9b5b29e7c027a1b137cdda762aee179",
+          "dd3df6b01f055a24175224d8bd5cc6f2e9b5b29e7c027a1b137cdda762aee179"
+        ]
+      },
+      "guarded_fallback_overhead_ratio": 0.9956519180831764,
+      "output_hashes_match": true
+    },
+    {
+      "neurons": 600,
+      "injected_spike_fraction": 0.15,
+      "steps_per_block": 25,
+      "fixed_step": {
+        "mean_ms_per_neural_step": 0.4273200000000088,
+        "median_ms_per_neural_step": 0.42233839999994416,
+        "samples_ms_per_neural_step": [
+          0.41771959999982755,
+          0.4203196000000844,
+          0.42233839999994416,
+          0.42401760000007016,
+          0.45220480000011776
+        ],
+        "skipped_blocks": 0,
+        "total_blocks": 50,
+        "output_hashes": [
+          "485b92243526f1eb7c41ed0af578ccb9e9c1b967c95c04ffed66c6db4d3e219a",
+          "265404ae3d0a671781a1bf0ff03bf920d73c66a83afdf71a3d20fc293731a487",
+          "f92dae9753ca3baba7ad5698f869f9d4de2a005a5e9463f90c0e3e9123993a0f",
+          "074370592f3736c349d3744ffc82a1aa8b6925510c4fe692b6c7d4555cf214c7",
+          "cddc89b42c7f74198ce55c11678b3969f3b0d1b8f96ac111af3bec486558c29d"
+        ]
+      },
+      "event_mode_with_fallback": {
+        "mean_ms_per_neural_step": 0.4233435199999803,
+        "median_ms_per_neural_step": 0.42255080000018097,
+        "samples_ms_per_neural_step": [
+          0.42255080000018097,
+          0.419895600000018,
+          0.42554599999994025,
+          0.4211935999999241,
+          0.42753159999983836
+        ],
+        "skipped_blocks": 0,
+        "total_blocks": 50,
+        "output_hashes": [
+          "485b92243526f1eb7c41ed0af578ccb9e9c1b967c95c04ffed66c6db4d3e219a",
+          "265404ae3d0a671781a1bf0ff03bf920d73c66a83afdf71a3d20fc293731a487",
+          "f92dae9753ca3baba7ad5698f869f9d4de2a005a5e9463f90c0e3e9123993a0f",
+          "074370592f3736c349d3744ffc82a1aa8b6925510c4fe692b6c7d4555cf214c7",
+          "cddc89b42c7f74198ce55c11678b3969f3b0d1b8f96ac111af3bec486558c29d"
+        ]
+      },
+      "guarded_fallback_overhead_ratio": 0.9906943742393793,
+      "output_hashes_match": true
+    },
+    {
+      "neurons": 600,
+      "injected_spike_fraction": 0.3,
+      "steps_per_block": 25,
+      "fixed_step": {
+        "mean_ms_per_neural_step": 0.4325380000000223,
+        "median_ms_per_neural_step": 0.42954680000002554,
+        "samples_ms_per_neural_step": [
+          0.4213632000000871,
+          0.43554999999992106,
+          0.42423200000007455,
+          0.42954680000002554,
+          0.45199800000000323
+        ],
+        "skipped_blocks": 0,
+        "total_blocks": 50,
+        "output_hashes": [
+          "2a3418060be0770babdd8f0ee960b1707494f2c2ba48e9a1d7dd870354f1912f",
+          "3216c0d7a7704ff666d8af1932abe7a547acf52f72aecff2c05286028dea9575",
+          "9828d2e782f3502da46dc8d1b0ee7904a41b061883f4bb94f83bf8caba1485b2",
+          "c5cab11fda02690df482b6004cda3d9e41b163859b146237af70c2641f4e68b3",
+          "3609d43eeedd906b70f3b79514bf9c790134e91d1e4953ab94c11265864999a2"
+        ]
+      },
+      "event_mode_with_fallback": {
+        "mean_ms_per_neural_step": 0.4347688799999105,
+        "median_ms_per_neural_step": 0.4276471999999103,
+        "samples_ms_per_neural_step": [
+          0.4254119999998238,
+          0.431824000000006,
+          0.4272251999998389,
+          0.4276471999999103,
+          0.4617359999999735
+        ],
+        "skipped_blocks": 0,
+        "total_blocks": 50,
+        "output_hashes": [
+          "2a3418060be0770babdd8f0ee960b1707494f2c2ba48e9a1d7dd870354f1912f",
+          "3216c0d7a7704ff666d8af1932abe7a547acf52f72aecff2c05286028dea9575",
+          "9828d2e782f3502da46dc8d1b0ee7904a41b061883f4bb94f83bf8caba1485b2",
+          "c5cab11fda02690df482b6004cda3d9e41b163859b146237af70c2641f4e68b3",
+          "3609d43eeedd906b70f3b79514bf9c790134e91d1e4953ab94c11265864999a2"
+        ]
+      },
+      "guarded_fallback_overhead_ratio": 1.005157650888218,
+      "output_hashes_match": true
+    },
+    {
+      "neurons": 1000,
+      "injected_spike_fraction": 0.01,
+      "steps_per_block": 25,
+      "fixed_step": {
+        "mean_ms_per_neural_step": 0.946333519999962,
+        "median_ms_per_neural_step": 0.9382947999999942,
+        "samples_ms_per_neural_step": [
+          0.9382947999999942,
+          0.9300991999998587,
+          0.9362316000001556,
+          0.9395515999999589,
+          0.9874903999998423
+        ],
+        "skipped_blocks": 0,
+        "total_blocks": 50,
+        "output_hashes": [
+          "2a60e85386d2ea13abc91fa6589fa30195be596086698e19b8089566b7c5807e",
+          "2a60e85386d2ea13abc91fa6589fa30195be596086698e19b8089566b7c5807e",
+          "2a60e85386d2ea13abc91fa6589fa30195be596086698e19b8089566b7c5807e",
+          "2a60e85386d2ea13abc91fa6589fa30195be596086698e19b8089566b7c5807e",
+          "2a60e85386d2ea13abc91fa6589fa30195be596086698e19b8089566b7c5807e"
+        ]
+      },
+      "event_mode_with_fallback": {
+        "mean_ms_per_neural_step": 0.9544675999999527,
+        "median_ms_per_neural_step": 0.9399111999998695,
+        "samples_ms_per_neural_step": [
+          1.0054723999999169,
+          0.9309763999999632,
+          0.938318400000071,
+          0.9576595999999427,
+          0.9399111999998695
+        ],
+        "skipped_blocks": 0,
+        "total_blocks": 50,
+        "output_hashes": [
+          "2a60e85386d2ea13abc91fa6589fa30195be596086698e19b8089566b7c5807e",
+          "2a60e85386d2ea13abc91fa6589fa30195be596086698e19b8089566b7c5807e",
+          "2a60e85386d2ea13abc91fa6589fa30195be596086698e19b8089566b7c5807e",
+          "2a60e85386d2ea13abc91fa6589fa30195be596086698e19b8089566b7c5807e",
+          "2a60e85386d2ea13abc91fa6589fa30195be596086698e19b8089566b7c5807e"
+        ]
+      },
+      "guarded_fallback_overhead_ratio": 1.008595362869521,
+      "output_hashes_match": true
+    },
+    {
+      "neurons": 1000,
+      "injected_spike_fraction": 0.05,
+      "steps_per_block": 25,
+      "fixed_step": {
+        "mean_ms_per_neural_step": 0.9508588000000145,
+        "median_ms_per_neural_step": 0.9454372000000149,
+        "samples_ms_per_neural_step": [
+          0.9801588000000265,
+          0.9454372000000149,
+          0.936429999999973,
+          0.9430636000001869,
+          0.9492043999998714
+        ],
+        "skipped_blocks": 0,
+        "total_blocks": 50,
+        "output_hashes": [
+          "2a60e85386d2ea13abc91fa6589fa30195be596086698e19b8089566b7c5807e",
+          "2a60e85386d2ea13abc91fa6589fa30195be596086698e19b8089566b7c5807e",
+          "2a60e85386d2ea13abc91fa6589fa30195be596086698e19b8089566b7c5807e",
+          "2a60e85386d2ea13abc91fa6589fa30195be596086698e19b8089566b7c5807e",
+          "998b4736b1095b0fe66af9a681d6f418f3b11e16bfbc4ade0193aa09f8b7e02d"
+        ]
+      },
+      "event_mode_with_fallback": {
+        "mean_ms_per_neural_step": 0.9463949599999524,
+        "median_ms_per_neural_step": 0.9456760000000486,
+        "samples_ms_per_neural_step": [
+          0.9406339999998181,
+          0.9324303999999302,
+          0.9657660000000305,
+          0.9456760000000486,
+          0.9474683999999343
+        ],
+        "skipped_blocks": 0,
+        "total_blocks": 50,
+        "output_hashes": [
+          "2a60e85386d2ea13abc91fa6589fa30195be596086698e19b8089566b7c5807e",
+          "2a60e85386d2ea13abc91fa6589fa30195be596086698e19b8089566b7c5807e",
+          "2a60e85386d2ea13abc91fa6589fa30195be596086698e19b8089566b7c5807e",
+          "2a60e85386d2ea13abc91fa6589fa30195be596086698e19b8089566b7c5807e",
+          "998b4736b1095b0fe66af9a681d6f418f3b11e16bfbc4ade0193aa09f8b7e02d"
+        ]
+      },
+      "guarded_fallback_overhead_ratio": 0.9953054649122856,
+      "output_hashes_match": true
+    },
+    {
+      "neurons": 1000,
+      "injected_spike_fraction": 0.15,
+      "steps_per_block": 25,
+      "fixed_step": {
+        "mean_ms_per_neural_step": 0.9422508000000107,
+        "median_ms_per_neural_step": 0.9437464000000091,
+        "samples_ms_per_neural_step": [
+          0.9481680000001234,
+          0.9284951999998157,
+          0.9437464000000091,
+          0.9366747999999916,
+          0.9541696000001139
+        ],
+        "skipped_blocks": 0,
+        "total_blocks": 50,
+        "output_hashes": [
+          "a345ca668f4b3c03c3f54ba1f4a6fad0a5e64e6d515b5be8d875480c3e36a5f7",
+          "90d3acf8714d1d16183d31ded6ec9c7c28d994136af0dc0f05ee26c088cd09b2",
+          "9430cbd4e08616cd5396bdf1c96f3c843339c2536c2ff67269722f9d84f8bf9a",
+          "e30218bc15f88a2210eae38a6c9ffedef8179e6816a8b2f31503fc2eafd2da38",
+          "e668242522ac12a12403dbcb3707b1310e853d1ff01607514a4317a0f9972e90"
+        ]
+      },
+      "event_mode_with_fallback": {
+        "mean_ms_per_neural_step": 0.952449119999892,
+        "median_ms_per_neural_step": 0.945169199999782,
+        "samples_ms_per_neural_step": [
+          0.945169199999782,
+          0.950019999999995,
+          0.9366263999997955,
+          0.9856551999998828,
+          0.9447748000000047
+        ],
+        "skipped_blocks": 0,
+        "total_blocks": 50,
+        "output_hashes": [
+          "a345ca668f4b3c03c3f54ba1f4a6fad0a5e64e6d515b5be8d875480c3e36a5f7",
+          "90d3acf8714d1d16183d31ded6ec9c7c28d994136af0dc0f05ee26c088cd09b2",
+          "9430cbd4e08616cd5396bdf1c96f3c843339c2536c2ff67269722f9d84f8bf9a",
+          "e30218bc15f88a2210eae38a6c9ffedef8179e6816a8b2f31503fc2eafd2da38",
+          "e668242522ac12a12403dbcb3707b1310e853d1ff01607514a4317a0f9972e90"
+        ]
+      },
+      "guarded_fallback_overhead_ratio": 1.010823360404556,
+      "output_hashes_match": true
+    },
+    {
+      "neurons": 1000,
+      "injected_spike_fraction": 0.3,
+      "steps_per_block": 25,
+      "fixed_step": {
+        "mean_ms_per_neural_step": 0.947857440000007,
+        "median_ms_per_neural_step": 0.9429271999999855,
+        "samples_ms_per_neural_step": [
+          0.9402944000000844,
+          0.9542140000000927,
+          0.9312947999999324,
+          0.9705567999999403,
+          0.9429271999999855
+        ],
+        "skipped_blocks": 0,
+        "total_blocks": 50,
+        "output_hashes": [
+          "7e57e99e56efae0386de3939743e6cba35f51a7b38623cb1cbeccc2f51a55144",
+          "c61e6a9feb56d31b77b07ef59bcb6ee9523898e09797ca13d900d79fc3ddb247",
+          "5164b8d96567e7886b62bb330cf19cb53e2519dbc85ffc1523a530d7a0dc4d1c",
+          "ae70653e5a4b42549aae6745011e02e2ab800debd59c73e3af6ca79643ba7d96",
+          "7a593f46c8f7045d0f8997e710d0df202ddff6055c9c80569293c83ee27cc34c"
+        ]
+      },
+      "event_mode_with_fallback": {
+        "mean_ms_per_neural_step": 0.9466105599999992,
+        "median_ms_per_neural_step": 0.9422895999998673,
+        "samples_ms_per_neural_step": [
+          0.9784480000000713,
+          0.9278380000000652,
+          0.9422895999998673,
+          0.9408367999999427,
+          0.9436404000000493
+        ],
+        "skipped_blocks": 0,
+        "total_blocks": 50,
+        "output_hashes": [
+          "7e57e99e56efae0386de3939743e6cba35f51a7b38623cb1cbeccc2f51a55144",
+          "c61e6a9feb56d31b77b07ef59bcb6ee9523898e09797ca13d900d79fc3ddb247",
+          "5164b8d96567e7886b62bb330cf19cb53e2519dbc85ffc1523a530d7a0dc4d1c",
+          "ae70653e5a4b42549aae6745011e02e2ab800debd59c73e3af6ca79643ba7d96",
+          "7a593f46c8f7045d0f8997e710d0df202ddff6055c9c80569293c83ee27cc34c"
+        ]
+      },
+      "guarded_fallback_overhead_ratio": 0.9986845279180298,
+      "output_hashes_match": true
+    }
+  ],
+  "notes": [
+    "The experimental path only skips a block when its preconditions prove the block is silent.",
+    "Fixed-step remains the reference; noise, sensory input, pending spikes, refractory cells, or a homeostasis boundary force fallback.",
+    "The measured event mode is a prototype, not a desktop runtime performance claim."
+  ]
+}

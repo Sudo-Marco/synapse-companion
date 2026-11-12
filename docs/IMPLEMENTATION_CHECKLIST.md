@@ -83,9 +83,9 @@ Legenda: ✅ concluído com evidência; ⚠️ ressalva registrada; ⏳ aguardan
 - [x] Investigar spikes, correntes, ruído, decaimento, refratariedade, adaptação, elegibilidade e janelas de homeostase.
 - [x] Manter `fixed_step` como padrão e adicionar modo experimental independente, desativado por padrão.
 - [x] Fazer o modo experimental recuar para o passo fixo em qualquer condição que possa produzir um evento.
-- [ ] Comparar saída, determinismo e custo com passos fixos no CI em 600/1.000 neurônios e coletar os artefatos finais.
+- [x] Comparar saída, determinismo e custo com passos fixos no CI em 600/1.000 neurônios e coletar os artefatos finais.
 - [x] Preservar topologia, pesos padrão, regras de aprendizado e formato de snapshot.
-- [ ] Registrar medições, limitações e decisão de manter/remover o protótipo em `docs/performance/PHASE7_EVENT_DRIVEN_REPORT.md`.
+- [x] Registrar medições, limitações e decisão de manter/remover o protótipo em `docs/performance/PHASE7_EVENT_DRIVEN_REPORT.md`.
 
 ## Fases posteriores — não iniciadas
 - [ ] Codificação/aprendizado, reorganização arquitetural, persistência/runtime, testes de estresse e release.

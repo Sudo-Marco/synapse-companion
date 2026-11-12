@@ -13,7 +13,7 @@ Atualizado em **11 de novembro de 2026**.
 | 4 — STDP compilada | Concluída; equivalência e benchmark no CI Windows/Ubuntu | `docs/performance/PHASE4_STDP_REPORT.md`, artefatos `cython_stdp_ci_*`, workflow e testes |
 | 5 — LIF compilado | Concluída; equivalência e benchmark aprovados em CI | `docs/performance/PHASE5_LIF_REPORT.md`, testes, benchmark e CI Windows/Ubuntu |
 | 6 — CSR compilado | Validada em CI; PR #4 aberta para `main` | `docs/performance/PHASE6_CSR_REPORT.md`, testes, benchmarks e CI Windows/Ubuntu |
-| 7 — Event-driven experimental | Implementada em branch; validação pendente | Modo fixo continua padrão; fast-forward apenas em bloco silencioso |
+| 7 — Event-driven experimental | Implementada e validada em CI; PR #5 aberta | Modo fixo continua padrão; fast-forward apenas em bloco silencioso |
 | 8+ — evolução | Não iniciadas | Codificação/aprendizado, reorganização arquitetural, persistência/runtime, estresse e release |
 
 ## Linha de base atual
@@ -40,4 +40,4 @@ O bloco de desempenho foi registrado no commit local `3f1bd4e` (`perf: complete 
 
 **Fase 7 iniciada:** investigar um modo event-driven experimental, sem substituir o passo fixo e sem alterar topologia ou regras de aprendizado. A configuração padrão segue `fixed_step`.
 
-**Andamento da Fase 7:** investigação confirmou que ruído, entrada sensorial, spikes pendentes, refratariedade e fronteiras de homeostase exigem o passo fixo. O protótipo fast-forward só salta um bloco silencioso, com ruído zero; toda outra situação volta ao passo fixo. `simulation.mode: fixed_step` e `simulation.event_driven: false` seguem como padrão. Testes e benchmark de 600/1.000 neurônios foram adicionados à CI Windows/Ubuntu; medições finais e decisão serão registradas após a execução dessa branch.
+**Checkpoint da Fase 7:** investigação confirmou que ruído, entrada sensorial, spikes pendentes, refratariedade e fronteiras de homeostase exigem o passo fixo. O protótipo fast-forward só salta bloco silencioso com ruído zero; toda outra situação retorna ao passo fixo. `simulation.mode: fixed_step` e `simulation.event_driven: false` seguem como padrão. CI passou 162 testes e compilou os kernels em Windows/Ubuntu. Em blocos quietos sintéticos, o speedup medido foi 78×–204×; com spikes injetados, os hashes coincidiram e o fallback ficou dentro de 2% de variação. Relatório e JSONs brutos estão em `docs/performance/PHASE7_EVENT_DRIVEN_REPORT.md` e `benchmarks/results/phase7_*.json`. PR #5 está aberta e empilhada sobre PR #4; nenhuma foi mesclada. A UI física do Windows não foi validada.
