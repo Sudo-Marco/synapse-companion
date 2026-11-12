@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1200 180" role="img" aria-labelledby="title desc">
+<title id="title">Sudo-Marco — SYNAPSE PET</title><desc id="desc">Marca pessoal com o pintinho original do Synapse Pet e a curva de potencial LIF.</desc>
+<defs><style>
+text { fill:#FFD93B; font-family:'Segoe UI',Arial,sans-serif; }
+.sudo { font: 15px Consolas,'Courier New',monospace; letter-spacing:2px; }
+.name { font-size:32px; font-weight:700; }
+.project { font:15px Consolas,'Courier New',monospace; letter-spacing:.4px; }
+</style></defs>
+
+<rect width="1200" height="180" rx="16" fill="#152126"/>
+<path d="M 34 148 H 74 L 88 139 L 98 104 L 109 148 H 131 L 143 58 L 154 148 H 175" fill="none" stroke="#FFD93B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M 143 58 L 154 148" fill="none" stroke="#397581" stroke-width="6" stroke-linecap="round"/>
+<image x="105" y="26" width="48" height="66" preserveAspectRatio="none" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAsCAYAAAAEuLqPAAACiUlEQVR4nO1XPWgUQRSeXRZPi8MqQgLKgSQBrwlWQgQbq9hYRqs0FhIshKBiI6YQPAQLC4s0VyXapbnO5iBFyjRXnCIIQixSxWtyFhl5k32bt2/f/G1i5X2w7O7M2+/79s3M21mlJphggv8dyVkJ9KirC7LmSjRfGiuGBxW/d+dZrG68Ac3EJHFqkGbmXKBHXb1084r+/fmaOeO9Hi6aA9uK9kAjaah4qFHIyKfnF805ZGjSWGIAClD0tmZLbRjrQ6ZqYPnt0amxB99KfaHCwQY0ST8Kw9tKADMYcy4Z0GSm20QpaAzPTPQc0JHiLjOuSZxGic/tRJvgdYMj8YrPPDrp2N9QdQHD0et3xHKdig8IaW/f/V46S7DF8CUqGtC2qrW/odo3XnhN8D6bUV4hU9rpq16DL9crgjExyE81Uk7w/v64tIw4iSTgi0Eu4Eb+kgHNUk+DkIyS8raQGC6MuhlNjxTEiRGtqeNSsWlNhT2HZsxE73eqlXB6/nJ+dVrvxWW1fEludxQt5P41PCzaMh6Enb3VTaVo3bn9RkVj52XOdXL7dfiwEpLiBaTj6XbDHC7AW/44kCs4tPu+AahRFCaVg05EukyklI72fqpba3/M9eBJQ7U/jIt5QeMhrrlwtWQKhY14cyUphgBLJBox1cvxNrvvLphze21cEgZRbpaL03KcWRUc333JCBemgL0B7hOCvgW9fsf69i4hG0Ccpt5pIMkdukzUFZd+XJI6G5KYLDSX1q3iTgM+EyFGfOJeA9wEQlpqJoYNGaTe97+Y+QwAQbE087GsfrKr6zz0fzFzddr2cbYZ7eKoPwc+vqp2PH4tEsbGA6J+z/8FElenaz9vzUBE/ASQgb8CV7xY9flo9AAAAABJRU5ErkJggg==" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAsCAYAAAAEuLqPAAACiUlEQVR4nO1XPWgUQRSeXRZPi8MqQgLKgSQBrwlWQgQbq9hYRqs0FhIshKBiI6YQPAQLC4s0VyXapbnO5iBFyjRXnCIIQixSxWtyFhl5k32bt2/f/G1i5X2w7O7M2+/79s3M21mlJphggv8dyVkJ9KirC7LmSjRfGiuGBxW/d+dZrG68Ac3EJHFqkGbmXKBHXb1084r+/fmaOeO9Hi6aA9uK9kAjaah4qFHIyKfnF805ZGjSWGIAClD0tmZLbRjrQ6ZqYPnt0amxB99KfaHCwQY0ST8Kw9tKADMYcy4Z0GSm20QpaAzPTPQc0JHiLjOuSZxGic/tRJvgdYMj8YrPPDrp2N9QdQHD0et3xHKdig8IaW/f/V46S7DF8CUqGtC2qrW/odo3XnhN8D6bUV4hU9rpq16DL9crgjExyE81Uk7w/v64tIw4iSTgi0Eu4Eb+kgHNUk+DkIyS8raQGC6MuhlNjxTEiRGtqeNSsWlNhT2HZsxE73eqlXB6/nJ+dVrvxWW1fEludxQt5P41PCzaMh6Enb3VTaVo3bn9RkVj52XOdXL7dfiwEpLiBaTj6XbDHC7AW/44kCs4tPu+AahRFCaVg05EukyklI72fqpba3/M9eBJQ7U/jIt5QeMhrrlwtWQKhY14cyUphgBLJBox1cvxNrvvLphze21cEgZRbpaL03KcWRUc333JCBemgL0B7hOCvgW9fsf69i4hG0Ccpt5pIMkdukzUFZd+XJI6G5KYLDSX1q3iTgM+EyFGfOJeA9wEQlpqJoYNGaTe97+Y+QwAQbE087GsfrKr6zz0fzFzddr2cbYZ7eKoPwc+vqp2PH4tEsbGA6J+z/8FElenaz9vzUBE/ASQgb8CV7xY9flo9AAAAABJRU5ErkJggg=="/>
+<text class="sudo" x="205" y="54">SUDO-MARCO</text>
+<text class="name" x="202" y="102">Marco Antônio Veloso Sousa</text>
+<text class="project" x="190" y="110">SYNAPSE PET</text>
+
+</svg>

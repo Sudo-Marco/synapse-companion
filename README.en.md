@@ -1,15 +1,26 @@
 # Synapse Pet
 
+<p align="center"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/brand/readme-header-dark.svg" />
+  <source media="(prefers-color-scheme: light)" srcset="assets/brand/readme-header-light.svg" />
+  <img src="assets/brand/readme-header-light.svg" alt="Sudo-Marco identity with the original Synapse Pet chick above an LIF curve." width="100%" />
+</picture></p>
+
 [Português (Brasil)](README.md) · English
 
-![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
-![Windows 10/11](https://img.shields.io/badge/Platform-Windows%2010%2F11-0078D6?logo=windows&logoColor=white)
-![MIT](https://img.shields.io/badge/License-MIT-2E8B57.svg)
-![Version](https://img.shields.io/badge/version-0.3.0-blue)
+<p align="center"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/brand/stack-badges-dark.svg" />
+  <source media="(prefers-color-scheme: light)" srcset="assets/brand/stack-badges-light.svg" />
+  <img src="assets/brand/stack-badges-light.svg" alt="Python 3.10 or later, NumPy, PySide6, and an LIF network with STDP." />
+</picture></p>
 
 **Companion desktop local em Python e PySide6, com uma SNN experimental em NumPy (LIF e STDP modulada por recompensa).**
 
-![Real screenshot of Synapse Pet running, showing Piu in the pixel-art scene, telemetry, and disabled sensors](docs/screenshots/synapse-demo-window.jpg)
+<p align="center"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/brand/demo-card-dark.svg" />
+  <source media="(prefers-color-scheme: light)" srcset="assets/brand/demo-card-light.svg" />
+  <img src="assets/brand/demo-card-light.svg" alt="Real screenshot of Synapse Pet running, showing Piu in pixel art with telemetry and disabled sensors, inside the Sudo-Marco frame." width="100%" />
+</picture></p>
 
 *The full README in Portuguese is available in [Português (Brasil)](README.md); optional sensors are off by default.*
 

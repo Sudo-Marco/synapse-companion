@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 468 48" role="img" aria-labelledby="title desc">
+<title id="title">Tecnologias do projeto</title><desc id="desc">Tecnologias descritas neste repositório, em badges locais sem widgets externos.</desc>
+<defs><style>text { font: 13px Consolas,"Courier New",monospace; fill:#F1F2E8; font-weight:700; letter-spacing:.2px; }</style></defs>
+<rect x="16" y="8" width="138" height="32" rx="8" fill="#152126"/><text x="85.0" y="29" text-anchor="middle" class="badge">PYTHON 3.10+</text><rect x="164" y="8" width="68" height="32" rx="8" fill="#152126"/><text x="198.0" y="29" text-anchor="middle" class="badge">NUMPY</text><rect x="242" y="8" width="88" height="32" rx="8" fill="#152126"/><text x="286.0" y="29" text-anchor="middle" class="badge">PYSIDE6</text><rect x="340" y="8" width="118" height="32" rx="8" fill="#152126"/><text x="399.0" y="29" text-anchor="middle" class="badge">LIF + STDP</text>
+</svg>
