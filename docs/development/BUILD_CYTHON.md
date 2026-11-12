@@ -1,9 +1,9 @@
 # Build opcional dos kernels Cython
 
 O backend padrão do Synapse Pet continua NumPy. As extensões Cython opcionais
-aceleram o passo LIF e a atualização de traços/elegibilidade e aplicação de
-recompensa da STDP. Propagação CSR, crédito de ação e homeostase continuam no
-caminho NumPy.
+aceleram o passo LIF, atualização de traços/elegibilidade e recompensa STDP,
+além da propagação CSR. Crédito de ação e homeostase continuam no caminho
+NumPy.
 
 ## Requisitos
 
@@ -45,12 +45,14 @@ fallback.
 python -m pytest -q
 python benchmarks/benchmark_cython_stdp.py --output benchmarks/results/cython_stdp_local.json
 python benchmarks/benchmark_cython_lif.py --output benchmarks/results/cython_lif_local.json
+python benchmarks/benchmark_cython_sparse.py --output benchmarks/results/cython_sparse_local.json
 ```
 
-`tests/test_cython_stdp.py` e `tests/test_cython_lif.py` são pulados quando as
-extensões opcionais não estão compiladas. O workflow
-`.github/workflows/cython-stdp.yml` compila ambos os kernels em Windows e
-Ubuntu, executa os testes e publica os benchmarks STDP e LIF. O benchmark LIF
+`tests/test_cython_stdp.py`, `tests/test_cython_lif.py` e
+`tests/test_cython_sparse.py` são pulados quando as extensões opcionais não
+estão compiladas. O workflow `.github/workflows/cython-stdp.yml` compila os
+kernels em Windows e Ubuntu, executa os testes e publica benchmarks STDP, LIF
+e CSR. O benchmark LIF
 compara ticks completos da rede em 600 e 1.000 neurônios, verifica o hash da
 sequência de saídas e mede tempo CPU/parede, memória Python e RSS do processo.
 Cada amostra repete a mesma sequência para amortizar a resolução do relógio de
@@ -62,4 +64,5 @@ de parede também é registrado. CI não valida a GUI no desktop físico.
 Não há OpenMP nem alteração da topologia, parâmetros ou fórmulas da SNN. O kernel
 recebe memoryviews dos arrays NumPy contíguos existentes; arrays não contíguos
 ou com alias usam a referência NumPy. O backend Cython permanece opt-in e NumPy segue como padrão. A equivalência
-e o custo medidos por plataforma estão documentados no relatório da Fase 5.
+e o custo medidos por plataforma estão documentados nos relatórios das Fases 4
+a 6.

@@ -68,7 +68,15 @@ Legenda: ✅ concluído com evidência; ⚠️ ressalva registrada; ⏳ aguardan
 - [x] Medir custo por tick, CPU/parede, memória e disparos por população; confirmar o limite de regressão de 3%.
 - [x] Registrar resultados e limites em `docs/performance/PHASE5_LIF_REPORT.md`.
 
-## Próximas fases — não iniciadas
+## Fase 6 — CSR compilado (em validação)
 
-- [ ] Fase 6: CSR compilado; não iniciada nesta branch.
+- [x] Implementar kernels Cython para CSR por destino e travessia de fontes ativas.
+- [x] Criar índice fonte→arestas sob demanda sem cópia do vetor de pesos.
+- [x] Adicionar testes condicionais de equivalência bit a bit, cache/invalidação e seleção de estratégia.
+- [x] Adicionar benchmark de densidades e taxas de disparo em projeções representativas de 600/1.000 neurônios.
+- [ ] Compilar, rodar a suíte completa e validar no CI Windows/Ubuntu.
+- [ ] Medir tick completo e confirmar regressão de CPU dentro de 3%; ajustar ou reverter se exceder.
+- [ ] Registrar hash, custo/memória e resultados por plataforma no relatório da Fase 6.
+
+## Próximas fases — não iniciadas
 - [ ] Fases posteriores: event-driven, codificação/aprendizado, reorganização e release.

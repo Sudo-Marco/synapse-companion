@@ -37,7 +37,7 @@ flowchart LR
 
 ### Seleção de backend numérico
 
-`neural_backend/` define uma interface comum para passo LIF, propagação, STDP, recompensa, crédito de ação e homeostase. A configuração padrão seleciona `numpy`; `cython` e `auto` têm fallback NumPy explícito enquanto os kernels compilados das fases seguintes não existem. O `PetEngine` aplica a mesma instância do backend ao passo da rede, aprendizado, homeostase e replay de sono; o backend não é persistido no snapshot. Detalhes em [NEURAL_BACKEND.md](NEURAL_BACKEND.md).
+`neural_backend/` define uma interface comum para passo LIF, propagação, STDP, recompensa, crédito de ação e homeostase. A configuração padrão seleciona `numpy`; `cython` e `auto` usam os kernels compilados disponíveis e têm fallback NumPy explícito se a extensão não puder ser carregada. O `PetEngine` aplica a mesma instância do backend ao passo da rede, aprendizado, homeostase e replay de sono; o backend não é persistido no snapshot. Detalhes em [NEURAL_BACKEND.md](NEURAL_BACKEND.md).
 
 ### Populações e conectividade
 
@@ -111,7 +111,7 @@ Os módulos de UI estão listados em `docs/architecture/REPOSITORY_INVENTORY.jso
 
 ## Dependências e qualidade
 
-Dependências obrigatórias declaradas no `pyproject.toml`: NumPy, SciPy, PyYAML, psutil, PySide6 Essentials, ModernGL e Pillow. Extras opcionais: `pynput`/`watchdog` para Windows, `SoundCard`/`pycaw` para áudio, `pytest`/`tqdm` para desenvolvimento e Cython no extra `native`. A infraestrutura do backend híbrido foi adicionada na Fase 3, mas ainda não há arquivo `.pyx`, `.pxd` ou extensão compilada; o pedido por Cython usa fallback NumPy.
+Dependências obrigatórias declaradas no `pyproject.toml`: NumPy, SciPy, PyYAML, psutil, PySide6 Essentials, ModernGL e Pillow. Extras opcionais: `pynput`/`watchdog` para Windows, `SoundCard`/`pycaw` para áudio, `pytest`/`tqdm` para desenvolvimento e Cython no extra `native`. Os kernels Cython opcionais cobrem STDP e LIF; propagação CSR está em validação na Fase 6. A configuração padrão continua NumPy.
 
 A CI GitHub Actions roda `pytest` no Windows e Ubuntu, com Python 3.12 e Qt offscreen. Na validação local pós-Fase 3 com Python 3.14.10 e Qt offscreen, foram coletados 158 testes: 157 passaram e um teste de geometria do salto falhou. A falha e seus limites estão descritos em `TECHNICAL_DEBT.md` e `benchmarks/results/validation_phase03.json`.
 
