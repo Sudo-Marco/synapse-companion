@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "measurement_kind": "phase2_stdp_mark_same_process_comparison",
+  "timestamp_local": "2026-11-08 22:14:20 -0300",
+  "python": "3.14.10 (tags/v3.14.10:b703b2c, Oct 25 2026, 17:36:52) [MSC v.1944 64 bit (AMD64)]",
+  "numpy": "2.5.4",
+  "seed": 20261102,
+  "configuration": {
+    "requested_neurons": 600,
+    "connectivity": 0.1,
+    "dt_s": 0.002,
+    "projections": {
+      "sensor_hidden": 3614,
+      "recurrent": 14728,
+      "hidden_output": 4586
+    },
+    "warmup_calls_per_variant": 200,
+    "samples": 40,
+    "iterations_per_sample": 400
+  },
+  "exact_equivalence": true,
+  "variants": {
+    "legacy_astype": {
+      "wall_ms": {
+        "mean": 0.38279885,
+        "stddev": 0.0758865546118802,
+        "p50": 0.341376875,
+        "p95": 0.4778012624999999,
+        "p99": 0.59879133
+      },
+      "thread_cpu_ms": {
+        "mean": 0.3720703125,
+        "stddev": 0.06932218173406758,
+        "p50": 0.3515625,
+        "p95": 0.5078125,
+        "p99": 0.531640625
+      }
+    },
+    "production_mark": {
+      "wall_ms": {
+        "mean": 0.38079044375,
+        "stddev": 0.06914532078217783,
+        "p50": 0.3338495,
+        "p95": 0.49015829999999994,
+        "p99": 0.5104623475000001
+      },
+      "thread_cpu_ms": {
+        "mean": 0.3671875,
+        "stddev": 0.06976785585738965,
+        "p50": 0.3515625,
+        "p95": 0.4707031249999999,
+        "p99": 0.5078125
+      }
+    }
+  }
+}

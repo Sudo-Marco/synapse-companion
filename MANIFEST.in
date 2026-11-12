@@ -1,0 +1,1 @@
+recursive-include src/synapse_pet/neural_backend/kernels *.pyx

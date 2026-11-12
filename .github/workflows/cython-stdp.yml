@@ -1,0 +1,47 @@
+name: optional Cython STDP
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  cython-stdp:
+    name: Cython STDP (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    env:
+      QT_QPA_PLATFORM: offscreen
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install Linux GUI runtime dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libegl1 libgl1 libxcb-cursor0 libxkbcommon-x11-0
+      - name: Install optional Cython build and test dependencies
+        run: python -m pip install -e ".[dev,native,windows]"
+      - name: Compile optional STDP extension
+        run: python setup.py build_ext --inplace
+        env:
+          SYNAPSE_PET_BUILD_CYTHON: "1"
+      - name: Run complete tests with compiled STDP
+        run: python -m pytest -q
+      - name: Benchmark NumPy against compiled STDP
+        run: python benchmarks/benchmark_cython_stdp.py --output artifacts/cython-stdp.json
+      - name: Upload STDP benchmark result
+        uses: actions/upload-artifact@v4
+        with:
+          name: cython-stdp-${{ matrix.os }}
+          path: artifacts/cython-stdp.json

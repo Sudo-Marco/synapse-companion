@@ -3,8 +3,10 @@ from __future__ import annotations
 import argparse
 import cProfile
 import gc
+import importlib.metadata
 import json
 import os
+import platform
 from pathlib import Path
 import pstats
 import subprocess
@@ -38,10 +40,13 @@ def _measure_ticks(engine: PetEngine, regime: str, count: int) -> dict[str, obje
         tick()
 
     wall_ms: list[float] = []
+    cpu_ms: list[float] = []
     cpu_before = time.thread_time_ns()
     for _ in range(count):
         wall_start = time.perf_counter_ns()
+        thread_start = time.thread_time_ns()
         tick()
+        cpu_ms.append((time.thread_time_ns() - thread_start) / 1_000_000.0)
         wall_ms.append((time.perf_counter_ns() - wall_start) / 1_000_000.0)
     cpu_ms_total = (time.thread_time_ns() - cpu_before) / 1_000_000.0
 
@@ -76,6 +81,8 @@ def _measure_ticks(engine: PetEngine, regime: str, count: int) -> dict[str, obje
         "ticks": count,
         "simulated_ms_per_tick": duration_ms,
         "mean_cpu_ms": cpu_ms_total / count,
+        "cpu_ms": _summary(cpu_ms),
+        "wall_ms": _summary(wall_ms),
         "p95_wall_ms": float(np.percentile(wall_ms, 95)),
         "mean_wall_ms": float(np.mean(wall_ms)),
         "live_traced_blocks_delta_per_tick": live_blocks_delta / count,
@@ -85,7 +92,77 @@ def _measure_ticks(engine: PetEngine, regime: str, count: int) -> dict[str, obje
     }
 
 
-def _measure_spike_rates(engine: PetEngine, regime: str, count: int) -> dict[str, float]:
+def _summary(values: list[float]) -> dict[str, float]:
+    array = np.asarray(values, dtype=np.float64)
+    return {
+        "mean": float(np.mean(array)),
+        "stddev": float(np.std(array)),
+        "p50": float(np.percentile(array, 50)),
+        "p95": float(np.percentile(array, 95)),
+        "p99": float(np.percentile(array, 99)),
+    }
+
+
+def _array_bytes(network) -> int:
+    arrays = [network.population.voltage, network.population.threshold_offset,
+              network.population.refractory, network.population.spikes,
+              network.hidden_sign, network.sensor_to_hidden.pre,
+              network.sensor_to_hidden.post, network.sensor_to_hidden.weights,
+              network.recurrent.pre, network.recurrent.post,
+              network.recurrent.weights, network.hidden_to_output.pre,
+              network.hidden_to_output.post, network.hidden_to_output.weights,
+              network._base_hidden_output_weights]
+    for context in network.context_output_weights.values():
+        arrays.extend((context.signature, context.weights))
+    for projection in (network.sensor_to_hidden, network.recurrent,
+                       network.hidden_to_output):
+        matrix = getattr(projection, "_matrix", None)
+        if matrix is not None:
+            arrays.extend((matrix.data, matrix.indices, matrix.indptr))
+    return sum(int(array.nbytes) for array in {id(item): item for item in arrays}.values())
+
+
+def _environment() -> dict[str, object]:
+    memory = psutil.virtual_memory()
+    try:
+        frequency = psutil.cpu_freq()
+    except Exception:
+        frequency = None
+    packages = {}
+    for package in ("numpy", "scipy", "psutil", "PyYAML", "PySide6_Essentials", "Pillow"):
+        try:
+            packages[package] = importlib.metadata.version(package)
+        except importlib.metadata.PackageNotFoundError:
+            packages[package] = None
+    try:
+        branch = subprocess.run(["git", "branch", "--show-current"], cwd=ROOT,
+                                capture_output=True, text=True, check=True).stdout.strip()
+        head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT,
+                              capture_output=True, text=True, check=True).stdout.strip()
+        status = subprocess.run(["git", "status", "--short"], cwd=ROOT,
+                                capture_output=True, text=True, check=True).stdout.splitlines()
+    except Exception:
+        branch, head, status = None, None, []
+    return {
+        "python": sys.version,
+        "python_executable": sys.executable,
+        "platform": platform.platform(),
+        "system": platform.system(),
+        "release": platform.release(),
+        "machine": platform.machine(),
+        "processor": platform.processor() or os.environ.get("PROCESSOR_IDENTIFIER", "unknown"),
+        "logical_cpus": psutil.cpu_count(logical=True),
+        "physical_cpus": psutil.cpu_count(logical=False),
+        "cpu_frequency_mhz": None if frequency is None else frequency.current,
+        "ram_total_mib": memory.total / (1024 * 1024),
+        "libraries": packages,
+        "git": {"branch": branch, "head": head, "dirty": bool(status),
+                "status_short": status},
+    }
+
+
+def _measure_spike_activity(engine: PetEngine, regime: str,
+                            count: int) -> dict[str, object]:
     network = engine.network
     accumulated = np.zeros(3, dtype=np.int64)
     simulated_seconds = 0.0
@@ -116,11 +193,19 @@ def _measure_spike_rates(engine: PetEngine, regime: str, count: int) -> dict[str
 
     sizes = (network.n_sensor, network.n_hidden, network.hidden_to_output.n_post)
     labels = ("sensor", "hidden", "output")
-    return {label: float(spikes / (max(simulated_seconds, 1e-9) * size))
-            for label, spikes, size in zip(labels, accumulated, sizes)}
+    return {
+        "rates_hz": {label: float(spikes / (max(simulated_seconds, 1e-9) * size))
+                     for label, spikes, size in zip(labels, accumulated, sizes)},
+        "spikes": {label: int(spikes)
+                   for label, spikes in zip(labels, accumulated)},
+        "neurons": {label: int(size) for label, size in zip(labels, sizes)},
+        "simulated_seconds": simulated_seconds,
+        "samples": count,
+    }
 
 
-def _profile_top_five(engine: PetEngine, steps: int) -> list[dict[str, object]]:
+def _profile_top_five(engine: PetEngine, steps: int,
+                      profile_path: Path | None = None) -> list[dict[str, object]]:
     profiler = cProfile.Profile()
     context = {"input_rate": 0.72, "window_category": "editor",
                "activity": 0.35, "hour": 0.62}
@@ -128,6 +213,9 @@ def _profile_top_five(engine: PetEngine, steps: int) -> list[dict[str, object]]:
     for _ in range(steps):
         engine.tick(context, 50.0, active=True)
     profiler.disable()
+    if profile_path is not None:
+        profile_path.parent.mkdir(parents=True, exist_ok=True)
+        profiler.dump_stats(str(profile_path))
     stats = pstats.Stats(profiler).strip_dirs().sort_stats("cumtime")
     return _sorted_profile_rows(stats, limit=5)
 
@@ -155,7 +243,15 @@ def _memory_probe(neurons: int) -> None:
         "connections": int(len(engine.network.sensor_to_hidden.weights)
                            + len(engine.network.recurrent.weights)
                            + len(engine.network.hidden_to_output.weights)),
+        "connections_by_projection": {
+            projection.name: int(len(projection.weights)) for projection in
+            (engine.network.sensor_to_hidden, engine.network.recurrent,
+             engine.network.hidden_to_output)},
+        "numpy_array_bytes_unique": _array_bytes(engine.network),
     }
+    # PetEngine installs a rotating file handler on a process-global logger.
+    # Close it before TemporaryDirectory removes the data folder on Windows.
+    engine.stop()
     del engine
     gc.collect()
     temporary.cleanup()
@@ -170,12 +266,16 @@ def _run_idle_cpu_probe(seconds: float,
         process = psutil.Process()
         engine.start()
         cpu_before = process.cpu_times()
+        process_cpu_before = time.process_time()
         wall_before = time.perf_counter()
         time.sleep(seconds)
         elapsed = time.perf_counter() - wall_before
+        process_cpu_elapsed = time.process_time() - process_cpu_before
         cpu_after = process.cpu_times()
         result = {"seconds": elapsed,
                   "single_core_cpu_percent": 100.0 * (
+                      process_cpu_elapsed / max(elapsed, 1e-9)),
+                  "psutil_single_core_cpu_percent_quantized": 100.0 * (
                       (cpu_after.user - cpu_before.user)
                       + (cpu_after.system - cpu_before.system)) / max(elapsed, 1e-9)}
         engine.stop()
@@ -207,6 +307,8 @@ def main() -> None:
     parser.add_argument("--ticks", type=int, default=160)
     parser.add_argument("--profile-steps", type=int, default=120)
     parser.add_argument("--idle-seconds", type=float, default=4.0)
+    parser.add_argument("--profile-dir", type=Path,
+                        default=ROOT / "benchmarks" / "profile")
     parser.add_argument("--tool-output-inhibition", action="store_true",
                         help="measure the optional tool-output competition path")
     parser.add_argument("--sleep-replay", action="store_true",
@@ -219,9 +321,10 @@ def main() -> None:
 
     results: dict[str, object] = {
         "schema": 1,
-        "baseline_kind": "phase0_before" if not args.compare else "comparison_run",
+        "baseline_kind": "phase1_pre_optimization" if not args.compare else "comparison_run",
         "python": sys.version.split()[0],
         "numpy": np.__version__,
+        "environment": _environment(),
         "seed": 20261102,
         "tick_samples": args.ticks,
         "experimental_features": {
@@ -241,9 +344,13 @@ def main() -> None:
         engine.sleep.replay_enabled = args.sleep_replay
         tick_cost: dict[str, object] = {}
         rates: dict[str, object] = {}
+        spike_activity: dict[str, object] = {}
         for regime in ("active", "rest", "sleep"):
             tick_cost[regime] = _measure_ticks(engine, regime, args.ticks)
-            rates[regime] = _measure_spike_rates(engine, regime, min(args.ticks, 80))
+            activity_sample = _measure_spike_activity(
+                engine, regime, min(args.ticks, 80))
+            rates[regime] = activity_sample["rates_hz"]
+            spike_activity[regime] = activity_sample
         tick_cost_1000: dict[str, object] = {}
         with tempfile.TemporaryDirectory(prefix="synapse_snn_1000_") as folder_1000:
             engine_1000 = PetEngine(seed=20261102, neurons=1000,
@@ -263,20 +370,40 @@ def main() -> None:
                           ("input_rate", "window_category", "activity", "hour"))}
             engine_1000.encoder = PopulationEncoder(groups, seed=20261102)
             tick_cost_1000["active"] = _measure_ticks(engine_1000, "active", args.ticks)
-            rates["1000_active"] = _measure_spike_rates(
+            activity_sample = _measure_spike_activity(
                 engine_1000, "active", min(args.ticks, 80))
+            rates["1000_active"] = activity_sample["rates_hz"]
+            spike_activity["1000_active"] = activity_sample
             tick_cost_1000["mean_cpu_ms_50ms_simulated"] = tick_cost_1000[
                 "active"]["mean_cpu_ms"]
+            engine_1000.stop()
             del engine_1000
             gc.collect()
         results["tick_cost_600"] = tick_cost
         results["tick_cost_1000"] = tick_cost_1000
+        results["configuration"] = {
+            "seed": 20261102,
+            "network": {key: engine.config.get("network", {}).get(key)
+                        for key in ("neurons", "recurrent_connectivity", "dt_ms",
+                                    "tick_active_ms", "tick_idle_ms",
+                                    "background_noise", "synaptic_gain",
+                                    "tool_output_inhibition",
+                                    "allow_neuron_growth_migration")},
+            "runtime": {key: engine.config.get("runtime", {}).get(key)
+                        for key in ("idle_tick_interval_s", "pet_idle_tick_interval_s",
+                                    "active_timeout_s", "sleep_after_s")},
+            "component_metrics_file": "baseline_components.json",
+        }
         results["encoder_probe_note"] = (
             "The harness uses four encoder groups scaled to n_sensor for both 600 and "
             "1000-neuron comparisons. Phase 0 exposed that the original runtime hard-coded "
             "4x24 sensors; phase 1 now derives these group sizes from the network.")
         results["firing_rate_hz"] = rates
-        results["top_profile_costs"] = _profile_top_five(engine, args.profile_steps)
+        results["spike_activity"] = spike_activity
+        results["top_profile_costs"] = _profile_top_five(
+            engine, args.profile_steps,
+            args.profile_dir / "legacy_active.prof")
+        engine.stop()
         del engine
         gc.collect()
 
@@ -322,8 +449,8 @@ def main() -> None:
     }, indent=2))
     if "comparison" in results:
         print(json.dumps(results["comparison"], indent=2))
-    profile_path = args.output.with_name(
-        f"{args.output.stem.replace('baseline', 'profile')}.md")
+    profile_path = args.profile_dir / "baseline_profile.md"
+    profile_path.parent.mkdir(parents=True, exist_ok=True)
     profile_lines = ["# Profiling da SNN", "",
                      f"Relatório gerado por `{args.output.name}`.", "",
                      "Cinco maiores custos por tempo cumulativo durante ticks ativos:", ""]

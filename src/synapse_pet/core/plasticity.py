@@ -15,21 +15,37 @@ class RewardSTDP:
         self.pre_trace: NDArray[np.float32] | None = None
         self.post_trace: NDArray[np.float32] | None = None
         self.eligibility: NDArray[np.float32] | None = None
+        self._pre_spike_float: NDArray[np.float32] | None = None
+        self._post_spike_float: NDArray[np.float32] | None = None
 
     def initialize(self, projection: SparseProjection) -> None:
         self.pre_trace = np.zeros(projection.n_pre, dtype=np.float32)
         self.post_trace = np.zeros(projection.n_post, dtype=np.float32)
         self.eligibility = np.zeros(len(projection.weights), dtype=np.float32)
+        self._pre_spike_float = np.empty(projection.n_pre, dtype=np.float32)
+        self._post_spike_float = np.empty(projection.n_post, dtype=np.float32)
 
     def mark(self, projection: SparseProjection, pre_spikes: NDArray[np.bool_],
              post_spikes: NDArray[np.bool_], dt_s: float) -> None:
-        if self.eligibility is None or len(self.eligibility) != len(projection.weights):
+        if (self.eligibility is None
+                or self.eligibility.size != len(projection.weights)
+                or self._pre_spike_float is None
+                or self._pre_spike_float.shape != (projection.n_pre,)
+                or self._post_spike_float is None
+                or self._post_spike_float.shape != (projection.n_post,)):
             self.initialize(projection)
-        assert self.pre_trace is not None and self.post_trace is not None and self.eligibility is not None
+        assert (self.pre_trace is not None and self.post_trace is not None
+                and self.eligibility is not None
+                and self._pre_spike_float is not None
+                and self._post_spike_float is not None)
+        # Preserve the original float32 arithmetic without allocating two
+        # converted spike arrays on every simulation substep.
+        np.copyto(self._pre_spike_float, pre_spikes, casting="unsafe")
+        np.copyto(self._post_spike_float, post_spikes, casting="unsafe")
         decay = np.float32(np.exp(-dt_s / self.eligibility_tau_s))
         self.pre_trace *= decay
         self.post_trace *= decay
-        pre, post = pre_spikes.astype(np.float32), post_spikes.astype(np.float32)
+        pre, post = self._pre_spike_float, self._post_spike_float
         self.eligibility *= decay
         self.eligibility += self.a_plus * self.pre_trace[projection.pre] * post[projection.post]
         self.eligibility -= self.a_minus * self.post_trace[projection.post] * pre[projection.pre]
@@ -59,7 +75,18 @@ class RewardSTDP:
         """
         if dopamine == 0.0 or len(pre_activity) != projection.n_pre or not len(post_indices):
             return
-        post_mask = np.isin(projection.post, post_indices, assume_unique=False)
+        # Action groups normally contain valid output IDs. A dense lookup table
+        # avoids np.isin's general-purpose setup cost and supports duplicate or
+        # unsorted IDs. Keep np.isin as the compatibility path for out-of-range
+        # values so they retain its non-raising behavior.
+        if (post_indices.dtype.kind in "iu"
+                and int(post_indices.min()) >= 0
+                and int(post_indices.max()) < projection.n_post):
+            selected = np.zeros(projection.n_post, dtype=np.bool_)
+            selected[post_indices] = True
+            post_mask = selected[projection.post]
+        else:
+            post_mask = np.isin(projection.post, post_indices, assume_unique=False)
         if not np.any(post_mask):
             return
         active_pre = np.clip(pre_activity[projection.pre], 0.0, 1.0)

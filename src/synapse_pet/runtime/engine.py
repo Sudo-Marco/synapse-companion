@@ -19,6 +19,7 @@ from ..core.decoding import RateDecoder
 from ..core.neuromodulators import Neuromodulators
 from ..core.homeostasis import Homeostasis
 from ..core.plasticity import RewardSTDP
+from ..neural_backend import create_neural_backend
 from ..mind.emotions import EmotionState
 from ..mind.personality import Personality
 from ..mind.drives import Drives
@@ -52,6 +53,11 @@ class PetEngine:
             "%(asctime)s %(levelname)s %(threadName)s %(message)s"))
         self.logger.addHandler(self._log_handler)
         self.config = load_config()
+        self.backend_selection = create_neural_backend(
+            self.config.get("neural_backend", {}))
+        self.neural_backend = self.backend_selection.backend
+        self.logger.info("Neural backend selected: %s",
+                         self.backend_selection.as_dict())
         self.personality_config = self.config.get("personality", {})
         network_config = self.config.get("network", {})
         self.runtime_config = self.config.get("runtime", {})
@@ -105,6 +111,7 @@ class PetEngine:
                 noise=float(network_config.get("background_noise", .015)),
                 tool_group_size=int(network_config.get("tool_group_size", 8)),
                 synaptic_gain=float(network_config.get("synaptic_gain", 1.0)))
+        self.network.set_backend(self.neural_backend)
         # Apply active settings even when loading a snapshot created by an older config.
         self.network.synaptic_gain = max(0.0, float(network_config.get("synaptic_gain", 1.0)))
         self.network.tool_output_inhibition_enabled = bool(
@@ -287,6 +294,7 @@ class PetEngine:
             return False
         network, state = self.store.load()
         self.network = network
+        self.network.set_backend(self.neural_backend)
         network_config = self.config.get("network", {})
         self.network.synaptic_gain = max(
             0.0, float(network_config.get("synaptic_gain", 1.0)))
@@ -397,11 +405,17 @@ class PetEngine:
             dt_step = self.network.dt_ms / 1000.0
             h = slice(self.network.hidden_start, self.network.output_start)
             out = slice(self.network.output_start, self.network.output_start + self.network.hidden_to_output.n_post)
-            self.learners["sensor_hidden"].mark(self.network.sensor_to_hidden,
+            self.neural_backend.update_stdp(
+                self.learners["sensor_hidden"], self.network.sensor_to_hidden,
                 spikes[:self.network.n_sensor], spikes[h], dt_step)
-            self.learners["recurrent"].mark(self.network.recurrent, spikes[h], spikes[h], dt_step)
-            self.learners["hidden_output"].mark(self.network.hidden_to_output, spikes[h], spikes[out], dt_step)
-            health_events = self.homeostasis.update(
+            self.neural_backend.update_stdp(
+                self.learners["recurrent"], self.network.recurrent,
+                spikes[h], spikes[h], dt_step)
+            self.neural_backend.update_stdp(
+                self.learners["hidden_output"], self.network.hidden_to_output,
+                spikes[h], spikes[out], dt_step)
+            health_events = self.neural_backend.update_homeostasis(
+                self.homeostasis,
                 self.network.population, spikes, dt_step,
                 (self.network.sensor_to_hidden, self.network.recurrent,
                  self.network.hidden_to_output))
@@ -591,8 +605,9 @@ class PetEngine:
             # Reward for a named tool must credit that output group specifically;
             # otherwise all output groups receive the same undirected update.
             output_indices = (action_group - self.network.output_start).astype(np.int32)
-            self.learners["hidden_output"].apply_action_credit(
-                self.network.hidden_to_output, self.learning_rpe, output_indices,
+            self.neural_backend.apply_action_credit(
+                self.learners["hidden_output"], self.network.hidden_to_output,
+                self.learning_rpe, output_indices,
                 self._recent_hidden_activity.get(context, self._last_hidden_activity),
                 learning_rate=float(self.plasticity_config.get("action_credit_rate", 0.10)))
         else:
@@ -600,7 +615,8 @@ class PetEngine:
                     ("sensor_hidden", self.network.sensor_to_hidden),
                     ("recurrent", self.network.recurrent),
                     ("hidden_output", self.network.hidden_to_output)):
-                self.learners[name].apply_reward(projection, self.learning_rpe)
+                self.neural_backend.apply_reward(
+                    self.learners[name], projection, self.learning_rpe)
 
         self.memory.add(context, action, target_reward,
                         str(asdict(self.emotions)), rpe=self.learning_rpe)

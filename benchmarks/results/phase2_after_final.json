@@ -1,0 +1,448 @@
+{
+  "schema": 1,
+  "baseline_kind": "phase1_pre_optimization",
+  "python": "3.14.10",
+  "numpy": "2.5.4",
+  "environment": {
+    "python": "3.14.10 (tags/v3.14.10:b703b2c, Oct 25 2026, 17:36:52) [MSC v.1944 64 bit (AMD64)]",
+    "python_executable": "C:\\Users\\marco\\Documents\\VScode\\python\\synapse_pet\\.venv\\Scripts\\python.exe",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "system": "Windows",
+    "release": "11",
+    "machine": "AMD64",
+    "processor": "AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",
+    "logical_cpus": 16,
+    "physical_cpus": 8,
+    "cpu_frequency_mhz": 1802.0,
+    "ram_total_mib": 5996.06640625,
+    "libraries": {
+      "numpy": "2.5.4",
+      "scipy": "1.18.1",
+      "psutil": "7.2.2",
+      "PyYAML": "6.0.3",
+      "PySide6_Essentials": "6.12.0",
+      "Pillow": "13.0.0"
+    },
+    "git": {
+      "branch": "feat/pet-sprite-sheet",
+      "head": "d46c09f4604712ead67b82c66c2bf7fb80eea440",
+      "dirty": true,
+      "status_short": [
+        " M README.md",
+        " M README.pt-BR.md",
+        " M benchmarks/snn_baseline.py",
+        " M configs/default.yaml",
+        " M docs/ARCHITECTURE.md",
+        " M docs/PRIVACY.md",
+        " M pyproject.toml",
+        " M src/synapse_pet/core/network.py",
+        " M src/synapse_pet/core/plasticity.py",
+        " M src/synapse_pet/ui/desktop_motion.py",
+        " M src/synapse_pet/ui/gl_renderer.py",
+        " M src/synapse_pet/ui/pixel_renderer.py",
+        " M src/synapse_pet/ui/qt_app.py",
+        " M tests/test_learning_eval.py",
+        " M tests/test_piu_asset_packaging.py",
+        " M tests/test_pixel_renderer.py",
+        "?? benchmarks/compare_phase2_tick.py",
+        "?? benchmarks/compare_stdp_mark.py",
+        "?? benchmarks/component_baseline.py",
+        "?? benchmarks/phase2_candidate_benchmarks.py",
+        "?? benchmarks/profile/",
+        "?? benchmarks/render_baseline_report.py",
+        "?? benchmarks/results/baseline.json",
+        "?? benchmarks/results/baseline_components.json",
+        "?? benchmarks/results/baseline_report.md",
+        "?? benchmarks/results/phase2_after.json",
+        "?? benchmarks/results/phase2_after_components.json",
+        "?? benchmarks/results/phase2_after_components_final.json",
+        "?? benchmarks/results/phase2_after_stdp_components.json",
+        "?? benchmarks/results/phase2_after_stdp_reuse_components.json",
+        "?? benchmarks/results/phase2_before.json",
+        "?? benchmarks/results/phase2_before_components.json",
+        "?? benchmarks/results/phase2_candidates.json",
+        "?? benchmarks/results/phase2_stdp_comparison.json",
+        "?? benchmarks/results/phase2_stdp_comparison_long.json",
+        "?? benchmarks/results/phase2_tick_ab.json",
+        "?? benchmarks/results/profile.md",
+        "?? benchmarks/results/validation_phase01.json",
+        "?? docs/IMPLEMENTATION_CHECKLIST.md",
+        "?? docs/PROJECT_PROGRESS.md",
+        "?? docs/architecture/",
+        "?? docs/performance/",
+        "?? docs/screenshots/legibility/",
+        "?? docs/screenshots/spectral_eye_stage1/",
+        "?? src/synapse_pet/assets/pet/",
+        "?? src/synapse_pet/ui/desktop_surfaces.py",
+        "?? src/synapse_pet/ui/sprite_adapter.py",
+        "?? tests/test_network_scratch_buffer.py",
+        "?? tests/test_sprite_adapter.py",
+        "?? tests/test_stdp_equivalence.py"
+      ]
+    }
+  },
+  "seed": 20261102,
+  "tick_samples": 1000,
+  "experimental_features": {
+    "tool_output_inhibition": false,
+    "sleep_replay": false
+  },
+  "determinism": {
+    "seed": 20261102,
+    "steps": 4096,
+    "spike_sha256": "45c47b8e06e2f7dfff2a61832f9d07d5cc4197c8ee35c82df65e3260bbcc92b7",
+    "state_sha256": "d34fec09870ee66aa118d91bfc1293c44e9b2fddb14ab6990eb742d330978279",
+    "spike_counts_by_population": {
+      "sensor": 12606,
+      "hidden": 33,
+      "output": 0
+    },
+    "spike_samples": {
+      "0": [
+        50,
+        58,
+        86
+      ],
+      "1": [
+        2,
+        4
+      ],
+      "2": [
+        79
+      ],
+      "127": [
+        55,
+        94
+      ],
+      "511": [
+        48,
+        59,
+        83
+      ],
+      "1023": [
+        0
+      ],
+      "2047": [
+        16,
+        19,
+        84,
+        85,
+        86
+      ],
+      "4095": [
+        10,
+        16,
+        82,
+        91,
+        92
+      ]
+    },
+    "weights": {
+      "sensor_hidden": 3614,
+      "recurrent": 14728,
+      "hidden_output": 4586
+    }
+  },
+  "memory": {
+    "600": {
+      "neurons_requested": 600,
+      "neurons_total_with_tools": 712,
+      "rss_mib": 56.24609375,
+      "connections": 27561,
+      "connections_by_projection": {
+        "sensor_hidden": 3695,
+        "recurrent": 14889,
+        "hidden_output": 8977
+      },
+      "numpy_array_bytes_unique": 345536
+    },
+    "1000": {
+      "neurons_requested": 1000,
+      "neurons_total_with_tools": 1112,
+      "rss_mib": 56.703125,
+      "connections": 71208,
+      "connections_by_projection": {
+        "sensor_hidden": 10211,
+        "recurrent": 40926,
+        "hidden_output": 20071
+      },
+      "numpy_array_bytes_unique": 877892
+    }
+  },
+  "tick_cost_600": {
+    "active": {
+      "ticks": 1000,
+      "simulated_ms_per_tick": 50.0,
+      "mean_cpu_ms": 12.671875,
+      "cpu_ms": {
+        "mean": 12.671875,
+        "stddev": 6.68923385817651,
+        "p50": 15.625,
+        "p95": 15.625,
+        "p99": 31.25
+      },
+      "wall_ms": {
+        "mean": 12.920630300000001,
+        "stddev": 2.1716145259672377,
+        "p50": 12.0493,
+        "p95": 17.143665,
+        "p99": 20.164880999999998
+      },
+      "p95_wall_ms": 17.143665,
+      "mean_wall_ms": 12.920630300000001,
+      "live_traced_blocks_delta_per_tick": 0.155,
+      "live_traced_bytes_delta_per_tick": 8.152,
+      "peak_traced_bytes_delta_per_tick": 200.112,
+      "sleep_entry_consolidation_cpu_ms": null
+    },
+    "rest": {
+      "ticks": 1000,
+      "simulated_ms_per_tick": 250.0,
+      "mean_cpu_ms": 0.703125,
+      "cpu_ms": {
+        "mean": 0.703125,
+        "stddev": 3.239126944004356,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 15.625
+      },
+      "wall_ms": {
+        "mean": 0.7130966,
+        "stddev": 0.13968936168670826,
+        "p50": 0.66325,
+        "p95": 0.9907099999999994,
+        "p99": 1.2099199999999999
+      },
+      "p95_wall_ms": 0.9907099999999994,
+      "mean_wall_ms": 0.7130966,
+      "live_traced_blocks_delta_per_tick": 0.041,
+      "live_traced_bytes_delta_per_tick": 3.971,
+      "peak_traced_bytes_delta_per_tick": 191.563,
+      "sleep_entry_consolidation_cpu_ms": null
+    },
+    "sleep": {
+      "ticks": 1000,
+      "simulated_ms_per_tick": 250.0,
+      "mean_cpu_ms": 0.703125,
+      "cpu_ms": {
+        "mean": 0.703125,
+        "stddev": 3.239126944004356,
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 15.625
+      },
+      "wall_ms": {
+        "mean": 0.7231773,
+        "stddev": 0.38686668819466746,
+        "p50": 0.66515,
+        "p95": 1.0211199999999998,
+        "p99": 1.143722
+      },
+      "p95_wall_ms": 1.0211199999999998,
+      "mean_wall_ms": 0.7231773,
+      "live_traced_blocks_delta_per_tick": 0.045,
+      "live_traced_bytes_delta_per_tick": 4.143,
+      "peak_traced_bytes_delta_per_tick": 191.767,
+      "sleep_entry_consolidation_cpu_ms": 0.0
+    }
+  },
+  "tick_cost_1000": {
+    "active": {
+      "ticks": 1000,
+      "simulated_ms_per_tick": 50.0,
+      "mean_cpu_ms": 25.234375,
+      "cpu_ms": {
+        "mean": 25.21875,
+        "stddev": 8.07381715407898,
+        "p50": 31.25,
+        "p95": 31.25,
+        "p99": 31.25
+      },
+      "wall_ms": {
+        "mean": 25.819529199999998,
+        "stddev": 5.081810607856943,
+        "p50": 24.768250000000002,
+        "p95": 31.333305,
+        "p99": 37.282265
+      },
+      "p95_wall_ms": 31.333305,
+      "mean_wall_ms": 25.819529199999998,
+      "live_traced_blocks_delta_per_tick": 0.174,
+      "live_traced_bytes_delta_per_tick": 10.599,
+      "peak_traced_bytes_delta_per_tick": 513.975,
+      "sleep_entry_consolidation_cpu_ms": null
+    },
+    "mean_cpu_ms_50ms_simulated": 25.234375
+  },
+  "configuration": {
+    "seed": 20261102,
+    "network": {
+      "neurons": 600,
+      "recurrent_connectivity": 0.1,
+      "dt_ms": 2.0,
+      "tick_active_ms": 50,
+      "tick_idle_ms": 250,
+      "background_noise": 0.015,
+      "synaptic_gain": 1.7,
+      "tool_output_inhibition": false,
+      "allow_neuron_growth_migration": false
+    },
+    "runtime": {
+      "idle_tick_interval_s": 0.25,
+      "pet_idle_tick_interval_s": 0.4,
+      "active_timeout_s": 20,
+      "sleep_after_s": 1800
+    },
+    "component_metrics_file": "baseline_components.json"
+  },
+  "encoder_probe_note": "The harness uses four encoder groups scaled to n_sensor for both 600 and 1000-neuron comparisons. Phase 0 exposed that the original runtime hard-coded 4x24 sensors; phase 1 now derives these group sizes from the network.",
+  "firing_rate_hz": {
+    "active": {
+      "sensor": 9.04427083333383,
+      "hidden": 5.202473958333618,
+      "output": 4.793103448276124
+    },
+    "rest": {
+      "sensor": 0.0,
+      "hidden": 0.0,
+      "output": 0.0
+    },
+    "sleep": {
+      "sensor": 0.0,
+      "hidden": 0.0,
+      "output": 0.0
+    },
+    "1000_active": {
+      "sensor": 7.948437500000435,
+      "hidden": 5.498437500000301,
+      "output": 5.858974358974679
+    }
+  },
+  "spike_activity": {
+    "active": {
+      "rates_hz": {
+        "sensor": 9.04427083333383,
+        "hidden": 5.202473958333618,
+        "output": 4.793103448276124
+      },
+      "spikes": {
+        "sensor": 3473,
+        "hidden": 7991,
+        "output": 4448
+      },
+      "neurons": {
+        "sensor": 96,
+        "hidden": 384,
+        "output": 232
+      },
+      "simulated_seconds": 3.999999999999781,
+      "samples": 80
+    },
+    "rest": {
+      "rates_hz": {
+        "sensor": 0.0,
+        "hidden": 0.0,
+        "output": 0.0
+      },
+      "spikes": {
+        "sensor": 0,
+        "hidden": 0,
+        "output": 0
+      },
+      "neurons": {
+        "sensor": 96,
+        "hidden": 384,
+        "output": 232
+      },
+      "simulated_seconds": 0.16000000000000011,
+      "samples": 80
+    },
+    "sleep": {
+      "rates_hz": {
+        "sensor": 0.0,
+        "hidden": 0.0,
+        "output": 0.0
+      },
+      "spikes": {
+        "sensor": 0,
+        "hidden": 0,
+        "output": 0
+      },
+      "neurons": {
+        "sensor": 96,
+        "hidden": 384,
+        "output": 232
+      },
+      "simulated_seconds": 0.16000000000000011,
+      "samples": 80
+    },
+    "1000_active": {
+      "rates_hz": {
+        "sensor": 7.948437500000435,
+        "hidden": 5.498437500000301,
+        "output": 5.858974358974679
+      },
+      "spikes": {
+        "sensor": 5087,
+        "hidden": 14076,
+        "output": 7312
+      },
+      "neurons": {
+        "sensor": 160,
+        "hidden": 640,
+        "output": 312
+      },
+      "simulated_seconds": 3.999999999999781,
+      "samples": 80
+    }
+  },
+  "top_profile_costs": [
+    {
+      "function": "tick",
+      "file": "engine.py",
+      "line": 371,
+      "calls": 120,
+      "total_seconds": 0.0402196,
+      "cumulative_seconds": 1.7470903000000002
+    },
+    {
+      "function": "mark",
+      "file": "plasticity.py",
+      "line": 28,
+      "calls": 9000,
+      "total_seconds": 1.1498813,
+      "cumulative_seconds": 1.1549081
+    },
+    {
+      "function": "step",
+      "file": "network.py",
+      "line": 239,
+      "calls": 3000,
+      "total_seconds": 0.06342110000000001,
+      "cumulative_seconds": 0.45056320000000005
+    },
+    {
+      "function": "currents",
+      "file": "synapses.py",
+      "line": 56,
+      "calls": 9000,
+      "total_seconds": 0.0163996,
+      "cumulative_seconds": 0.24442940000000002
+    },
+    {
+      "function": "__matmul__",
+      "file": "_base.py",
+      "line": 1006,
+      "calls": 9000,
+      "total_seconds": 0.0069036,
+      "cumulative_seconds": 0.2171053
+    }
+  ],
+  "idle_process_cpu": {
+    "seconds": 10.00056119999499,
+    "single_core_cpu_percent": 0.4687236952264587,
+    "psutil_single_core_cpu_percent_quantized": 0.4687236952264587
+  },
+  "allocation_metric_note": "Python tracemalloc reports net live traced blocks/bytes per tick and peak traced bytes; it does not count short-lived allocations that are freed inside each tick.",
+  "regime_note": "Active uses 50 ms simulated with 25 LIF steps. Rest and sleep each use one 250 ms low-duty LIF step; sleep adds a one-time consolidation measurement and the runtime waits 500 ms between sleep ticks."
+}
