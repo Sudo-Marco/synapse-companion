@@ -80,11 +80,12 @@ Legenda: ✅ concluído com evidência; ⚠️ ressalva registrada; ⏳ aguardan
 
 ## Fase 7 — event-driven experimental
 
-- [ ] Investigar spikes novos, filas, correntes pendentes, decaimento, refratariedade, adaptação e elegibilidade.
-- [ ] Manter `fixed_step` como padrão e criar modo experimental independente, desativado por padrão.
-- [ ] Comparar saída, determinismo e custo com passos fixos em múltiplas taxas de spikes.
-- [ ] Reter a arquitetura tradicional se o ganho não for relevante ou se a fidelidade temporal não for preservada.
-- [ ] Não alterar topologia, pesos padrão, regras de aprendizado nem formato de snapshot.
+- [x] Investigar spikes, correntes, ruído, decaimento, refratariedade, adaptação, elegibilidade e janelas de homeostase.
+- [x] Manter `fixed_step` como padrão e adicionar modo experimental independente, desativado por padrão.
+- [x] Fazer o modo experimental recuar para o passo fixo em qualquer condição que possa produzir um evento.
+- [ ] Comparar saída, determinismo e custo com passos fixos no CI em 600/1.000 neurônios e coletar os artefatos finais.
+- [x] Preservar topologia, pesos padrão, regras de aprendizado e formato de snapshot.
+- [ ] Registrar medições, limitações e decisão de manter/remover o protótipo em `docs/performance/PHASE7_EVENT_DRIVEN_REPORT.md`.
 
 ## Fases posteriores — não iniciadas
 - [ ] Codificação/aprendizado, reorganização arquitetural, persistência/runtime, testes de estresse e release.

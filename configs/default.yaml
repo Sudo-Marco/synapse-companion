@@ -5,6 +5,9 @@ neural_backend:
   fallback: numpy     # usado até os kernels Cython estarem disponíveis
   precision: float32
   deterministic: true
+simulation:
+  mode: fixed_step       # fixed_step ou event_driven (experimental)
+  event_driven: false    # exige mode: event_driven; só salta blocos seguros e silenciosos
 pet:
   mode: floating          # floating (somente o olho) ou window (painel ao iniciar)
   render_style: pixel     # pixel (Piu), spectral, ascii ou vector

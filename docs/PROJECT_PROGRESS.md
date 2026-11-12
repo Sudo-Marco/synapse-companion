@@ -13,7 +13,7 @@ Atualizado em **11 de novembro de 2026**.
 | 4 — STDP compilada | Concluída; equivalência e benchmark no CI Windows/Ubuntu | `docs/performance/PHASE4_STDP_REPORT.md`, artefatos `cython_stdp_ci_*`, workflow e testes |
 | 5 — LIF compilado | Concluída; equivalência e benchmark aprovados em CI | `docs/performance/PHASE5_LIF_REPORT.md`, testes, benchmark e CI Windows/Ubuntu |
 | 6 — CSR compilado | Validada em CI; PR #4 aberta para `main` | `docs/performance/PHASE6_CSR_REPORT.md`, testes, benchmarks e CI Windows/Ubuntu |
-| 7 — Event-driven experimental | Próxima; protocolo definido | Modo fixo continua padrão; experimentar somente sob flag |
+| 7 — Event-driven experimental | Implementada em branch; validação pendente | Modo fixo continua padrão; fast-forward apenas em bloco silencioso |
 | 8+ — evolução | Não iniciadas | Codificação/aprendizado, reorganização arquitetural, persistência/runtime, estresse e release |
 
 ## Linha de base atual
@@ -38,4 +38,6 @@ O bloco de desempenho foi registrado no commit local `3f1bd4e` (`perf: complete 
 
 **Checkpoint da Fase 6:** propagação CSR opcional em Cython por destino ou por spikes ativos, com índice fonte→arestas sob demanda e sem duplicar pesos. Layout validado uma vez na reconstrução/vinculação para não adicionar checagens caras em cada tick. O corte final é 30% de atividade: acima dele, CSR por destino é mais consistente. A CI compilou e passou a suíte completa em Windows/Ubuntu; hashes NumPy/Cython coincidiram. CPU do tick caiu 48,7–58,0% contra NumPy, sem regressão. O relatório e quatro JSONs com dados brutos estão em `docs/performance/PHASE6_CSR_REPORT.md` e `benchmarks/results/cython_phase6_*.json`. PR #4 está aberta e não foi mesclada. A compilação nativa local e a UI física do Windows não foram validadas.
 
-**Próxima fase autorizada — Fase 7:** investigar um modo event-driven experimental, sem substituir o passo fixo e sem alterar topologia ou regras de aprendizado. O trabalho começa após o checkpoint da Fase 6; a configuração padrão seguirá `fixed_step`.
+**Fase 7 iniciada:** investigar um modo event-driven experimental, sem substituir o passo fixo e sem alterar topologia ou regras de aprendizado. A configuração padrão segue `fixed_step`.
+
+**Andamento da Fase 7:** investigação confirmou que ruído, entrada sensorial, spikes pendentes, refratariedade e fronteiras de homeostase exigem o passo fixo. O protótipo fast-forward só salta um bloco silencioso, com ruído zero; toda outra situação volta ao passo fixo. `simulation.mode: fixed_step` e `simulation.event_driven: false` seguem como padrão. Testes e benchmark de 600/1.000 neurônios foram adicionados à CI Windows/Ubuntu; medições finais e decisão serão registradas após a execução dessa branch.

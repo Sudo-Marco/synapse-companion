@@ -38,6 +38,24 @@ incompatíveis e entradas com alias voltam ao caminho NumPy.
 Nenhum estado do backend é escrito no snapshot, então saves permanecem
 independentes de Cython.
 
+## Avanço event-driven experimental
+
+O modo padrão é `simulation.mode: fixed_step` com `simulation.event_driven:
+false`. O protótipo de avanço event-driven só tenta agrupar um bloco quando a
+rede está silenciosa, não há ruído nem corrente sensorial, todos os neurônios
+estão fora da refratariedade e o bloco não cruza uma janela de homeostase.
+Qualquer condição não comprovada cai no loop fixo sem alterar estado. Por isso,
+o protótipo só pode ser exercitado com `network.background_noise: 0.0` e uma
+entrada silenciosa; com a configuração distribuída (`background_noise: 0.015`)
+ele usa o caminho fixo.
+
+Para experimentar, configure `simulation.mode: event_driven`,
+`simulation.event_driven: true` e ruído zero. O cálculo agrupado é determinístico
+e preserva os spikes nos casos testados, mas as multiplicações float32 dos
+estados internos podem diferir alguns ULPs do arredondamento repetido. O passo
+fixo continua sendo a referência e o modo experimental não é recomendado para
+execução normal. Não altera topologia, regras de aprendizado nem snapshots.
+
 ## Build Cython opcional
 
 Instalação e compilação são separadas. O pacote padrão nunca tenta compilar

@@ -67,3 +67,7 @@ ou com alias usam a referência NumPy. O backend Cython permanece opt-in e NumPy
 e o custo medidos por plataforma estão documentados nos relatórios das Fases 4
 a 6. O relatório da Fase 6 registra os resultados do kernel CSR compilado e o
 seu ponto de seleção por taxa de disparos.
+
+O avanço event-driven da Fase 7 não exige Cython. Ele é experimental, desligado
+por padrão e só agrupa blocos silenciosos sob condições estritas; detalhes de
+configuração e ressalvas estão em `docs/architecture/NEURAL_BACKEND.md`.

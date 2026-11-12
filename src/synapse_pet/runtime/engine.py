@@ -35,6 +35,7 @@ from .persistence import SnapshotStore
 from .logging_db import ActionLog
 from .scheduler import RuntimeScheduler
 from .visual_state import VisualState
+from .event_driven import try_fast_forward_quiet
 
 APP_DATA = Path(os.environ.get("APPDATA", str(Path.home() / "AppData" / "Roaming"))) / "synapse_pet"
 
@@ -53,6 +54,16 @@ class PetEngine:
             "%(asctime)s %(levelname)s %(threadName)s %(message)s"))
         self.logger.addHandler(self._log_handler)
         self.config = load_config()
+        simulation_config = self.config.get("simulation", {})
+        self.simulation_mode = str(
+            simulation_config.get("mode", "fixed_step")).lower()
+        if self.simulation_mode not in {"fixed_step", "event_driven"}:
+            raise ValueError(
+                "simulation.mode must be 'fixed_step' or 'event_driven'")
+        self.event_driven_enabled = bool(
+            simulation_config.get("event_driven", False)
+            and self.simulation_mode == "event_driven")
+        self.last_event_driven_used = False
         self.backend_selection = create_neural_backend(
             self.config.get("neural_backend", {}))
         self.neural_backend = self.backend_selection.backend
@@ -399,28 +410,35 @@ class PetEngine:
             self._tick_spike_counts = np.zeros_like(self.network.population.spikes,
                                                     dtype=np.float32)
         self._tick_spike_counts.fill(0.0)
-        for _ in range(steps):
-            spikes = self.network.step(stimulus)
-            self._tick_spike_counts += spikes
-            dt_step = self.network.dt_ms / 1000.0
-            h = slice(self.network.hidden_start, self.network.output_start)
-            out = slice(self.network.output_start, self.network.output_start + self.network.hidden_to_output.n_post)
-            self.neural_backend.update_stdp(
-                self.learners["sensor_hidden"], self.network.sensor_to_hidden,
-                spikes[:self.network.n_sensor], spikes[h], dt_step)
-            self.neural_backend.update_stdp(
-                self.learners["recurrent"], self.network.recurrent,
-                spikes[h], spikes[h], dt_step)
-            self.neural_backend.update_stdp(
-                self.learners["hidden_output"], self.network.hidden_to_output,
-                spikes[h], spikes[out], dt_step)
-            health_events = self.neural_backend.update_homeostasis(
-                self.homeostasis,
-                self.network.population, spikes, dt_step,
-                (self.network.sensor_to_hidden, self.network.recurrent,
-                 self.network.hidden_to_output))
-            for event in health_events:
-                self.action_log.record("homeostasis", event, 0.0, "system")
+        self.last_event_driven_used = bool(
+            self.event_driven_enabled
+            and try_fast_forward_quiet(
+                self.network, self.learners, self.homeostasis, steps, stimulus))
+        if self.last_event_driven_used:
+            spikes = self.network.population.spikes.copy()
+        else:
+            for _ in range(steps):
+                spikes = self.network.step(stimulus)
+                self._tick_spike_counts += spikes
+                dt_step = self.network.dt_ms / 1000.0
+                h = slice(self.network.hidden_start, self.network.output_start)
+                out = slice(self.network.output_start, self.network.output_start + self.network.hidden_to_output.n_post)
+                self.neural_backend.update_stdp(
+                    self.learners["sensor_hidden"], self.network.sensor_to_hidden,
+                    spikes[:self.network.n_sensor], spikes[h], dt_step)
+                self.neural_backend.update_stdp(
+                    self.learners["recurrent"], self.network.recurrent,
+                    spikes[h], spikes[h], dt_step)
+                self.neural_backend.update_stdp(
+                    self.learners["hidden_output"], self.network.hidden_to_output,
+                    spikes[h], spikes[out], dt_step)
+                health_events = self.neural_backend.update_homeostasis(
+                    self.homeostasis,
+                    self.network.population, spikes, dt_step,
+                    (self.network.sensor_to_hidden, self.network.recurrent,
+                     self.network.hidden_to_output))
+                for event in health_events:
+                    self.action_log.record("homeostasis", event, 0.0, "system")
         self.last_rates = self.decoder.update(self._tick_spike_counts, dt_s)
         activity = float(self._tick_spike_counts.mean() / steps)
         hidden_counts = self._tick_spike_counts[
