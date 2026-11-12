@@ -36,6 +36,12 @@ if os.environ.get("SYNAPSE_PET_BUILD_CYTHON") == "1":
                 include_dirs=[np.get_include()],
                 extra_compile_args=strict_fp_args,
             ),
+            Extension(
+                "synapse_pet.neural_backend._sparse",
+                ["src/synapse_pet/neural_backend/kernels/sparse.pyx"],
+                include_dirs=[np.get_include()],
+                extra_compile_args=strict_fp_args,
+            ),
         ],
         build_dir="build/cython",
         compiler_directives={"language_level": 3},

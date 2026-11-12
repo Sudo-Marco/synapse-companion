@@ -34,8 +34,8 @@ class BackendSelection:
 def create_neural_backend(config: Mapping[str, object] | None = None) -> BackendSelection:
     """Resolve `numpy`, `cython`, or `auto` without hiding unavailable kernels.
 
-    NumPy remains the stable reference path. Cython accelerates LIF and STDP;
-    sparse propagation, action credit and homeostasis remain NumPy operations.
+    NumPy remains the stable reference path. Cython optionally accelerates LIF,
+    STDP and CSR propagation; action credit and homeostasis remain NumPy.
     """
     settings = dict(config or {})
     requested = str(settings.get("engine", "numpy")).strip().lower()

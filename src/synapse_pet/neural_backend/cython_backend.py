@@ -19,13 +19,15 @@ class CythonBackendUnavailable(RuntimeError):
 
 
 class CythonBackend(NumpyBackend):
-    """NumPy backend with optional Cython kernels for STDP and LIF.
+    """NumPy backend with optional Cython kernels for STDP, LIF and CSR.
 
-    Sparse propagation, action credit and homeostasis remain established NumPy
-    operations in this phase.
+    Action credit and homeostasis remain established NumPy operations.
     """
 
     name = "cython"
+    # Microbenchmarks compare this crossover for source-oriented traversal.
+    # It is deliberately centralized and can be revised with new evidence.
+    ACTIVE_PROPAGATION_MAX_RATE = 0.15
 
     def __init__(self, *, deterministic: bool = True) -> None:
         super().__init__(deterministic=deterministic)
@@ -36,11 +38,84 @@ class CythonBackend(NumpyBackend):
             self._lif = importlib.import_module(
                 "synapse_pet.neural_backend._lif"
             )
+            self._sparse = importlib.import_module(
+                "synapse_pet.neural_backend._sparse"
+            )
         except (ImportError, OSError) as exc:
             raise CythonBackendUnavailable(
-                "The optional compiled Cython STDP/LIF kernels are unavailable; "
+                "The optional compiled Cython STDP/LIF/CSR kernels are unavailable; "
                 "install/build the native extra or use the NumPy fallback."
             ) from exc
+
+    def propagate(
+        self, projection: SparseProjection, spikes: NDArray[np.bool_]
+    ) -> NDArray[np.float32]:
+        if len(spikes) != projection.n_pre:
+            raise ValueError("spike vector does not match projection input size")
+
+        matrix = projection._matrix
+        if matrix is None:
+            return super().propagate(projection, spikes)
+        indptr = getattr(matrix, "indptr", None)
+        indices = getattr(matrix, "indices", None)
+        matrix_data = getattr(matrix, "data", None)
+        if not (
+            isinstance(spikes, np.ndarray)
+            and spikes.dtype == np.bool_
+            and spikes.ndim == 1
+            and spikes.flags.c_contiguous
+            and isinstance(indptr, np.ndarray)
+            and indptr.dtype == np.int32
+            and indptr.flags.c_contiguous
+            and indptr.shape == (projection.n_post + 1,)
+            and isinstance(indices, np.ndarray)
+            and indices.dtype == np.int32
+            and indices.flags.c_contiguous
+            and np.shares_memory(indices, projection.pre)
+            and isinstance(matrix_data, np.ndarray)
+            and matrix_data.dtype == np.float32
+            and matrix_data.flags.c_contiguous
+            and np.shares_memory(matrix_data, projection.weights)
+            and projection.weights.dtype == np.float32
+            and projection.weights.flags.c_contiguous
+            and len(projection.weights) == len(matrix_data)
+            and len(indices) == len(matrix_data)
+            and int(indptr[-1]) == len(matrix_data)
+            and projection.pre.dtype == np.int32
+            and projection.pre.flags.c_contiguous
+            and projection.post.dtype == np.int32
+            and projection.post.flags.c_contiguous
+            and len(projection.pre) == len(matrix_data)
+            and len(projection.post) == len(matrix_data)
+        ):
+            return super().propagate(projection, spikes)
+
+        active_count = int(np.count_nonzero(spikes))
+        if active_count == 0:
+            return np.zeros(projection.n_post, dtype=np.float32)
+        if active_count / projection.n_pre <= self.ACTIVE_PROPAGATION_MAX_RATE:
+            source_indptr, source_order = projection.source_index()
+            if not (
+                source_indptr.flags.c_contiguous
+                and source_indptr.dtype == np.int32
+                and source_order.flags.c_contiguous
+                and source_order.dtype == np.int32
+                and len(source_indptr) == projection.n_pre + 1
+                and len(source_order) == len(matrix_data)
+            ):
+                return super().propagate(projection, spikes)
+            return self._sparse.propagate_active(
+                source_indptr,
+                source_order,
+                projection.post,
+                projection.weights,
+                spikes,
+                projection.n_post,
+            )
+
+        return self._sparse.propagate_csr(
+            indptr, indices, matrix_data, spikes
+        )
 
     def step_neurons(
         self,
