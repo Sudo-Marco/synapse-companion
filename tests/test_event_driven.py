@@ -86,6 +86,27 @@ def test_quiet_fast_forward_preserves_spikes_and_state_within_float_tolerance():
     np.testing.assert_array_equal(fixed.step(drive), event.step(drive))
 
 
+def test_event_fast_forward_is_deterministic_for_a_fixed_seed():
+    left, left_learners, left_homeostasis, _ = _state(seed=904)
+    right, right_learners, right_homeostasis, _ = _state(seed=904)
+    stimulus = np.zeros(left.n_sensor, dtype=np.float32)
+
+    assert try_fast_forward_quiet(
+        left, left_learners, left_homeostasis, 25, stimulus)
+    assert try_fast_forward_quiet(
+        right, right_learners, right_homeostasis, 25, stimulus)
+
+    np.testing.assert_array_equal(left.population.voltage,
+                                  right.population.voltage)
+    np.testing.assert_array_equal(left.population.threshold_offset,
+                                  right.population.threshold_offset)
+    for name in left_learners:
+        for field in ("pre_trace", "post_trace", "eligibility"):
+            np.testing.assert_array_equal(
+                getattr(left_learners[name], field),
+                getattr(right_learners[name], field))
+
+
 @pytest.mark.parametrize("unsafe", [
     "stochastic_noise", "sensory_current", "pending_spike",
     "refractory_cell", "homeostasis_boundary", "sensor_shape",
