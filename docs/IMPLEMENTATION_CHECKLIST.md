@@ -74,9 +74,9 @@ Legenda: ✅ concluído com evidência; ⚠️ ressalva registrada; ⏳ aguardan
 - [x] Criar índice fonte→arestas sob demanda sem cópia do vetor de pesos.
 - [x] Adicionar testes condicionais de equivalência bit a bit, cache/invalidação e seleção de estratégia.
 - [x] Adicionar benchmark de densidades e taxas de disparo em projeções representativas de 600/1.000 neurônios.
-- [ ] Compilar, rodar a suíte completa e validar no CI Windows/Ubuntu.
-- [ ] Medir tick completo e confirmar regressão de CPU dentro de 3%; ajustar ou reverter se exceder.
-- [ ] Registrar hash, custo/memória e resultados por plataforma no relatório da Fase 6.
+- [x] Compilar, rodar a suíte completa e validar no CI Windows/Ubuntu.
+- [ ] Repetir benchmark após ajuste do crossover para 60% e confirmar regressão de CPU dentro de 3%.
+- [x] Registrar hash, custo/memória e resultados por plataforma no relatório da Fase 6.
 
 ## Próximas fases — não iniciadas
 - [ ] Fases posteriores: event-driven, codificação/aprendizado, reorganização e release.

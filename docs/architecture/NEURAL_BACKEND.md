@@ -3,10 +3,9 @@
 ## Estado
 
 A Fase 3 introduziu a seleção e o contrato comum para cálculos numéricos da
-SNN. A Fase 4 adicionou kernels Cython opcionais para STDP e a Fase 5, um
-kernel para o passo LIF. A Fase 6 está adicionando propagação CSR compilada com
-duas estratégias de travessia. O backend padrão continua NumPy; crédito por
-ação e homeostase continuam no NumPy.
+SNN. A Fase 4 adicionou kernels Cython opcionais para STDP, a Fase 5 para LIF
+e a Fase 6 para propagação CSR com duas estratégias de travessia. O backend
+padrão continua NumPy; crédito por ação e homeostase continuam no NumPy.
 
 ## Configuração
 
@@ -28,7 +27,9 @@ engine registra o backend efetivo e o motivo de fallback no log do runtime.
 `interface.py` define as operações numéricas utilizadas por rede e runtime.
 `NumpyBackend` delega as implementações atuais sem replicar fórmulas. O
 `CythonBackend` herda esse adaptador e substitui `step_neurons`, `update_stdp`,
-`apply_reward` e `propagate` após a validação da Fase 6. O LIF mantém a ordem de operações e os arredondamentos
+`apply_reward` e `propagate`. Para CSR, usa travessia por fonte ativa até 60% de
+atividade e travessia por linha para atividade mais densa; sem spikes retorna
+um vetor zero. O LIF mantém a ordem de operações e os arredondamentos
 float32 da implementação de referência, além de consumir o mesmo fluxo RNG
 quando o ruído está ativo. Os arrays continuam pertencendo aos objetos NumPy;
 os kernels usam memoryviews durante a chamada e não armazenam ponteiros. Layouts
@@ -65,4 +66,5 @@ trajetória integral da rede em múltiplos tamanhos, incluindo RNG.
 indexação fonte→destino sob demanda e a seleção por atividade. Os benchmarks
 separam tempo de CPU e parede e medem `tracemalloc` e RSS; RSS representa o
 processo inteiro, não a extensão isolada. O benchmark de tick completo cobre
-`SpikingNetwork.step` e aplica o limite de regressão de 3%.
+`SpikingNetwork.step` e aplica o limite de regressão de 3%. Os resultados da
+Fase 6 estão em [`PHASE6_CSR_REPORT.md`](../performance/PHASE6_CSR_REPORT.md).

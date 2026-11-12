@@ -25,9 +25,9 @@ class CythonBackend(NumpyBackend):
     """
 
     name = "cython"
-    # CI microbenchmarks show source traversal wins through 30% activity on
-    # both platforms; row-oriented CSR is safer at denser firing rates.
-    ACTIVE_PROPAGATION_MAX_RATE = 0.30
+    # CI microbenchmarks show active-source traversal beats SciPy in at least
+    # 89% of cases through 60% activity on both platforms; row CSR wins at 100%.
+    ACTIVE_PROPAGATION_MAX_RATE = 0.60
 
     def __init__(self, *, deterministic: bool = True) -> None:
         super().__init__(deterministic=deterministic)

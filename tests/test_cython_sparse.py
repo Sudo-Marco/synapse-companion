@@ -196,10 +196,11 @@ def test_backend_selects_csr_when_activity_is_above_crossover():
     assert calls == ["csr"]
 
 
-def test_backend_selects_active_sources_when_activity_is_below_crossover():
+@pytest.mark.parametrize("active_count", [30, 60])
+def test_backend_selects_active_sources_through_measured_crossover(active_count):
     projection = _projection(100, 73, 0.12, seed=56)
     spikes = np.zeros(100, dtype=np.bool_)
-    spikes[:30] = True
+    spikes[:active_count] = True
     backend = CythonBackend()
     calls: list[str] = []
     original_active = backend._sparse.propagate_active
